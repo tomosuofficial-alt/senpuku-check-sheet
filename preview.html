@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="千福チェック">
+  <link rel="apple-touch-icon" href="favicon.png">
+  <title>よいどころ千福 チェックリスト</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.16);
+      --glass-bg-heavy: rgba(255, 255, 255, 0.24);
+      --glass-border: rgba(255, 255, 255, 0.25);
+      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      --blur: 24px;
+      --blur-heavy: 40px;
+      --text-white: #ffffff;
+      --text-primary: #1a1a1a;
+      --text-muted: #7a7a7a;
+      --accent: #007AFF;
+      --accent-glow: rgba(0, 122, 255, 0.25);
+      --green: #34C759;
+      --green-glow: rgba(52, 199, 89, 0.2);
+      --orange: #FF9500;
+      --red: #FF3B30;
+      --purple: #AF52DE;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --transition: 0.2s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-primary);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== Splash Screen ===== */
+    .splash {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: #1a1008;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      transition: opacity 0.8s ease;
+    }
+
+    .splash.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .splash-logo {
+      max-width: 80%;
+      max-height: 40vh;
+      opacity: 0;
+      transform: scale(0.95);
+      animation: logoFadeIn 2s ease 0.3s forwards;
+      filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5));
+    }
+
+    .splash-subtitle {
+      margin-top: 20px;
+      font-size: 0.75rem;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      color: rgba(255, 255, 255, 0);
+      animation: subtitleFadeIn 1.5s ease 1.6s forwards;
+    }
+
+    @keyframes logoFadeIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes subtitleFadeIn {
+      0% {
+        color: rgba(255, 255, 255, 0);
+      }
+
+      100% {
+        color: rgba(255, 255, 255, 0.6);
+      }
+    }
+
+    /* ===== Background ===== */
+    .bg-image {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image: url("bg.jpg?v=2");
+      background-size: cover;
+      background-position: center;
+      filter: brightness(0.65);
+    }
+
+    .bg-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.12);
+    }
+
+    /* ===== App Shell ===== */
+    .app-shell {
+      position: relative;
+      z-index: 2;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ===== Header ===== */
+    .header {
+      flex-shrink: 0;
+      backdrop-filter: blur(var(--blur-heavy));
+      -webkit-backdrop-filter: blur(var(--blur-heavy));
+      background: rgba(255, 255, 255, 0.20);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 10px 16px;
+      padding-top: max(10px, env(safe-area-inset-top));
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-white);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .header .date-time {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 400;
+    }
+
+    .settings-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: var(--text-white);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .settings-btn:active {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    /* ===== Staff ===== */
+    .staff-bar {
+      flex-shrink: 0;
+      padding: 8px 16px;
+    }
+
+    .staff-select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
+      background: var(--glass-bg-heavy);
+      color: var(--text-white);
+      font-size: 0.9rem;
+      font-family: inherit;
+      font-weight: 500;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .staff-select option {
+      color: #333;
+      background: #fff;
+    }
+
+    /* ===== Tabs ===== */
+    .tab-bar {
+      flex-shrink: 0;
+      display: flex;
+      gap: 6px;
+      padding: 0 16px 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tab-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab-btn {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 0.8rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab-btn.active {
+      background: rgba(255, 255, 255, 0.55);
+      border-color: rgba(255, 255, 255, 0.6);
+      color: var(--text-primary);
+      font-weight: 600;
+      text-shadow: none;
+      box-shadow: 0 2px 12px rgba(255, 255, 255, 0.15);
+    }
+
+    /* ===== Content ===== */
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 12px 12px;
+    }
+
+    /* ===== Progress ===== */
+    .progress-card {
+      backdrop-filter: blur(var(--blur-heavy));
+      -webkit-backdrop-filter: blur(var(--blur-heavy));
+      background: var(--glass-bg-heavy);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .progress-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-white);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .progress-pct {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-white);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .progress-bar-bg {
+      height: 5px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 999px;
+      transition: width 0.5s ease;
+      box-shadow: 0 0 8px var(--green-glow);
+    }
+
+    /* ===== Timer ===== */
+    .timer-card {
+      backdrop-filter: blur(var(--blur-heavy));
+      -webkit-backdrop-filter: blur(var(--blur-heavy));
+      background: rgba(255, 149, 0, 0.15);
+      border: 1px solid rgba(255, 149, 0, 0.3);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--glass-shadow);
+      display: none;
+    }
+
+    .timer-card.visible {
+      display: block;
+    }
+
+    .timer-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-white);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .timer-display {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-white);
+      text-align: center;
+      margin: 8px 0;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .timer-controls {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .timer-btn {
+      padding: 6px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.2);
+      color: var(--text-white);
+      font-size: 0.8rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .timer-btn:active {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .timer-btn.primary {
+      background: var(--orange);
+      border-color: var(--orange);
+    }
+
+    /* ===== Timing ===== */
+    .timing-group {
+      margin-bottom: 10px;
+    }
+
+    .timing-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 6px;
+      margin-bottom: 6px;
+    }
+
+    .timing-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .timing-name {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.85);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      letter-spacing: 0.03em;
+    }
+
+    .timing-count {
+      font-size: 0.65rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin-left: auto;
+    }
+
+    /* ===== Check Item ===== */
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all var(--transition);
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .check-item:active {
+      transform: scale(0.98);
+    }
+
+    .check-item.checked {
+      background: rgba(52, 199, 89, 0.15);
+      border-color: rgba(52, 199, 89, 0.35);
+    }
+
+    .check-item.already-done {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .checkbox-circle {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition);
+      margin-top: 1px;
+    }
+
+    .check-item.checked .checkbox-circle {
+      background: var(--green);
+      border-color: var(--green);
+      box-shadow: 0 0 8px var(--green-glow);
+    }
+
+    .checkbox-circle svg {
+      width: 12px;
+      height: 12px;
+      stroke: #fff;
+      stroke-width: 3;
+      fill: none;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all var(--transition);
+    }
+
+    .check-item.checked .checkbox-circle svg {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .item-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .item-name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-white);
+      line-height: 1.4;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .item-tags {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .tag {
+      font-size: 0.6rem;
+      font-weight: 500;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .tag-high {
+      color: var(--red);
+      background: rgba(255, 59, 48, 0.12);
+    }
+
+    .tag-mid {
+      color: var(--orange);
+      background: rgba(255, 149, 0, 0.12);
+    }
+
+    .tag-low {
+      color: var(--purple);
+      background: rgba(175, 82, 222, 0.12);
+    }
+
+    .manual-link {
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: var(--accent);
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(0, 122, 255, 0.12);
+      cursor: pointer;
+    }
+
+    .item-memo {
+      font-size: 0.72rem;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 1.5;
+      margin-top: 6px;
+      padding: 6px 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      display: none;
+    }
+
+    .check-item.expanded .item-memo {
+      display: block;
+    }
+
+    .memo-btn {
+      font-size: 0.65rem;
+      color: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* ===== Submit ===== */
+    .submit-bar {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+      backdrop-filter: blur(var(--blur-heavy));
+      -webkit-backdrop-filter: blur(var(--blur-heavy));
+      background: rgba(255, 255, 255, 0.12);
+      border-top: 1px solid var(--glass-border);
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+
+    .submit-btn:active {
+      transform: scale(0.97);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ===== Toast ===== */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-120px);
+      backdrop-filter: blur(var(--blur-heavy));
+      background: rgba(52, 199, 89, 0.85);
+      color: #fff;
+      padding: 12px 22px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      box-shadow: var(--glass-shadow);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 500;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ===== Modal ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-sheet {
+      width: 100%;
+      max-width: 480px;
+      max-height: 85vh;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(var(--blur-heavy));
+      -webkit-backdrop-filter: blur(var(--blur-heavy));
+      border-radius: var(--radius) var(--radius) 0 0;
+      overflow-y: auto;
+      padding: 20px 16px;
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+      }
+
+      to {
+        transform: translateY(0);
+      }
+    }
+
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      background: #ccc;
+      border-radius: 999px;
+      margin: 0 auto 16px;
+    }
+
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0, 0, 0, 0.06);
+      color: var(--text-muted);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-family: inherit;
+      background: rgba(255, 255, 255, 0.8);
+      color: var(--text-primary);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .form-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .staff-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .staff-list-name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .staff-list-id {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .status-toggle {
+      padding: 4px 12px;
+      border: 1px solid #ddd;
+      border-radius: 999px;
+      background: none;
+      font-size: 0.7rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .status-toggle.active {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+
+    .status-toggle.inactive {
+      background: #eee;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Splash Screen -->
+  <div class="splash" id="splash">
+    <img class="splash-logo" src="logo.png" alt="千福 運営心得">
+    <div class="splash-subtitle">by TOMOSU.design</div>
+  </div>
+
+  <div class="bg-image"></div>
+  <div class="bg-overlay"></div>
+  <div class="toast" id="toast"></div>
+
+  <div class="app-shell">
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <h1>よいどころ千福</h1>
+          <div class="date-time" id="dateTime"></div>
+        </div>
+        <button class="settings-btn" id="settingsBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="staff-bar">
+      <select class="staff-select" id="staffSelect">
+        <option value="">-- 担当者を選択 --</option>
+      </select>
+    </div>
+    <div class="tab-bar" id="tabBar">
+      <button class="tab-btn active" data-cat="開店">開店準備</button>
+      <button class="tab-btn" data-cat="閉店">閉店作業</button>
+      <button class="tab-btn" data-cat="トイレ清掃">トイレ清掃</button>
+      <button class="tab-btn" data-cat="マニュアル">マニュアル</button>
+    </div>
+    <div class="content-area" id="contentArea"></div>
+    <div class="submit-bar" id="submitBar">
+      <button class="submit-btn" id="submitBtn" disabled>チェック完了を送信</button>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <button class="modal-close" id="closeSettings">&times;</button>
+      <div class="modal-title">設定</div>
+      <div class="modal-title" style="font-size:0.85rem;margin-top:8px;">スタッフ管理</div>
+      <div id="staffList"></div>
+      <div class="form-group" style="margin-top:16px;">
+        <label class="form-label">新規スタッフ追加</label>
+        <div style="display:flex;gap:8px;">
+          <input class="form-input" id="newStaffName" placeholder="名前を入力" style="flex:1;">
+          <button class="form-btn" id="addStaffBtn">追加</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== MOCK =====
+    var _ms = [{ "id": "STAFF001", "name": "浅見 千福", "active": true }, { "id": "STAFF002", "name": "高橋 汀", "active": true }, { "id": "STAFF003", "name": "小野川 達矢", "active": true }, { "id": "STAFF004", "name": "井上 寛大", "active": true }, { "id": "STAFF005", "name": "近藤 郁恵", "active": true }, { "id": "STAFF006", "name": "佐々木 郁人", "active": true }];
+    var _mi = [{ "itemId": "KAI001", "category": "開店", "timing": "出勤時", "name": "店内清掃", "memo": "清掃マニュアル参照", "minutes": 15.0, "priority": "高", "frequency": "毎日", "sortOrder": 1.0 }, { "itemId": "HEI001", "category": "閉店", "timing": "閉店後", "name": "シンク掃除", "memo": "全体に洗剤をかけスポンジで隅々まで擦り、蛇口も擦る。水で流す。スポンジ・ダスター・吸水マットをタッパーにまとめてハイターでつけ置き、熱湯で殺菌して干す", "minutes": 10.0, "priority": "高", "frequency": "毎日", "sortOrder": 1.0 }, { "itemId": "TOI001", "category": "トイレ清掃", "timing": "随時", "name": "便器の清掃", "memo": "", "minutes": 1.0, "priority": "高", "frequency": "毎日", "sortOrder": 1.0 }, { "itemId": "KAI002", "category": "開店", "timing": "出勤時", "name": "仕込み", "memo": "仕込みマニュアル参照", "minutes": 30.0, "priority": "高", "frequency": "毎日", "sortOrder": 2.0 }, { "itemId": "HEI002", "category": "閉店", "timing": "閉店後", "name": "包丁・まな板・まきす消毒", "memo": "ハイターでつけ置きしてから熱湯をかけて殺菌。まきすはハンガーにかけ干す", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 2.0 }, { "itemId": "TOI002", "category": "トイレ清掃", "timing": "随時", "name": "床の清掃", "memo": "", "minutes": 3.0, "priority": "高", "frequency": "毎日", "sortOrder": 2.0 }, { "itemId": "KAI003", "category": "開店", "timing": "出勤時", "name": "神棚の水を替える", "memo": "", "minutes": 2.0, "priority": "中", "frequency": "毎日", "sortOrder": 3.0 }, { "itemId": "HEI003", "category": "閉店", "timing": "閉店後", "name": "調理台・器具の清掃", "memo": "アルコール・ダスターを使ってコンロ、オーブン、冷蔵庫、調理台の汚れをしっかり拭く", "minutes": 10.0, "priority": "高", "frequency": "毎日", "sortOrder": 3.0 }, { "itemId": "TOI003", "category": "トイレ清掃", "timing": "随時", "name": "洗面台の清掃", "memo": "", "minutes": 2.0, "priority": "高", "frequency": "毎日", "sortOrder": 3.0 }, { "itemId": "KAI004", "category": "開店", "timing": "出勤時", "name": "厨房入場時の挨拶", "memo": "「お願いします」と元気よく挨拶する", "minutes": 1.0, "priority": "中", "frequency": "毎日", "sortOrder": 4.0 }, { "itemId": "HEI004", "category": "閉店", "timing": "閉店後", "name": "花への水やり・花瓶の掃除", "memo": "", "minutes": 3.0, "priority": "低", "frequency": "毎日", "sortOrder": 4.0 }, { "itemId": "TOI004", "category": "トイレ清掃", "timing": "随時", "name": "鏡の清掃", "memo": "", "minutes": 2.0, "priority": "中", "frequency": "毎日", "sortOrder": 4.0 }, { "itemId": "KAI005", "category": "開店", "timing": "出勤時", "name": "本日のおすすめを社長に確認", "memo": "社長不在時は社員が事前に確認しておく", "minutes": 3.0, "priority": "高", "frequency": "毎日", "sortOrder": 5.0 }, { "itemId": "HEI005", "category": "閉店", "timing": "閉店後", "name": "ビールサーバー掃除", "memo": "専用容器に水を入れてサーバーに繋ぎ水を通し切ったら空気を抜く。週3回スポンジ通し洗浄。ビールとの接続部をアルコールで拭き、サランラップをかける", "minutes": 10.0, "priority": "高", "frequency": "週3回", "sortOrder": 5.0 }, { "itemId": "TOI005", "category": "トイレ清掃", "timing": "随時", "name": "ごみ箱の確認・清掃", "memo": "", "minutes": 2.0, "priority": "中", "frequency": "毎日", "sortOrder": 5.0 }, { "itemId": "KAI006", "category": "開店", "timing": "出勤時", "name": "タオルの配置", "memo": "決まった場所に配置する", "minutes": 2.0, "priority": "中", "frequency": "毎日", "sortOrder": 6.0 }, { "itemId": "HEI006", "category": "閉店", "timing": "閉店後", "name": "ゴミ捨て", "memo": "青い袋にまとめてゴミ置き場に出す。ゴミの分別をきちんとする。新しいゴミ袋をセットする", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 6.0 }, { "itemId": "TOI006", "category": "トイレ清掃", "timing": "随時", "name": "トイレットペーパーの補充", "memo": "", "minutes": 1.0, "priority": "高", "frequency": "随時", "sortOrder": 6.0 }, { "itemId": "KAI007", "category": "開店", "timing": "出勤時", "name": "身だしなみチェック", "memo": "爪・髪・髭・ニオイ・服のシワ・ハチマキ・雪駄の汚れ・ズボンの裾", "minutes": 3.0, "priority": "高", "frequency": "毎日", "sortOrder": 7.0 }, { "itemId": "HEI007", "category": "閉店", "timing": "閉店後", "name": "座席・床掃除", "memo": "テーブルを壁に立てかけ、カウンターの椅子をまとめ、暖簾をかける。床を雑巾で拭いてからほうきで掃く。冷蔵庫の下なども掃く。水・土は厨房床を徹底清掃", "minutes": 15.0, "priority": "高", "frequency": "毎日", "sortOrder": 7.0 }, { "itemId": "TOI007", "category": "トイレ清掃", "timing": "随時", "name": "ペーパータオルの補充", "memo": "", "minutes": 1.0, "priority": "高", "frequency": "随時", "sortOrder": 7.0 }, { "itemId": "KAI008", "category": "開店", "timing": "出勤時", "name": "外観確認・外清掃", "memo": "", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 8.0 }, { "itemId": "HEI008", "category": "閉店", "timing": "閉店後", "name": "食材のリード交換", "memo": "肉・馬刺しはバリアラップを巻く。魚は板前さんで巻いてからサランラップ", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 8.0 }, { "itemId": "TOI008", "category": "トイレ清掃", "timing": "随時", "name": "ハンドソープの補充", "memo": "", "minutes": 1.0, "priority": "高", "frequency": "随時", "sortOrder": 8.0 }, { "itemId": "KAI009", "category": "開店", "timing": "出勤時", "name": "天紙と印紙の確認・配置", "memo": "厨房の各場所に配置する", "minutes": 3.0, "priority": "中", "frequency": "毎日", "sortOrder": 9.0 }, { "itemId": "HEI009", "category": "閉店", "timing": "閉店後", "name": "壁の清掃", "memo": "蜘蛛の巣や汚れを拭き取る", "minutes": 3.0, "priority": "中", "frequency": "毎日", "sortOrder": 9.0 }, { "itemId": "KAI010", "category": "開店", "timing": "出勤時", "name": "調味料の補充", "memo": "", "minutes": 3.0, "priority": "中", "frequency": "毎日", "sortOrder": 10.0 }, { "itemId": "HEI010", "category": "閉店", "timing": "閉店後", "name": "食材の水換え", "memo": "笹・かいわれ大根はタッパーの中の水を交換する", "minutes": 3.0, "priority": "高", "frequency": "毎日", "sortOrder": 10.0 }, { "itemId": "KAI011", "category": "開店", "timing": "出勤時", "name": "冷蔵庫の整理確認", "memo": "", "minutes": 3.0, "priority": "中", "frequency": "毎日", "sortOrder": 11.0 }, { "itemId": "HEI011", "category": "閉店", "timing": "閉店後", "name": "日本酒の蓋の確認", "memo": "日本酒を使った際は蓋の閉め忘れがないか確認する", "minutes": 2.0, "priority": "高", "frequency": "毎日", "sortOrder": 11.0 }, { "itemId": "KAI012", "category": "開店", "timing": "出勤時", "name": "キープボトルの管理確認", "memo": "綺麗に管理できているか", "minutes": 3.0, "priority": "中", "frequency": "毎日", "sortOrder": 12.0 }, { "itemId": "HEI012", "category": "閉店", "timing": "閉店後", "name": "在庫確認・発注", "memo": "在庫をチェックして翌日の買い出し・発注品をメモ。魚屋・肉屋・酒屋・西原に連絡。パソコンで在庫管理", "minutes": 10.0, "priority": "高", "frequency": "毎日", "sortOrder": 12.0 }, { "itemId": "KAI013", "category": "開店", "timing": "出勤時", "name": "ポット・ピッチャー・アイスペールの汚れ確認", "memo": "", "minutes": 3.0, "priority": "中", "frequency": "毎日", "sortOrder": 13.0 }, { "itemId": "HEI013", "category": "閉店", "timing": "閉店後", "name": "フライヤーの火止め・元栓閉め", "memo": "つまみを0度に右に回して火が消えたことを確認。左下のガス元栓を左に回して閉める", "minutes": 3.0, "priority": "高", "frequency": "毎日", "sortOrder": 13.0 }, { "itemId": "KAI014", "category": "開店", "timing": "出勤時", "name": "トイレットペーパー・手拭きペーパーの補充確認", "memo": "", "minutes": 3.0, "priority": "高", "frequency": "毎日", "sortOrder": 14.0 }, { "itemId": "HEI014", "category": "閉店", "timing": "閉店後", "name": "冷蔵庫の整理確認", "memo": "中身をチェックし整理する。扱いがわからないものは都度確認する", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 14.0 }, { "itemId": "KAI015", "category": "開店", "timing": "出勤時", "name": "お皿の汚れ確認", "memo": "", "minutes": 3.0, "priority": "高", "frequency": "毎日", "sortOrder": 15.0 }, { "itemId": "HEI015", "category": "閉店", "timing": "閉店後", "name": "オーブンの清掃", "memo": "受け・網・中の壁面全て綺麗にして締め", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 15.0 }, { "itemId": "KAI016", "category": "開店", "timing": "出勤時", "name": "灰皿の清潔確認", "memo": "", "minutes": 2.0, "priority": "中", "frequency": "毎日", "sortOrder": 16.0 }, { "itemId": "HEI016", "category": "閉店", "timing": "閉店後", "name": "冷蔵庫チェック・補充", "memo": "板場冷蔵庫チェック。裏冷蔵庫から足りないもの補充", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 16.0 }, { "itemId": "KAI017", "category": "開店", "timing": "出勤時", "name": "おしぼりの補充", "memo": "", "minutes": 2.0, "priority": "高", "frequency": "毎日", "sortOrder": 17.0 }, { "itemId": "HEI017", "category": "閉店", "timing": "閉店後", "name": "トング・レードルの洗浄", "memo": "洗って綺麗な状態にしておく", "minutes": 3.0, "priority": "高", "frequency": "毎日", "sortOrder": 17.0 }, { "itemId": "KAI018", "category": "開店", "timing": "出勤時", "name": "お通しの受け皿の清潔確認", "memo": "", "minutes": 2.0, "priority": "中", "frequency": "毎日", "sortOrder": 18.0 }, { "itemId": "HEI018", "category": "閉店", "timing": "閉店後", "name": "昆布だしのセット（翌日分）", "memo": "翌日使う昆布だしを前日にセットしておく", "minutes": 3.0, "priority": "高", "frequency": "毎日", "sortOrder": 18.0 }, { "itemId": "KAI019", "category": "開店", "timing": "出勤時", "name": "洗剤の補充", "memo": "", "minutes": 2.0, "priority": "中", "frequency": "毎日", "sortOrder": 19.0 }, { "itemId": "HEI019", "category": "閉店", "timing": "隔週(土)", "name": "冷蔵庫フィルターの清掃", "memo": "2週間に一度、土曜日に全フィルターの清掃", "minutes": 10.0, "priority": "中", "frequency": "隔週土曜", "sortOrder": 19.0 }, { "itemId": "KAI020", "category": "開店", "timing": "17:30〜", "name": "おすすめ印刷・確認", "memo": "しっかり印刷されているか、不備はないか確認する", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 20.0 }, { "itemId": "HEI020", "category": "閉店", "timing": "閉店後", "name": "一番出汁の仕込み", "memo": "営業終了時に昆布を水の中に入れて冷蔵庫管理（出汁をとる）", "minutes": 3.0, "priority": "高", "frequency": "毎日", "sortOrder": 20.0 }, { "itemId": "KAI021", "category": "開店", "timing": "17:30〜", "name": "フライヤーの火入れ", "memo": "ガスのつまみを押して左に回しチャッカマンで着火。30秒待って点火", "minutes": 3.0, "priority": "高", "frequency": "毎日", "sortOrder": 21.0 }, { "itemId": "HEI021", "category": "閉店", "timing": "週1(土)", "name": "ピッチャー・アイスペールの漂白", "memo": "毎週土曜日に漂白", "minutes": 5.0, "priority": "中", "frequency": "週1土曜", "sortOrder": 21.0 }, { "itemId": "KAI022", "category": "開店", "timing": "17:30〜", "name": "ビールサーバーのセット", "memo": "レバーを樽に取付け右に回しガスを2〜2.5にセット。最初の泡を出し切る", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 22.0 }, { "itemId": "HEI022", "category": "閉店", "timing": "閉店後", "name": "おぼんの清掃", "memo": "洗って並べて自然乾燥させる", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 22.0 }, { "itemId": "KAI023", "category": "開店", "timing": "17:30〜", "name": "トイレタイマーセット", "memo": "", "minutes": 1.0, "priority": "中", "frequency": "毎日", "sortOrder": 23.0 }, { "itemId": "HEI023", "category": "閉店", "timing": "最終確認", "name": "【最終確認】エアコン・フライヤー・電気・戸締まり", "memo": "エアコン・フライヤー・全電気の消灯を確認。戸締まりを忘れずに", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 23.0 }, { "itemId": "KAI024", "category": "開店", "timing": "17:30〜", "name": "おぼん・お通し受け皿の拭き掃除", "memo": "", "minutes": 3.0, "priority": "中", "frequency": "毎日", "sortOrder": 24.0 }, { "itemId": "KAI025", "category": "開店", "timing": "17:30〜", "name": "お湯の用意（冬季）", "memo": "やかんでお湯を沸かす", "minutes": 5.0, "priority": "中", "frequency": "冬季のみ", "sortOrder": 25.0 }, { "itemId": "KAI026", "category": "開店", "timing": "17:30〜", "name": "予約確認・座席セット", "memo": "タイムツリーで確認し「○時、○○様、○名」をメモ帳に記入。コース予約は金額も記入", "minutes": 10.0, "priority": "高", "frequency": "毎日", "sortOrder": 26.0 }, { "itemId": "KAI027", "category": "開店", "timing": "17:30〜", "name": "レジ・ハンディの更新", "memo": "", "minutes": 3.0, "priority": "高", "frequency": "毎日", "sortOrder": 27.0 }, { "itemId": "KAI028", "category": "開店", "timing": "17:30〜", "name": "エアコンの調整", "memo": "お客様来店まではレースを閉めて室内を温めておく", "minutes": 2.0, "priority": "中", "frequency": "毎日", "sortOrder": 28.0 }, { "itemId": "KAI029", "category": "開店", "timing": "17:30〜", "name": "薬味の用意", "memo": "大葉・ツマ・レモン・万能ネギ。大葉には氷を2〜3個入れる", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 29.0 }, { "itemId": "KAI030", "category": "開店", "timing": "17:30〜", "name": "わさび・醤油のはけの用意", "memo": "", "minutes": 2.0, "priority": "高", "frequency": "毎日", "sortOrder": 30.0 }, { "itemId": "KAI031", "category": "開店", "timing": "17:30〜", "name": "花への水やり・花瓶掃除", "memo": "", "minutes": 3.0, "priority": "低", "frequency": "毎日", "sortOrder": 31.0 }, { "itemId": "KAI032", "category": "開店", "timing": "17:30〜", "name": "テーブルセットの最終確認", "memo": "誰が見ても綺麗にセット。座布団の向き・模様を揃える", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 32.0 }, { "itemId": "KAI033", "category": "開店", "timing": "17:30〜", "name": "メニュー表の確認・コース表作成", "memo": "印刷ミスや枚数のチェック", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 33.0 }, { "itemId": "KAI034", "category": "開店", "timing": "17:30〜", "name": "お通しの盛り付け", "memo": "予約分の用意。すぐに出せる状態にする", "minutes": 5.0, "priority": "高", "frequency": "毎日", "sortOrder": 34.0 }, { "itemId": "KAI035", "category": "開店", "timing": "17:55〜", "name": "看板・提灯・街灯の点灯・BGM再生", "memo": "板場上のスイッチを押して点灯", "minutes": 2.0, "priority": "高", "frequency": "毎日", "sortOrder": 35.0 }, { "itemId": "KAI036", "category": "開店", "timing": "17:55〜", "name": "暖簾をかける", "memo": "お客様用玄関の上にセット", "minutes": 1.0, "priority": "高", "frequency": "毎日", "sortOrder": 36.0 }];
+    var google = { script: { run: {} } };
+    google.script.run.withSuccessHandler = function (cb) {
+      return {
+        withFailureHandler: function () {
+          return {
+            getStaffList: function () { setTimeout(function () { cb(_ms); }, 200); },
+            getCheckItems: function () { setTimeout(function () { cb(_mi); }, 200); },
+            getTodayChecked: function () { setTimeout(function () { cb(["KAI001", "KAI003", "KAI005", "HEI001", "HEI003"]); }, 200); },
+            submitChecks: function (p) { setTimeout(function () { cb({ status: "success", count: p.items.length }); }, 500); },
+            addStaff: function (n) { setTimeout(function () { cb({ id: "STAFF099", name: n, active: true }); }, 300); },
+            toggleStaffStatus: function (id) { setTimeout(function () { cb({ id: id, active: false }); }, 200); }
+          };
+        }
+      };
+    };
+
+    // ===== Splash Screen =====
+    setTimeout(function () {
+      var splash = document.getElementById("splash");
+      splash.classList.add("fade-out");
+      setTimeout(function () { splash.style.display = "none"; }, 800);
+    }, 3500);
+
+    // ===== State =====
+    var allItems = [], staffList = [], todayChecked = [], currentCategory = "開店", checkedState = {};
+    var els = {
+      staffSelect: document.getElementById("staffSelect"),
+      tabBar: document.getElementById("tabBar"),
+      contentArea: document.getElementById("contentArea"),
+      submitBtn: document.getElementById("submitBtn"),
+      submitBar: document.getElementById("submitBar"),
+      toast: document.getElementById("toast"),
+      dateTime: document.getElementById("dateTime"),
+      settingsBtn: document.getElementById("settingsBtn"),
+      settingsModal: document.getElementById("settingsModal"),
+      closeSettings: document.getElementById("closeSettings"),
+      staffListEl: document.getElementById("staffList"),
+      newStaffName: document.getElementById("newStaffName"),
+      addStaffBtn: document.getElementById("addStaffBtn")
+    };
+
+    (function init() {
+      updateDateTime(); setInterval(updateDateTime, 60000);
+      google.script.run.withSuccessHandler(function (staff) {
+        staffList = staff; renderStaffSelect();
+        google.script.run.withSuccessHandler(function (items) {
+          allItems = items; loadCheckedAndRender();
+        }).withFailureHandler(function () { }).getCheckItems();
+      }).withFailureHandler(function () { }).getStaffList();
+    })();
+
+    function updateDateTime() {
+      var n = new Date(), wd = ["日", "月", "火", "水", "木", "金", "土"];
+      els.dateTime.textContent = (n.getMonth() + 1) + "/" + n.getDate() + " (" + wd[n.getDay()] + ") " + ("0" + n.getHours()).slice(-2) + ":" + ("0" + n.getMinutes()).slice(-2);
+    }
+    function renderStaffSelect() {
+      els.staffSelect.innerHTML = '<option value="">-- 担当者を選択 --</option>';
+      staffList.forEach(function (s) { if (!s.active) return; var o = document.createElement("option"); o.value = s.id; o.textContent = s.name; o.dataset.name = s.name; els.staffSelect.appendChild(o); });
+    }
+    function loadCheckedAndRender() {
+      if (currentCategory === "マニュアル") { renderManualTab(); return; }
+      google.script.run.withSuccessHandler(function (ids) { todayChecked = ids || []; renderChecklist(); }).withFailureHandler(function () { todayChecked = []; renderChecklist(); }).getTodayChecked(currentCategory);
+    }
+    els.tabBar.addEventListener("click", function (e) {
+      var btn = e.target.closest(".tab-btn"); if (!btn) return;
+      document.querySelectorAll(".tab-btn").forEach(function (b) { b.classList.remove("active"); }); btn.classList.add("active");
+      currentCategory = btn.dataset.cat; checkedState = {};
+      if (currentCategory === "マニュアル") { els.submitBar.style.display = "none"; renderManualTab(); }
+      else { els.submitBar.style.display = ""; loadCheckedAndRender(); }
+    });
+    function renderChecklist() {
+      var a = els.contentArea; a.innerHTML = "";
+      var f = allItems.filter(function (i) { return i.category === currentCategory; });
+      if (!f.length) { a.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.5);">該当する項目がありません</div>'; return; }
+      var pc = document.createElement("div"); pc.className = "progress-card";
+      pc.innerHTML = '<div class="progress-top"><span class="progress-label">完了状況</span><span class="progress-pct" id="progressPct">0%</span></div><div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>';
+      a.appendChild(pc);
+      if (currentCategory === "トイレ清掃") {
+        var tc = document.createElement("div"); tc.className = "timer-card visible";
+        tc.innerHTML = '<div class="timer-label">次回清掃タイマー</div><div class="timer-display" id="timerDisplay">60:00</div><div class="timer-controls"><button class="timer-btn primary" id="timerStartBtn">開始</button><button class="timer-btn" id="timerResetBtn">リセット</button></div>';
+        a.appendChild(tc);
+      }
+      var g = {}, ord = [];
+      f.forEach(function (i) { var t = i.timing || "(その他)"; if (!g[t]) { g[t] = []; ord.push(t); } g[t].push(i); });
+      var dc = { "出勤時": "#007AFF", "17:30〜": "#FF9500", "17:55〜": "#AF52DE", "閉店後": "#007AFF", "最終確認": "#FF3B30", "隔週(土)": "#34C759", "週1(土)": "#34C759", "随時": "#FF9500" };
+      ord.forEach(function (timing) {
+        var items = g[timing], color = dc[timing] || "#999";
+        var sec = document.createElement("div"); sec.className = "timing-group";
+        sec.innerHTML = '<div class="timing-header"><div class="timing-dot" style="background:' + color + '"></div><span class="timing-name">' + timing + '</span><span class="timing-count">' + items.length + '件</span></div>';
+        items.forEach(function (item) {
+          var card = document.createElement("div"); card.className = "check-item"; card.dataset.id = item.itemId;
+          var isDone = todayChecked.indexOf(item.itemId) !== -1;
+          if (isDone) card.classList.add("already-done", "checked");
+          if (checkedState[item.itemId]) card.classList.add("checked");
+          var pt = item.priority === "高" ? '<span class="tag tag-high">重要</span>' : item.priority === "中" ? '<span class="tag tag-mid">通常</span>' : '<span class="tag tag-low">任意</span>';
+          var tt = item.minutes ? '<span class="tag">' + item.minutes + '分</span>' : "";
+          var ft = item.frequency && item.frequency !== "毎日" ? '<span class="tag">' + item.frequency + '</span>' : "";
+          var ml = (item.memo || "");
+          var manEl = ml.indexOf("マニュアル参照") !== -1 ? '<span class="manual-link">参照</span>' : "";
+          var mt = "", mc = "";
+          if (item.memo && ml.indexOf("マニュアル参照") === -1) { mt = '<span class="memo-btn">詳細</span>'; mc = '<div class="item-memo">' + esc(item.memo) + '</div>'; }
+          card.innerHTML = '<div class="checkbox-circle"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div><div class="item-body"><div class="item-name">' + esc(item.name) + '</div><div class="item-tags">' + pt + tt + ft + manEl + mt + '</div>' + mc + '</div>';
+          card.addEventListener("click", function (e) {
+            if (isDone) return;
+            if (e.target.classList.contains("manual-link")) { showToast("マニュアル閲覧 (プレビュー)"); return; }
+            if (e.target.classList.contains("memo-btn")) { card.classList.toggle("expanded"); e.target.textContent = card.classList.contains("expanded") ? "閉じる" : "詳細"; return; }
+            card.classList.toggle("checked"); checkedState[item.itemId] = card.classList.contains("checked"); updateProgress(); updateSubmitBtn();
+          });
+          sec.appendChild(card);
+        });
+        a.appendChild(sec);
+      });
+      updateProgress(); updateSubmitBtn();
+    }
+    function renderManualTab() {
+      var a = els.contentArea; a.innerHTML = "";
+      var c = document.createElement("div"); c.className = "progress-card"; c.style.padding = "16px";
+      c.innerHTML = '<div style="font-size:0.85rem;font-weight:600;color:#fff;margin-bottom:14px;">業務マニュアル</div><div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.15);display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:0.85rem;font-weight:500;color:#fff;">店内清掃マニュアル</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.5);margin-top:2px;">開店 / 出勤時</div></div><button style="padding:6px 14px;border:1px solid rgba(255,255,255,0.3);border-radius:10px;background:none;color:#fff;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;">開く</button></div><div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.15);display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:0.85rem;font-weight:500;color:#fff;">仕込みマニュアル</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.5);margin-top:2px;">開店 / 出勤時</div></div><button style="padding:6px 14px;border:1px solid rgba(255,255,255,0.3);border-radius:10px;background:none;color:#fff;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;">開く</button></div><div style="padding:12px 0;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:0.85rem;font-weight:500;color:#fff;">営業中オペレーション</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.5);margin-top:2px;">営業中の業務手順</div></div><button style="padding:6px 14px;border:1px solid rgba(255,255,255,0.3);border-radius:10px;background:none;color:#fff;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;">開く</button></div>';
+      a.appendChild(c);
+    }
+    function updateProgress() {
+      var f = allItems.filter(function (i) { return i.category === currentCategory; }), t = f.length, d = 0;
+      f.forEach(function (i) { if (todayChecked.indexOf(i.itemId) !== -1 || checkedState[i.itemId]) d++; });
+      var p = t > 0 ? Math.round((d / t) * 100) : 0;
+      var pe = document.getElementById("progressPct"), fe = document.getElementById("progressFill");
+      if (pe) pe.textContent = d + "/" + t + " (" + p + "%)"; if (fe) fe.style.width = p + "%";
+    }
+    function updateSubmitBtn() {
+      var n = Object.keys(checkedState).filter(function (k) { return checkedState[k]; }).length;
+      els.submitBtn.disabled = n === 0; els.submitBtn.textContent = n > 0 ? n + "件を送信" : "チェック完了を送信";
+    }
+    els.submitBtn.addEventListener("click", function () {
+      if (!els.staffSelect.value) { showToast("担当者を選択してください", "rgba(255,59,48,0.85)"); return; }
+      var o = els.staffSelect.options[els.staffSelect.selectedIndex];
+      var payload = {
+        staffId: els.staffSelect.value, staffName: o.dataset.name, category: currentCategory,
+        items: allItems.filter(function (i) { return i.category === currentCategory && checkedState[i.itemId]; }).map(function (i) { return { itemId: i.itemId, name: i.name, timing: i.timing, checked: true }; })
+      };
+      if (!payload.items.length) { showToast("チェック項目を選択してください", "rgba(255,59,48,0.85)"); return; }
+      els.submitBtn.disabled = true; els.submitBtn.textContent = "送信中...";
+      google.script.run.withSuccessHandler(function (r) { showToast(r.count + "件を記録しました"); checkedState = {}; loadCheckedAndRender(); }).withFailureHandler(function () { showToast("エラー", "rgba(255,59,48,0.85)"); els.submitBtn.disabled = false; els.submitBtn.textContent = "チェック完了を送信"; }).submitChecks(payload);
+    });
+    els.settingsBtn.addEventListener("click", function () { renderStaffListModal(); els.settingsModal.classList.add("open"); });
+    els.closeSettings.addEventListener("click", function () { els.settingsModal.classList.remove("open"); });
+    els.settingsModal.addEventListener("click", function (e) { if (e.target === els.settingsModal) els.settingsModal.classList.remove("open"); });
+    function renderStaffListModal() {
+      var el = els.staffListEl; el.innerHTML = "";
+      staffList.forEach(function (s) {
+        var d = document.createElement("div"); d.className = "staff-list-item";
+        d.innerHTML = '<div><div class="staff-list-name">' + esc(s.name) + '</div><div class="staff-list-id">' + s.id + '</div></div><button class="status-toggle ' + (s.active ? "active" : "inactive") + '" data-id="' + s.id + '">' + (s.active ? "有効" : "無効") + '</button>';
+        el.appendChild(d);
+      });
+    }
+    els.addStaffBtn.addEventListener("click", function () {
+      var n = els.newStaffName.value.trim(); if (!n) { showToast("名前を入力", "rgba(255,59,48,0.85)"); return; }
+      google.script.run.withSuccessHandler(function (ns) { staffList.push(ns); renderStaffListModal(); renderStaffSelect(); els.newStaffName.value = ""; showToast(ns.name + " を追加"); }).withFailureHandler(function () { }).addStaff(n);
+    });
+    function showToast(m, bg) { els.toast.textContent = m; els.toast.style.background = bg || "rgba(52,199,89,0.85)"; els.toast.classList.add("show"); setTimeout(function () { els.toast.classList.remove("show"); }, 3000); }
+    function esc(s) { if (!s) return ""; var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+  </script>
+</body>
+
+</html>
