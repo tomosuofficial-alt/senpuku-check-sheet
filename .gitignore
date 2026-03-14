@@ -1,0 +1,4 @@
+.DS_Store
+bg_base64.txt
+*.xlsx
+node_modules/
