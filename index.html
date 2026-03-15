@@ -1129,12 +1129,15 @@
 
     function loadCheckedAndRender(isBackground) {
       if (currentCategory === 'マニュアル') { hideLoading(); renderManualTab(); return; }
+      var requestedCategory = currentCategory;
       if (!isBackground) showLoading();
-      api('getTodayChecked', { category: currentCategory }).then(function (ids) {
+      api('getTodayChecked', { category: requestedCategory }).then(function (ids) {
+        if (currentCategory !== requestedCategory) return;
         todayChecked = ids || [];
         hideLoading();
         renderChecklist();
       }).catch(function () {
+        if (currentCategory !== requestedCategory) return;
         todayChecked = [];
         hideLoading();
         renderChecklist();
