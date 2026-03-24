@@ -1,5 +1,5 @@
 // Code.gs - よいどころ千福 店舗チェックシステム v3 (Multi-Store Support)
-// 外部サイト（Netlify）からのCORS問題を回避するため、全てGETで処理
+// 読み取り系は GET、送信（submitChecks）は POST の JSON ボディ推奨（URL 長制限回避）
 
 // ============================================================
 // 定数
@@ -17,7 +17,19 @@ const SHEETS = {
 };
 
 const RESET_HOUR = 7;
-const API_KEY = 'senpuku-secret-key-2024'; // ※本番運用時はより複雑な文字列に変更してください
+/** スクリプトプロパティ API_KEY 未設定時のフォールバック（プロパティに移行推奨） */
+const API_KEY = 'senpuku-secret-key-2024';
+
+function getApiKey_() {
+  var p = PropertiesService.getScriptProperties().getProperty('API_KEY');
+  return (p && String(p).length) ? String(p) : API_KEY;
+}
+
+function assertApiKey_(apiKey) {
+  if (apiKey !== getApiKey_()) {
+    throw new Error('Invalid API Key: 認証に失敗しました。');
+  }
+}
 
 // ============================================================
 // Web App エントリーポイント
@@ -30,10 +42,7 @@ function doGet(e) {
   var result;
 
   try {
-    // APIキーの検証
-    if (apiKey !== API_KEY) {
-      throw new Error('Invalid API Key: 認証に失敗しました。');
-    }
+    assertApiKey_(apiKey);
 
     switch(action) {
       case 'getStaffList':
@@ -66,8 +75,33 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+/**
+ * submitChecks 専用: JSON ボディ { action, apiKey, data: payload }
+ * Content-Type: text/plain で送るとブラウザのプリフライトを避けやすい
+ */
 function doPost(e) {
-  return doGet(e);
+  var result;
+  try {
+    var body = {};
+    if (e.postData && e.postData.contents) {
+      body = JSON.parse(e.postData.contents);
+    }
+    var action = body.action || '';
+    assertApiKey_(body.apiKey || '');
+
+    switch (action) {
+      case 'submitChecks':
+        result = submitChecks(body.data);
+        break;
+      default:
+        result = { error: 'POST は submitChecks のみ対応しています' };
+    }
+  } catch (err) {
+    result = { error: err.message };
+  }
+
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 // ============================================================
@@ -88,6 +122,10 @@ function getStaffList() {
 }
 
 function addStaff(name) {
+  var trimmed = String(name || '').trim();
+  if (!trimmed) {
+    throw new Error('名前を入力してください。');
+  }
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName(SHEETS.STAFF);
   var data = sheet.getDataRange().getValues();
@@ -97,8 +135,8 @@ function addStaff(name) {
     if (match) { var n = parseInt(match[1], 10); if (n > maxNum) maxNum = n; }
   }
   var newId = 'STAFF' + ('000' + (maxNum + 1)).slice(-3);
-  sheet.appendRow([newId, name, true]);
-  return { id: newId, name: name, active: true };
+  sheet.appendRow([newId, trimmed, true]);
+  return { id: newId, name: trimmed, active: true };
 }
 
 function toggleStaffStatus(staffId) {

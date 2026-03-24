@@ -176,8 +176,10 @@
     }
 
     .settings-btn {
-      width: 32px;
-      height: 32px;
+      min-width: 44px;
+      min-height: 44px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       border: none;
       background: rgba(255, 255, 255, 0.2);
@@ -1064,6 +1066,20 @@
       return fetch(url).then(function (r) { return r.json(); });
     }
 
+    /** チェック送信は POST（URL 長制限回避）。失敗時は従来の GET にフォールバック */
+    function submitChecksRequest(payload) {
+      return fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'submitChecks', apiKey: API_KEY, data: payload }),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      }).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).catch(function () {
+        return api('submitChecks', { data: JSON.stringify(payload) });
+      });
+    }
+
     // ===== Splash =====
     setTimeout(function () {
       var s = document.getElementById('splash');
@@ -1077,6 +1093,7 @@
 
     var els = {
       staffSelect: document.getElementById('staffSelect'),
+      progressContainer: document.getElementById('progressContainer'),
       tabBar: document.getElementById('tabBar'),
       contentArea: document.getElementById('contentArea'),
       submitBtn: document.getElementById('submitBtn'),
@@ -1118,6 +1135,7 @@
     }
 
     function renderStaffSelect() {
+      var prev = els.staffSelect.value;
       els.staffSelect.innerHTML = '<option value="">-- 担当者を選択 --</option>';
       staffList.forEach(function (s) {
         if (!s.active) return;
@@ -1125,6 +1143,15 @@
         o.value = s.id; o.textContent = s.name; o.dataset.name = s.name;
         els.staffSelect.appendChild(o);
       });
+      if (prev) {
+        for (var i = 0; i < els.staffSelect.options.length; i++) {
+          if (els.staffSelect.options[i].value === prev) {
+            els.staffSelect.value = prev;
+            break;
+          }
+        }
+      }
+      updateSubmitBtn();
     }
 
     function loadCheckedAndRender(isBackground) {
@@ -1155,9 +1182,11 @@
       
       if (currentCategory === 'マニュアル') {
         els.submitBar.style.display = 'none';
+        if (els.progressContainer) els.progressContainer.style.display = 'none';
         renderManualTab();
       } else {
         els.submitBar.style.display = '';
+        if (els.progressContainer) els.progressContainer.style.display = '';
         // 即座に描画
         renderChecklist();
         // 裏側で最新状態を取得して更新
@@ -1165,11 +1194,17 @@
       }
     });
 
+    els.staffSelect.addEventListener('change', function () { updateSubmitBtn(); });
+
     // ===== Checklist =====
     function renderChecklist() {
       var a = els.contentArea; a.innerHTML = '';
       var f = allItems.filter(function (i) { return i.category === currentCategory; });
-      if (!f.length) { a.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.5);">該当する項目がありません</div>'; return; }
+      if (!f.length) {
+        a.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.5);">該当する項目がありません</div>';
+        updateProgress(); updateSubmitBtn();
+        return;
+      }
 
       // The progress card is now a static element outside the content area,
       // so we don't need to create it here.
@@ -1212,6 +1247,19 @@
 
           card.innerHTML = '<div class="checkbox-circle"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div><div class="item-body"><div class="item-name">' + esc(item.name) + '</div>' + mc + '</div><div style="flex-shrink:0; display:flex; align-items:center; gap:8px;">' + ft + manEl + arrow + '</div>';
 
+          card.setAttribute('role', 'checkbox');
+          card.setAttribute('aria-checked', (isDone || checkedState[item.itemId]) ? 'true' : 'false');
+          if (isDone) card.setAttribute('aria-disabled', 'true');
+          else card.setAttribute('tabindex', '0');
+
+          if (!isDone) {
+            card.addEventListener('keydown', function (ev) {
+              if (ev.key !== 'Enter' && ev.key !== ' ') return;
+              ev.preventDefault();
+              card.click();
+            });
+          }
+
           card.addEventListener('click', function (e) {
             if (isDone) return;
             // Separate check toggle from expansion
@@ -1233,6 +1281,7 @@
 
             card.classList.toggle('checked');
             checkedState[item.itemId] = card.classList.contains('checked');
+            card.setAttribute('aria-checked', card.classList.contains('checked') ? 'true' : 'false');
 
             if (currentCategory === 'トイレ清掃') {
               var tcCount = 0;
@@ -1302,8 +1351,11 @@
     // ===== Submit =====
     function updateSubmitBtn() {
       var n = Object.keys(checkedState).filter(function (k) { return checkedState[k]; }).length;
-      els.submitBtn.disabled = n === 0;
-      els.submitBtn.textContent = n > 0 ? n + '件を送信' : 'チェック完了を送信';
+      var staffOk = !!els.staffSelect.value;
+      els.submitBtn.disabled = n === 0 || !staffOk;
+      if (n === 0) els.submitBtn.textContent = 'チェック完了を送信';
+      else if (!staffOk) els.submitBtn.textContent = n + '件を送信（担当者を選択）';
+      else els.submitBtn.textContent = n + '件を送信';
     }
     els.submitBtn.addEventListener('click', function () {
       var opt = els.staffSelect.options[els.staffSelect.selectedIndex];
@@ -1315,13 +1367,13 @@
       };
       if (!payload.items.length) { showToast('チェック項目を選択してください', 'rgba(255,59,48,0.85)'); return; }
       els.submitBtn.disabled = true; els.submitBtn.textContent = '送信中...';
-      api('submitChecks', { data: JSON.stringify(payload) }).then(function (r) {
+      submitChecksRequest(payload).then(function (r) {
         if (r.error) throw new Error(r.error);
         showToast(r.count + '件を記録しました');
         checkedState = {}; showLoading(); loadCheckedAndRender();
       }).catch(function (e) {
         showToast('エラー: ' + (e.message || e), 'rgba(255,59,48,0.85)');
-        els.submitBtn.disabled = false; els.submitBtn.textContent = 'チェック完了を送信';
+        updateSubmitBtn();
       });
     });
 
@@ -1391,8 +1443,10 @@
       api('addStaff', { name: n }).then(function (ns) {
         if (ns.error) throw new Error(ns.error);
         staffList.push(ns); renderStaffListModal(); renderStaffSelect();
+        els.staffSelect.value = ns.id;
         els.newStaffName.value = ''; els.addStaffBtn.disabled = false; els.addStaffBtn.textContent = '追加';
         showToast(ns.name + ' を追加しました (' + ns.id + ')');
+        updateSubmitBtn();
       }).catch(function (e) {
         els.addStaffBtn.disabled = false; els.addStaffBtn.textContent = '追加'; handleErr(e);
       });
