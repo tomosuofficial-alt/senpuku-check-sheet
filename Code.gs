@@ -20,13 +20,17 @@ const RESET_HOUR = 7;
 /** スクリプトプロパティ API_KEY 未設定時のフォールバック（プロパティに移行推奨） */
 const API_KEY = 'senpuku-secret-key-2024';
 
+/** プロパティ未設定・空・空白のみはコード内の API_KEY にフォールバック。値は trim して比較 */
 function getApiKey_() {
-  var p = PropertiesService.getScriptProperties().getProperty('API_KEY');
-  return (p && String(p).length) ? String(p) : API_KEY;
+  var raw = PropertiesService.getScriptProperties().getProperty('API_KEY');
+  var t = raw == null ? '' : String(raw).trim();
+  return t.length ? t : API_KEY;
 }
 
 function assertApiKey_(apiKey) {
-  if (apiKey !== getApiKey_()) {
+  var expected = getApiKey_();
+  var got = apiKey == null ? '' : String(apiKey).trim();
+  if (got !== expected) {
     throw new Error('Invalid API Key: 認証に失敗しました。');
   }
 }
