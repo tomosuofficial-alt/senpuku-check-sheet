@@ -15,26 +15,31 @@
     rel="stylesheet">
   <style>
     :root {
-      --glass-bg: rgba(255, 255, 255, 0.08);
-      --glass-bg-heavy: rgba(255, 255, 255, 0.16);
-      --glass-border: rgba(255, 255, 255, 0.15);
-      --glass-border-bright: rgba(255, 255, 255, 0.3);
-      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-      --inner-glow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      --glass-bg: rgba(255, 255, 255, 0.04);
+      --glass-bg-heavy: rgba(255, 255, 255, 0.07);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-border-bright: rgba(255, 255, 255, 0.18);
+      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+      --inner-glow: inset 0 1px 1px rgba(255, 255, 255, 0.06);
       --blur: 12px;
       --blur-heavy: 20px;
-      --text-white: #ffffff;
-      --text-primary: #ffffff;
-      --text-muted: rgba(255, 255, 255, 0.6);
-      --accent: #8A3FFC;
-      --accent-glow: rgba(138, 63, 252, 0.4);
-      --green: #8A3FFC;
-      --green-glow: rgba(138, 63, 252, 0.3);
-      --orange: #FF9F0A;
-      --red: #FF453A;
-      --purple: #BF5AF2;
-      --radius: 32px;
-      --radius-sm: 22px;
+      --text-white: #f5f4f0;
+      --text-primary: #f5f4f0;
+      --text-muted: rgba(245, 244, 240, 0.45);
+      --red: #c30d23;
+      --red-glow: rgba(195, 13, 35, 0.35);
+      --gold: #c3a569;
+      --gold-light: #d4b97a;
+      --gold-dim: #8a7445;
+      --gold-glow: rgba(195, 165, 105, 0.35);
+      --accent: var(--red);
+      --accent-glow: var(--red-glow);
+      --green: var(--red);
+      --green-glow: var(--red-glow);
+      --orange: var(--red);
+      --purple: #8a7445;
+      --radius: 20px;
+      --radius-sm: 14px;
       --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -60,7 +65,7 @@
       position: fixed;
       inset: 0;
       z-index: 1000;
-      background: #1a1008;
+      background: #0e0e0c;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -105,11 +110,11 @@
 
     @keyframes subtitleFadeIn {
       0% {
-        color: rgba(255, 255, 255, 0);
+        color: rgba(245, 244, 240, 0);
       }
 
       100% {
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(245, 244, 240, 0.5);
       }
     }
 
@@ -117,23 +122,15 @@
       position: fixed;
       inset: 0;
       z-index: 0;
-      background: #000;
-      background-image: radial-gradient(circle at 20% 30%, rgba(10, 132, 255, 0.15), transparent 40%),
-                        radial-gradient(circle at 80% 70%, rgba(191, 90, 242, 0.12), transparent 45%),
-                        radial-gradient(circle at 50% 10%, rgba(48, 209, 88, 0.1), transparent 35%),
-                        url("bg.jpg");
-      background-size: cover;
-      background-position: center;
-      filter: brightness(0.6);
+      background: #121210;
     }
 
     .bg-overlay {
       position: fixed;
       inset: 0;
       z-index: 1;
-      background: rgba(0, 0, 0, 0.3);
-      backdrop-filter: saturate(1.8) brightness(0.85);
-      -webkit-backdrop-filter: saturate(1.8) brightness(0.85);
+      background: radial-gradient(ellipse at 30% 20%, rgba(195, 13, 35, 0.03), transparent 60%),
+                  radial-gradient(ellipse at 70% 80%, rgba(255, 255, 255, 0.01), transparent 50%);
     }
 
     .app-shell {
@@ -148,12 +145,12 @@
 
     .header {
       flex-shrink: 0;
+      background: rgba(18, 18, 16, 0.85);
       backdrop-filter: blur(var(--blur-heavy));
       -webkit-backdrop-filter: blur(var(--blur-heavy));
-      background: rgba(255, 255, 255, 0.15);
-      border-bottom: 1px solid var(--glass-border);
-      padding: 16px 16px;
-      padding-top: max(16px, env(safe-area-inset-top));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 14px 16px;
+      padding-top: max(14px, env(safe-area-inset-top));
     }
 
     .header-top {
@@ -165,14 +162,14 @@
     .header h1 {
       font-size: 1.1rem;
       font-weight: 700;
-      color: var(--text-white);
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+      color: #ffffff;
     }
 
     .header .date-time {
-      font-size: 0.7rem;
-      color: rgba(255, 255, 255, 0.8);
-      font-weight: 400;
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      font-weight: 500;
+      letter-spacing: 0.05em;
     }
 
     .settings-btn {
@@ -181,17 +178,18 @@
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      border: none;
-      background: rgba(255, 255, 255, 0.2);
-      color: var(--text-white);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(245, 244, 240, 0.6);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all var(--transition);
     }
 
     .settings-btn:active {
-      background: rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.1);
     }
 
     .staff-bar {
@@ -201,98 +199,111 @@
 
     .staff-select {
       width: 100%;
-      padding: 12px 30px; /* バランス調整のため左右に余白 */
-      border: 1px solid var(--glass-border);
+      padding: 12px 30px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: var(--radius-sm);
       backdrop-filter: blur(var(--blur));
       -webkit-backdrop-filter: blur(var(--blur));
-      background: var(--glass-bg-heavy);
+      background: rgba(255, 255, 255, 0.04);
       color: var(--text-white);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-family: inherit;
-      font-weight: 600;
+      font-weight: 500;
+      letter-spacing: 0.05em;
       appearance: none;
       -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23f5f4f0' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 16px center;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
       text-align: center;
       text-align-last: center;
     }
 
     .staff-select option {
-      color: #333;
-      background: #fff;
+      color: #1a1a18;
+      background: #f5f4f0;
     }
 
     .tab-bar {
       flex-shrink: 0;
       display: flex;
       padding: 4px;
-      gap: 4px;
-      background: rgba(255, 255, 255, 0.08);
-      margin: 12px 16px;
+      gap: 0;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-top-color: rgba(255, 255, 255, 0.12);
+      margin: 8px 24px;
       border-radius: 999px;
-      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
 
     .tab-btn {
       flex: 1;
-      padding: 10px 4px;
+      padding: 11px 4px;
       border: none;
       border-radius: 999px;
       background: transparent;
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 0.8rem;
-      font-weight: 500;
+      color: rgba(245, 244, 240, 0.25);
+      font-size: 0;
       font-family: inherit;
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      white-space: nowrap;
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tab-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      fill: none;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .tab-btn.active {
-      background: #ffffff;
-      color: var(--accent);
-      font-weight: 700;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      transform: scale(1.02);
+      background: rgba(195, 13, 35, 0.12);
+      color: #ffffff;
+      box-shadow: 0 0 16px rgba(195, 13, 35, 0.1);
+    }
+
+    .tab-btn.active svg {
+      stroke-width: 1.8;
+      filter: drop-shadow(0 0 4px rgba(195, 13, 35, 0.4));
     }
 
     .main-card {
       flex: 1;
       display: flex;
       flex-direction: column;
-      margin: 0 16px 12px;
-      backdrop-filter: blur(var(--blur-heavy));
-      -webkit-backdrop-filter: blur(var(--blur-heavy));
-      background: var(--glass-bg-heavy);
-      border: 1px solid var(--glass-border);
-      border-top-color: var(--glass-border-bright);
-      border-radius: var(--radius);
+      margin: 0 8px 12px;
+      background: transparent;
+      border: none;
+      border-radius: 0;
       overflow: hidden;
-      box-shadow: var(--glass-shadow);
+      box-shadow: none;
     }
 
     .content-area {
       flex: 1;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding: 0;
+      padding: 0 4px;
     }
 
     .progress-card {
       backdrop-filter: blur(var(--blur-heavy));
       -webkit-backdrop-filter: blur(var(--blur-heavy));
-      background: var(--glass-bg-heavy);
-      border: 1px solid var(--glass-border);
-      border-top-color: var(--glass-border-bright);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-top-color: rgba(255, 255, 255, 0.1);
       border-radius: var(--radius-sm);
-      padding: 14px 20px;
-      margin: 8px 16px 12px;
-      box-shadow: var(--glass-shadow), var(--inner-glow);
+      padding: 12px 18px;
+      margin: 6px 16px 10px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
 
     .progress-top {
@@ -303,32 +314,31 @@
     }
 
     .progress-label {
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: var(--text-white);
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: rgba(245, 244, 240, 0.5);
+      letter-spacing: 0.08em;
     }
 
     .progress-pct {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--text-white);
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #ffffff;
     }
 
     .progress-bar-bg {
-      height: 5px;
-      background: rgba(255, 255, 255, 0.2);
+      height: 3px;
+      background: rgba(255, 255, 255, 0.08);
       border-radius: 999px;
       overflow: hidden;
     }
 
     .progress-bar-fill {
       height: 100%;
-      background: var(--green);
+      background: linear-gradient(90deg, #8b0818, var(--red));
       border-radius: 999px;
       transition: width 0.5s ease;
-      box-shadow: 0 0 8px var(--green-glow);
+      box-shadow: 0 0 6px rgba(195, 13, 35, 0.35);
     }
 
     .timer-card {
@@ -395,11 +405,11 @@
     .timing-group {
       background: transparent;
       border: none;
-      border-bottom: 1px solid var(--glass-border);
       margin-bottom: 0;
-      overflow: hidden;
+      overflow: visible;
       box-shadow: none;
       border-radius: 0;
+      padding: 0 12px;
     }
 
     .timing-group:last-child {
@@ -411,9 +421,7 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      padding: 16px 20px;
-      background: rgba(255, 255, 255, 0.05);
-      border-bottom: 1px solid var(--glass-border);
+      padding: 14px 8px 6px;
     }
 
     .timing-dot {
@@ -424,93 +432,91 @@
     }
 
     .timing-name {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.95);
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-      letter-spacing: 0.05em;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: rgba(245, 244, 240, 0.4);
+      letter-spacing: 0.1em;
     }
 
     .timing-count {
-      font-size: 0.65rem;
-      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.6rem;
+      color: rgba(245, 244, 240, 0.25);
       margin-left: auto;
     }
 
     .check-item {
       position: relative;
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 14px;
-      padding: 18px 20px;
+      padding: 15px 18px;
+      margin: 5px 0;
       cursor: pointer;
-      transition: all var(--transition);
       -webkit-user-select: none;
       user-select: none;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-top-color: rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .check-item::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 20px;
-      right: 20px;
-      height: 1px;
-      background: var(--glass-border);
-    }
-
-    .check-item:last-child::after {
       display: none;
     }
 
     .check-item:active {
-      background: rgba(255, 255, 255, 0.08);
+      transform: scale(0.97);
+      background: rgba(255, 255, 255, 0.06);
     }
 
     .check-item.checked {
-      background: rgba(48, 209, 88, 0.08);
-      opacity: 0.65;
+      background: rgba(195, 13, 35, 0.08);
+      border-color: rgba(195, 13, 35, 0.2);
+      border-top-color: rgba(195, 13, 35, 0.3);
+      box-shadow:
+        0 0 14px rgba(195, 13, 35, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(195, 13, 35, 0.15);
+    }
+
+    .check-item.checked .item-name {
+      color: rgba(245, 244, 240, 0.35);
+      text-decoration: line-through;
+      text-decoration-color: rgba(195, 13, 35, 0.3);
+    }
+
+    @keyframes checkGlow {
+      0% {
+        box-shadow: 0 0 14px rgba(195, 13, 35, 0.12), 0 2px 8px rgba(0, 0, 0, 0.2),
+                    inset 0 1px 0 rgba(195, 13, 35, 0.15);
+      }
+      50% {
+        box-shadow: 0 0 28px rgba(195, 13, 35, 0.4), 0 2px 12px rgba(0, 0, 0, 0.25),
+                    inset 0 1px 0 rgba(195, 13, 35, 0.3);
+      }
+      100% {
+        box-shadow: 0 0 14px rgba(195, 13, 35, 0.12), 0 2px 8px rgba(0, 0, 0, 0.2),
+                    inset 0 1px 0 rgba(195, 13, 35, 0.15);
+      }
+    }
+
+    .check-item.check-flash {
+      animation: checkGlow 0.6s ease;
     }
 
     .check-item.already-done {
-      opacity: 0.3;
+      opacity: 0.2;
       pointer-events: none;
     }
 
     .checkbox-circle {
-      flex-shrink: 0;
-      width: 28px;
-      height: 28px;
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all var(--transition);
-      margin-top: 0;
-    }
-
-    .check-item.checked .checkbox-circle {
-      background: var(--green);
-      border-color: var(--green);
-      box-shadow: 0 4px 12px var(--green-glow);
-    }
-
-    .checkbox-circle svg {
-      width: 14px;
-      height: 14px;
-      stroke: #fff;
-      stroke-width: 3.5;
-      fill: none;
-      opacity: 0;
-      transform: scale(0.6) rotate(-10deg);
-      transition: all var(--transition);
-    }
-
-    .check-item.checked .checkbox-circle svg {
-      opacity: 1;
-      transform: scale(1) rotate(0deg);
+      display: none;
     }
 
     .item-body {
@@ -519,24 +525,24 @@
     }
 
     .item-name {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #ffffff;
-      line-height: 1.45;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+      font-size: 0.88rem;
+      font-weight: 400;
+      color: rgba(240, 235, 224, 0.85);
+      line-height: 1.5;
+      letter-spacing: 0.02em;
     }
 
     .chevron {
       flex-shrink: 0;
       width: 20px;
       height: 20px;
-      color: rgba(255, 255, 255, 0.4);
-      transition: transform var(--transition);
-      margin-top: 2px;
+      color: rgba(245, 244, 240, 0.25);
+      transition: transform var(--transition), color var(--transition);
+      transform: rotate(180deg);
     }
 
     .check-item.expanded .chevron {
-      transform: rotate(180deg);
+      transform: rotate(0deg);
       color: #ffffff;
     }
 
@@ -549,13 +555,13 @@
     }
 
     .tag {
-      font-size: 0.65rem;
-      font-weight: 600;
+      font-size: 0.6rem;
+      font-weight: 500;
       padding: 3px 8px;
       border-radius: 6px;
-      background: rgba(255, 255, 255, 0.1);
-      color: rgba(255, 255, 255, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(245, 244, 240, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .tag-high {
@@ -580,25 +586,25 @@
     }
 
     .manual-link {
-      font-size: 0.65rem;
-      font-weight: 600;
-      color: #ffffff;
+      font-size: 0.6rem;
+      font-weight: 500;
+      color: var(--red);
       padding: 3px 9px;
       border-radius: 6px;
-      background: var(--accent);
+      background: rgba(195, 13, 35, 0.08);
+      border: 1px solid rgba(195, 13, 35, 0.2);
       cursor: pointer;
-      box-shadow: 0 2px 8px var(--accent-glow);
     }
 
     .item-memo {
-      font-size: 0.82rem;
-      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.65);
       line-height: 1.6;
-      margin-top: 12px;
-      padding: 12px 14px;
-      background: rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
       display: none;
       animation: slideIn 0.3s ease;
     }
@@ -627,35 +633,36 @@
       flex-shrink: 0;
       padding: 8px 16px;
       padding-bottom: max(8px, env(safe-area-inset-bottom));
+      background: rgba(18, 18, 16, 0.9);
       backdrop-filter: blur(var(--blur-heavy));
       -webkit-backdrop-filter: blur(var(--blur-heavy));
-      background: rgba(255, 255, 255, 0.12);
-      border-top: 1px solid var(--glass-border);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .submit-btn {
       width: 100%;
-      padding: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-top-color: rgba(255, 255, 255, 0.3);
+      padding: 15px;
+      border: 1px solid rgba(195, 165, 105, 0.3);
+      border-top-color: rgba(195, 165, 105, 0.5);
       border-radius: var(--radius-sm);
-      background: var(--accent);
-      color: #fff;
-      font-size: 1rem;
+      background: linear-gradient(135deg, rgba(195, 165, 105, 0.2), rgba(195, 165, 105, 0.08));
+      color: var(--gold-light);
+      font-size: 0.95rem;
       font-weight: 600;
       font-family: inherit;
+      letter-spacing: 0.05em;
       cursor: pointer;
-      box-shadow: 0 8px 24px var(--accent-glow), var(--inner-glow);
+      box-shadow: 0 4px 16px rgba(195, 165, 105, 0.12), inset 0 1px 0 rgba(195, 165, 105, 0.2);
       transition: all var(--transition);
     }
 
     .submit-btn:active {
       transform: scale(0.96) translateY(2px);
-      box-shadow: 0 4px 12px var(--accent-glow);
+      box-shadow: 0 2px 8px rgba(195, 165, 105, 0.1);
     }
 
     .submit-btn:disabled {
-      opacity: 0.35;
+      opacity: 0.3;
       cursor: not-allowed;
       transform: none;
     }
@@ -666,13 +673,14 @@
       left: 50%;
       transform: translateX(-50%) translateY(-120px);
       backdrop-filter: blur(var(--blur-heavy));
-      background: rgba(52, 199, 89, 0.85);
-      color: #fff;
+      -webkit-backdrop-filter: blur(var(--blur-heavy));
+      background: rgba(245, 244, 240, 0.95);
+      color: #121210;
       padding: 12px 22px;
       border-radius: var(--radius-sm);
       font-size: 0.85rem;
       font-weight: 600;
-      box-shadow: var(--glass-shadow);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       z-index: 500;
     }
@@ -1005,10 +1013,26 @@
     </div>
     <div class="main-card">
       <div class="tab-bar" id="tabBar">
-        <button class="tab-btn active" data-cat="開店">開店準備</button>
-        <button class="tab-btn" data-cat="閉店">閉店作業</button>
-        <button class="tab-btn" data-cat="トイレ清掃">トイレ清掃</button>
-        <button class="tab-btn" data-cat="マニュアル">マニュアル</button>
+        <button class="tab-btn active" data-cat="開店" aria-label="開店準備">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/>
+          </svg>
+        </button>
+        <button class="tab-btn" data-cat="閉店" aria-label="閉店作業">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+          </svg>
+        </button>
+        <button class="tab-btn" data-cat="トイレ清掃" aria-label="トイレ清掃">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
+          </svg>
+        </button>
+        <button class="tab-btn" data-cat="マニュアル" aria-label="マニュアル">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+          </svg>
+        </button>
       </div>
       <div class="content-area" id="contentArea"></div>
     </div>
@@ -1085,7 +1109,7 @@
       var s = document.getElementById('splash');
       s.classList.add('fade-out');
       setTimeout(function () { s.style.display = 'none'; }, 800);
-    }, 3500);
+    }, IS_LOCAL ? 500 : 3500);
 
     // ===== State =====
     var allItems = [], staffList = [], todayChecked = [], currentCategory = '開店', checkedState = {};
@@ -1113,11 +1137,55 @@
       manualViewerClose: document.getElementById('manualViewerClose')
     };
 
+    // ===== Local preview mode =====
+    var IS_LOCAL = location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+    function getLocalDummyData() {
+      return {
+        staff: [
+          { id: 'STAFF001', name: '浅見 千福', active: true },
+          { id: 'STAFF002', name: '高橋 汀', active: true },
+          { id: 'STAFF003', name: '小野川 達矢', active: true }
+        ],
+        items: [
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI001', name:'店内清掃（清掃マニュアル参照）', sortOrder:1, memo:'清掃マニュアル参照' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI002', name:'仕込み（仕込みマニュアル参照）', sortOrder:2, memo:'仕込みマニュアル参照' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI003', name:'神棚の水を替える', sortOrder:3, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI004', name:'厨房入場時の挨拶', sortOrder:4, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI005', name:'本日のおすすめを社長に確認', sortOrder:5, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'17:30〜', itemId:'KAI006', name:'おすすめの印刷', sortOrder:6, memo:'しっかり印刷されているか、不備はないか確認する' },
+          { storeId:'STORE001', category:'開店', timing:'17:30〜', itemId:'KAI007', name:'フライヤーの火入れ', sortOrder:7, memo:'ガスのつまみを押して左に回しチャッカマンで着火させて30秒ほど待って点火' },
+          { storeId:'STORE001', category:'開店', timing:'17:30〜', itemId:'KAI008', name:'ビールサーバーのセット', sortOrder:8, memo:'レバーを樽に取り付け右に回しガスを2〜2.5にセット。最初は泡しか出ないため泡がなくなるまで出し続ける' },
+          { storeId:'STORE001', category:'開店', timing:'17:55〜', itemId:'KAI009', name:'看板・提灯・街灯の点灯', sortOrder:9, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'17:55〜', itemId:'KAI010', name:'暖簾をかける', sortOrder:10, memo:'' },
+          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI001', name:'シンク掃除', sortOrder:1, memo:'全体に洗剤をかけてスポンジで隅々まで擦り、蛇口もしっかりと擦る。水で流す。' },
+          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI002', name:'包丁・まな板・まきす消毒', sortOrder:2, memo:'ハイターでつけ置きしておき、熱湯をかけて殺菌。まきすはハンガーにかけ干す' },
+          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI003', name:'調理台・器具の清掃', sortOrder:3, memo:'アルコール・ダスターを使ってコンロやオーブン、冷蔵庫、調理台の汚れをしっかり拭く' },
+          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI004', name:'ゴミ捨て', sortOrder:4, memo:'青い袋にまとめてゴミ置き場に出す。ゴミの分別をきちんとする。新しいゴミ袋をセットする。' },
+          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI005', name:'座席・床掃除', sortOrder:5, memo:'座布団をまとめて置く。テーブルは全て壁に立てかける。床のゴミをしっかりと掃く。' },
+          { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI001', name:'便器の清掃', sortOrder:1, memo:'' },
+          { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI002', name:'床の拭き掃除', sortOrder:2, memo:'' },
+          { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI003', name:'手洗い場の清掃', sortOrder:3, memo:'' },
+          { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI004', name:'ペーパー補充確認', sortOrder:4, memo:'' }
+        ]
+      };
+    }
+
     // ===== Init =====
     (function init() {
       updateDateTime();
       setInterval(updateDateTime, 60000);
       restoreTimer();
+
+      if (IS_LOCAL) {
+        var dummy = getLocalDummyData();
+        staffList = dummy.staff;
+        allItems = dummy.items;
+        renderStaffSelect();
+        hideLoading();
+        renderChecklist();
+        return;
+      }
 
       api('getStaffList').then(function (staff) {
         staffList = staff;
@@ -1156,6 +1224,7 @@
 
     function loadCheckedAndRender(isBackground) {
       if (currentCategory === 'マニュアル') { hideLoading(); renderManualTab(); return; }
+      if (IS_LOCAL) { todayChecked = []; hideLoading(); renderChecklist(); return; }
       var requestedCategory = currentCategory;
       if (!isBackground) showLoading();
       api('getTodayChecked', { category: requestedCategory }).then(function (ids) {
@@ -1242,7 +1311,7 @@
           var ml = item.memo || '';
           var manEl = ml.indexOf('マニュアル参照') !== -1 ? '<span class="manual-link" data-manual="' + esc(item.name) + '">参照</span>' : '';
           var hasMemo = item.memo && ml.indexOf('マニュアル参照') === -1;
-          var arrow = hasMemo ? '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' : '';
+          var arrow = hasMemo ? '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' : '';
           var mc = hasMemo ? '<div class="item-memo">' + esc(item.memo).replace(/\n/g, '<br>') + '</div>' : '';
 
           card.innerHTML = '<div class="checkbox-circle"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div><div class="item-body"><div class="item-name">' + esc(item.name) + '</div>' + mc + '</div><div style="flex-shrink:0; display:flex; align-items:center; gap:8px;">' + ft + manEl + arrow + '</div>';
@@ -1262,9 +1331,8 @@
 
           card.addEventListener('click', function (e) {
             if (isDone) return;
-            // Separate check toggle from expansion
-            var isCheckbox = e.target.closest('.checkbox-circle');
             var isManual = e.target.classList.contains('manual-link');
+            var isChevron = e.target.closest('.chevron');
 
             if (isManual) {
               var name = e.target.dataset.manual || '';
@@ -1274,7 +1342,7 @@
               return;
             }
 
-            if (hasMemo && !isCheckbox) {
+            if (isChevron) {
               card.classList.toggle('expanded');
               return;
             }
@@ -1283,12 +1351,17 @@
             checkedState[item.itemId] = card.classList.contains('checked');
             card.setAttribute('aria-checked', card.classList.contains('checked') ? 'true' : 'false');
 
+            if (card.classList.contains('checked')) {
+              card.classList.remove('check-flash');
+              void card.offsetWidth;
+              card.classList.add('check-flash');
+            }
+
             if (currentCategory === 'トイレ清掃') {
               var tcCount = 0;
               allItems.forEach(function (itm) {
                 if (itm.category === 'トイレ清掃' && checkedState[itm.itemId]) tcCount++;
               });
-              // 8項目チェックされたら自動でタイマーを開始し、タイマーをリセットして1時間から再スタートする
               if (tcCount >= 8) {
                 resetTimer();
                 startTimer();
