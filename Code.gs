@@ -166,18 +166,17 @@ function getCheckItems(storeId) {
   var sheet = ss.getSheetByName(SHEETS.ITEMS);
   var data = sheet.getDataRange().getValues();
   var items = [];
-  // 新構造: storeId, category, timing, itemId, itemName, displayOrder, active
+  // 列構造: A:storeId, B:category, C:timing, D:itemId, E:itemName, F:memo, G:active
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     if (row[0] !== storeId) continue;
-    if (row[6] === false || row[6] === 'FALSE') continue; // 非アクティブをスキップ
+    if (row[6] === false || row[6] === 'FALSE') continue;
     items.push({
-      storeId: row[0], category: row[1], timing: row[2], 
-      itemId: row[3], name: row[4], sortOrder: row[5],
-      memo: row[7] || '', minutes: '', priority: '', frequency: '' // memoをスプレッドシート(H列)から取得
+      storeId: row[0], category: row[1], timing: row[2],
+      itemId: row[3], name: row[4], sortOrder: i,
+      memo: row[5] || '', minutes: '', priority: '', frequency: ''
     });
   }
-  items.sort(function(a, b) { return (a.sortOrder || 999) - (b.sortOrder || 999); });
   return items;
 }
 
@@ -339,14 +338,14 @@ function syncCheckItemsFromDocs() {
 
   var rows = [];
   kaitenItems.forEach(function (item, i) {
-    rows.push([storeId, '開店', item.timing, 'KAI' + ('000' + (i + 1)).slice(-3), item.name, i + 1, true, item.memo]);
+    rows.push([storeId, '開店', item.timing, 'KAI' + ('000' + (i + 1)).slice(-3), item.name, item.memo, true]);
   });
   heitenItems.forEach(function (item, i) {
-    rows.push([storeId, '閉店', item.timing, 'HEI' + ('000' + (i + 1)).slice(-3), item.name, i + 1, true, item.memo]);
+    rows.push([storeId, '閉店', item.timing, 'HEI' + ('000' + (i + 1)).slice(-3), item.name, item.memo, true]);
   });
 
   if (rows.length > 0) {
-    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 8).setValues(rows);
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
   }
 
   Logger.log('同期完了: 開店 ' + kaitenItems.length + '件, 閉店 ' + heitenItems.length + '件');
