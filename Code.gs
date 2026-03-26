@@ -316,3 +316,124 @@ function checkOmissions() {
   return { status: 'success', count: omissions.length };
 }
 
+// ============================================================
+// Google ドキュメント → チェック項目マスタ 同期
+// GAS エディタから手動実行する。トイレ清掃の行は触らない。
+// ============================================================
+
+var SYNC_DOCS = {
+  '開店': '1ZYw9Kv0LYOMOAqxyXZ6gPB4FsJjLVIV9Gg1aepJYleI',
+  '閉店': '1DP9mepRb_7M_5uNSszgzOR8Phz4AJZbkaCakLLvmCWk'
+};
+
+function syncCheckItemsFromDocs() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName(SHEETS.ITEMS);
+  var storeId = 'STORE001';
+
+  var kaitenItems = parseKaitenDoc_(SYNC_DOCS['開店']);
+  var heitenItems = parseHeitenDoc_(SYNC_DOCS['閉店']);
+
+  deleteRowsByCategory_(sheet, storeId, '開店');
+  deleteRowsByCategory_(sheet, storeId, '閉店');
+
+  var rows = [];
+  kaitenItems.forEach(function (item, i) {
+    rows.push([storeId, '開店', item.timing, 'KAI' + ('000' + (i + 1)).slice(-3), item.name, i + 1, true, item.memo]);
+  });
+  heitenItems.forEach(function (item, i) {
+    rows.push([storeId, '閉店', item.timing, 'HEI' + ('000' + (i + 1)).slice(-3), item.name, i + 1, true, item.memo]);
+  });
+
+  if (rows.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 8).setValues(rows);
+  }
+
+  Logger.log('同期完了: 開店 ' + kaitenItems.length + '件, 閉店 ' + heitenItems.length + '件');
+  return { kaiten: kaitenItems.length, heiten: heitenItems.length };
+}
+
+function deleteRowsByCategory_(sheet, storeId, category) {
+  var data = sheet.getDataRange().getValues();
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] === storeId && data[i][1] === category) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+}
+
+// ---- 開店マニュアル解析 ----
+function parseKaitenDoc_(docId) {
+  var doc = DocumentApp.openById(docId);
+  var text = doc.getBody().getText();
+  var lines = text.split('\n');
+  var items = [];
+  var timing = '出勤時';
+  var skipPatterns = /^(日付|開店作業マニュアル|／|月|火|水|木|金|土|☐|担当者|サイン|１８：００|$)/;
+  var timingMap = {
+    '出勤': '出勤時',
+    '1７：３０': '17:30〜',
+    '17：30': '17:30〜',
+    '17:30': '17:30〜',
+    '１７：５５': '17:55〜',
+    '17：55': '17:55〜',
+    '17:55': '17:55〜'
+  };
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    if (skipPatterns.test(line)) continue;
+
+    var foundTiming = false;
+    for (var key in timingMap) {
+      if (line.indexOf(key) === 0) {
+        timing = timingMap[key];
+        foundTiming = true;
+        break;
+      }
+    }
+    if (foundTiming) continue;
+
+    var name = line;
+    var memo = '';
+    var parenMatch = name.match(/[（(]([^）)]+)[）)]/);
+    if (parenMatch) {
+      memo = parenMatch[1];
+    }
+
+    items.push({ timing: timing, name: name, memo: memo });
+  }
+
+  return items;
+}
+
+// ---- 閉店マニュアル解析 ----
+function parseHeitenDoc_(docId) {
+  var doc = DocumentApp.openById(docId);
+  var text = doc.getBody().getText();
+  var lines = text.split('\n');
+  var items = [];
+  var skipPatterns = /^(閉店作業マニュアル|日付|／|項⽬|やり⽅|月|火|水|木|金|土|☐|担当者|サイン|【最終項⽬】|$)/;
+
+  var pendingName = '';
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    if (skipPatterns.test(line)) continue;
+
+    if (!pendingName) {
+      pendingName = line;
+    } else {
+      var memo = line;
+      items.push({ timing: '閉店後', name: pendingName, memo: memo });
+      pendingName = '';
+    }
+  }
+  if (pendingName) {
+    items.push({ timing: '閉店後', name: pendingName, memo: '' });
+  }
+
+  return items;
+}
+
