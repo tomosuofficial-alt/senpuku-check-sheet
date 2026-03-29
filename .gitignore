@@ -2,3 +2,6 @@
 bg_base64.txt
 *.xlsx
 node_modules/
+
+# Local Netlify folder
+.netlify

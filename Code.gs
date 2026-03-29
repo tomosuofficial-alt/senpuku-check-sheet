@@ -97,6 +97,9 @@ function doPost(e) {
       case 'submitChecks':
         result = submitChecks(body.data);
         break;
+      case 'contact':
+        result = sendContactToNotion(body);
+        break;
       default:
         result = { error: 'POST は submitChecks のみ対応しています' };
     }
@@ -313,6 +316,57 @@ function checkOmissions() {
   }
   
   return { status: 'success', count: omissions.length };
+}
+
+// ============================================================
+// 問い合わせ → Notion 送信
+// ============================================================
+
+var NOTION_TOKEN = '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';
+var NOTION_DB_ID = '3309fe8c3a7f8195a86ec7d09fc4ff49';
+
+function sendContactToNotion(body) {
+  var now = new Date();
+  var isoDate = Utilities.formatDate(now, 'Asia/Tokyo', "yyyy-MM-dd'T'HH:mm:ssXXX");
+
+  var properties = {
+    '名前': { title: [{ text: { content: body.name || '(未入力)' } }] },
+    'カテゴリ': { select: { name: body.category || 'その他' } },
+    '企業名': { rich_text: [{ text: { content: body.company || '' } }] },
+    '問い合わせ内容': { rich_text: [{ text: { content: body.message || '' } }] },
+    '日時': { date: { start: isoDate } },
+    'ステータス': { select: { name: '未対応' } }
+  };
+
+  if (body.email) {
+    properties['メールアドレス'] = { email: body.email };
+  }
+
+  var payload = {
+    parent: { database_id: NOTION_DB_ID },
+    properties: properties
+  };
+
+  var options = {
+    method: 'post',
+    headers: {
+      'Authorization': 'Bearer ' + NOTION_TOKEN,
+      'Notion-Version': '2022-06-28',
+      'Content-Type': 'application/json'
+    },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+
+  var res = UrlFetchApp.fetch('https://api.notion.com/v1/pages', options);
+  var code = res.getResponseCode();
+
+  if (code === 200) {
+    return { status: 'success' };
+  } else {
+    Logger.log('Notion API error: ' + res.getContentText());
+    throw new Error('Notion への送信に失敗しました (HTTP ' + code + ')');
+  }
 }
 
 // ============================================================
