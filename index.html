@@ -1615,7 +1615,7 @@
       var h = '<div style="font-size:0.85rem;font-weight:600;color:#fff;margin-bottom:14px;text-shadow:0 1px 2px rgba(0,0,0,0.3);">業務マニュアル</div>';
       manuals.forEach(function (m, i) {
         var border = i < manuals.length - 1 ? 'border-bottom:1px solid rgba(255,255,255,0.15);' : '';
-        h += '<div style="padding:12px 0;' + border + 'display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:0.85rem;font-weight:500;color:#fff;">' + m.title + '</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.5);margin-top:2px;">' + m.desc + '</div></div><button data-key="' + m.key + '" data-title="' + m.title + '" style="padding:6px 14px;border:1px solid rgba(255,255,255,0.3);border-radius:10px;background:none;color:#fff;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;">開く</button></div>';
+        h += '<div style="padding:12px 0;' + border + 'display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:0.85rem;font-weight:500;color:#fff;">' + m.title + '</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.5);margin-top:2px;">' + m.desc + '</div></div><button class="manual-link" data-key="' + m.key + '" data-title="' + m.title + '">開く</button></div>';
       });
       c.innerHTML = h;
       c.querySelectorAll('button[data-key]').forEach(function (btn) {
