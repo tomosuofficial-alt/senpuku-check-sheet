@@ -322,8 +322,12 @@ function checkOmissions() {
 // 問い合わせ → Notion 送信
 // ============================================================
 
-var NOTION_TOKEN = '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';
-var NOTION_DB_ID = '3309fe8c3a7f8195a86ec7d09fc4ff49';
+function getNotionToken_() {
+  return PropertiesService.getScriptProperties().getProperty('NOTION_TOKEN');
+}
+function getNotionDbId_() {
+  return PropertiesService.getScriptProperties().getProperty('NOTION_DB_ID');
+}
 
 function sendContactToNotion(body) {
   var now = new Date();
@@ -343,14 +347,14 @@ function sendContactToNotion(body) {
   }
 
   var payload = {
-    parent: { database_id: NOTION_DB_ID },
+    parent: { database_id: getNotionDbId_() },
     properties: properties
   };
 
   var options = {
     method: 'post',
     headers: {
-      'Authorization': 'Bearer ' + NOTION_TOKEN,
+      'Authorization': 'Bearer ' + getNotionToken_(),
       'Notion-Version': '2022-06-28',
       'Content-Type': 'application/json'
     },
