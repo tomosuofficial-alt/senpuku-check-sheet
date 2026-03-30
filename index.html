@@ -1701,7 +1701,7 @@
           var arrow = hasMemo ? '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' : '';
           var mc = hasMemo ? '<div class="item-memo">' + esc(item.memo).replace(/\n/g, '<br>') + '</div>' : '';
 
-          var tempEl = isTemp ? '<div class="temp-input-wrap"><input type="number" step="0.1" class="temp-input" data-item-id="' + item.itemId + '" placeholder="--" inputmode="decimal"><span class="temp-unit">°C</span></div>' : '';
+          var tempEl = isTemp ? '<div class="temp-input-wrap"><input type="number" step="0.1" class="temp-input" data-item-id="' + item.itemId + '" placeholder="--"><span class="temp-unit">°C</span></div>' : '';
 
           card.innerHTML = '<div class="checkbox-circle"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div><div class="item-body"><div class="item-name">' + esc(item.name) + '</div>' + mc + '</div><div style="flex-shrink:0; display:flex; align-items:center; gap:8px;">' + ft + tempEl + manEl + arrow + '</div>';
 
