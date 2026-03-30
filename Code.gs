@@ -8,11 +8,9 @@
 const SHEET_ID = '1SvnkJzDm6AzcyGHuJOUprppQWnSUUEcJUtv5HMhAuAk';
 
 const SHEETS = {
-  STORES:   '店舗マスタ',
   STAFF:    'スタッフマスタ',
   ITEMS:    'チェック項目マスタ',
   HISTORY:  'チェック履歴',
-  AGGREGATION: '集計',
   OMISSIONS: '未実施チェック'
 };
 
@@ -57,6 +55,9 @@ function doGet(e) {
         break;
       case 'getTodayChecked':
         result = getTodayChecked(storeId, e.parameter.category || '');
+        break;
+      case 'getOmissions':
+        result = getOmissions(storeId);
         break;
       case 'submitChecks':
         var payload = JSON.parse(e.parameter.data);
@@ -213,6 +214,37 @@ function getTodayChecked(storeId, category) {
 }
 
 // ============================================================
+// 未実施チェック取得（前営業日分）
+// ============================================================
+
+function getOmissions(storeId) {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var omSheet = ss.getSheetByName(SHEETS.OMISSIONS);
+  if (!omSheet || omSheet.getLastRow() <= 1) return [];
+
+  // 直近の営業日の未実施を返す（最新の日付を探す）
+  var data = omSheet.getDataRange().getValues();
+  var latestDate = '';
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] !== storeId) continue;
+    var rd = data[i][1] instanceof Date ? Utilities.formatDate(data[i][1], 'Asia/Tokyo', 'yyyy-MM-dd') : String(data[i][1]).substring(0, 10);
+    if (rd > latestDate) latestDate = rd;
+  }
+  if (!latestDate) return [];
+
+  var omissions = [];
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    if (row[0] !== storeId) continue;
+    var rd = row[1] instanceof Date ? Utilities.formatDate(row[1], 'Asia/Tokyo', 'yyyy-MM-dd') : String(row[1]).substring(0, 10);
+    if (rd === latestDate) {
+      omissions.push({ category: row[2], itemId: row[3], name: row[4], date: latestDate });
+    }
+  }
+  return omissions;
+}
+
+// ============================================================
 // チェック結果送信 (8カラム構成)
 // ============================================================
 
@@ -228,7 +260,11 @@ function submitChecks(payload) {
   
   // 新構成: timestamp, date, storeId, staffId, category, itemId, checked, comment
   for (var i = 0; i < checked.length; i++) {
-    rows.push([dt, bd, storeId, payload.staffId, payload.category, checked[i].itemId, true, '']);
+    var comment = '';
+    if (checked[i].temperature !== undefined && checked[i].temperature !== null) {
+      comment = checked[i].temperature + '°C';
+    }
+    rows.push([dt, bd, storeId, payload.staffId, payload.category, checked[i].itemId, true, comment]);
   }
   
   if (rows.length > 0) {
@@ -243,26 +279,13 @@ function submitChecks(payload) {
 
 function setupSpreadsheet() {
   var ss = SpreadsheetApp.openById(SHEET_ID);
-  
-  // 店舗マスタ
-  var storeSheet = ss.getSheetByName(SHEETS.STORES) || ss.insertSheet(SHEETS.STORES);
-  if (storeSheet.getLastRow() === 0) {
-    storeSheet.appendRow(['storeId', 'storeName', 'active']);
-    storeSheet.appendRow(['STORE001', 'よいどころ千福', true]);
-  }
-  
-  // 集計シート
-  var aggSheet = ss.getSheetByName(SHEETS.AGGREGATION) || ss.insertSheet(SHEETS.AGGREGATION);
-  if (aggSheet.getLastRow() === 0) {
-    aggSheet.getRange('A1').setFormula('=QUERY(\'チェック履歴\'!A:H, "select C,B,count(F),sum(G) label count(F) \'全項目数\', sum(G) \'完了数\' group by C,B", 1)');
-  }
-  
+
   // 未実施チェックシート
   var omSheet = ss.getSheetByName(SHEETS.OMISSIONS) || ss.insertSheet(SHEETS.OMISSIONS);
   if (omSheet.getLastRow() === 0) {
-    omSheet.appendRow(['storeId', 'date', 'itemId', 'itemName']);
+    omSheet.appendRow(['storeId', 'date', 'category', 'itemId', 'itemName']);
   }
-  
+
   Logger.log('Spreadsheet setup complete.');
 }
 
@@ -271,13 +294,21 @@ function checkOmissions() {
   var bd = getBusinessDate_();
   var items = ss.getSheetByName(SHEETS.ITEMS).getDataRange().getValues();
   var hist = ss.getSheetByName(SHEETS.HISTORY).getDataRange().getValues();
+
+  // その営業日にチェック履歴があるカテゴリを収集
+  var activeCategories = {};
+  for (var h = 1; h < hist.length; h++) {
+    var hd = hist[h][1] instanceof Date ? Utilities.formatDate(hist[h][1], 'Asia/Tokyo', 'yyyy-MM-dd') : String(hist[h][1]).substring(0, 10);
+    if (hd === bd) activeCategories[hist[h][4]] = true;
+  }
+  if (Object.keys(activeCategories).length === 0) {
+    Logger.log('営業日 ' + bd + ' のチェック履歴なし（完全定休日）。スキップ');
+    return { status: 'skipped', reason: '定休日（チェック履歴なし）' };
+  }
   var omSheet = ss.getSheetByName(SHEETS.OMISSIONS) || ss.insertSheet(SHEETS.OMISSIONS);
-  if (omSheet.getLastRow() === 0) omSheet.appendRow(['storeId', 'date', 'itemId', 'itemName']);
+  if (omSheet.getLastRow() === 0) omSheet.appendRow(['storeId', 'date', 'category', 'itemId', 'itemName']);
   
-  // 定義されている店舗リスト（storeId）を取得
-  var stores = [];
-  var masterStores = ss.getSheetByName(SHEETS.STORES).getDataRange().getValues();
-  for (var s = 1; s < masterStores.length; s++) { if (masterStores[s][0] && masterStores[s][2]) stores.push(masterStores[s][0]); }
+  var stores = ['STORE001'];
   
   var omissions = [];
   
@@ -296,10 +327,11 @@ function checkOmissions() {
       }
     }
     
-    // 3. マスタにはあるが未実施のものを抽出
+    // 3. マスタにはあるが未実施のものを抽出（その日にチェック履歴があるカテゴリのみ）
     masterItems.forEach(function(m) {
+      if (!activeCategories[m[1]]) return; // このカテゴリは今日使われていない
       if (!doneIds[m[3]]) {
-        omissions.push([storeId, bd, m[3], m[4]]);
+        omissions.push([storeId, bd, m[1], m[3], m[4]]);
       }
     });
   });
@@ -312,7 +344,7 @@ function checkOmissions() {
   }
   
   if (omissions.length > 0) {
-    omSheet.getRange(omSheet.getLastRow() + 1, 1, omissions.length, 4).setValues(omissions);
+    omSheet.getRange(omSheet.getLastRow() + 1, 1, omissions.length, 5).setValues(omissions);
   }
   
   return { status: 'success', count: omissions.length };
@@ -463,6 +495,39 @@ function parseKaitenDoc_(docId) {
   }
 
   return items;
+}
+
+// ============================================================
+// 氷プール項目をチェック項目マスタに追加（初回のみ実行）
+// ============================================================
+
+function addIcePoolItems() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName(SHEETS.ITEMS);
+  var storeId = 'STORE001';
+
+  // 既存の氷プール項目があれば削除して再作成
+  deleteRowsByCategory_(sheet, storeId, '氷プール');
+
+  var timings = ['出勤時', '22時', '退勤時'];
+  var tasks = ['氷補充', '塩補充', '温度計測'];
+  var rows = [];
+  var num = 1;
+
+  timings.forEach(function (timing) {
+    tasks.forEach(function (task) {
+      var itemId = 'ICE' + ('000' + num).slice(-3);
+      rows.push([storeId, '氷プール', timing, itemId, task, '', true]);
+      num++;
+    });
+  });
+
+  if (rows.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
+  }
+
+  Logger.log('氷プール項目追加完了: ' + rows.length + '件');
+  return { status: 'success', count: rows.length };
 }
 
 // ---- 閉店マニュアル解析 ----
