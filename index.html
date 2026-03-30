@@ -460,9 +460,23 @@
     .timing-header {
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: 10px;
-      padding: 14px 8px 6px;
+      padding: 10px 16px;
+      margin: 8px 0 2px;
+    }
+
+    .timing-header::before {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--timing-color, rgba(255,255,255,0.15)));
+    }
+
+    .timing-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to left, transparent, var(--timing-color, rgba(255,255,255,0.15)));
     }
 
     .timing-dot {
@@ -473,10 +487,16 @@
     }
 
     .timing-name {
-      font-size: 0.75rem;
-      font-weight: 500;
+      font-size: 0.94rem;
+      font-weight: 700;
       color: rgba(255, 255, 255, 0.4);
-      letter-spacing: 0.1em;
+      letter-spacing: 0.12em;
+      white-space: nowrap;
+      padding: 4px 14px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
 
     .timing-count {
@@ -584,7 +604,7 @@
     }
 
     .item-name {
-      font-size: 0.88rem;
+      font-size: 1.1rem;
       font-weight: 400;
       color: rgba(255, 255, 255, 0.85);
       line-height: 1.5;
@@ -645,7 +665,7 @@
     }
 
     .manual-link {
-      font-size: 0.6rem;
+      font-size: 0.75rem;
       font-weight: 600;
       color: #ffffff;
       padding: 5px 12px;
@@ -682,8 +702,47 @@
       );
     }
 
+    .temp-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .temp-input {
+      width: 60px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 0.85rem;
+      font-family: inherit;
+      text-align: right;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .temp-input:focus {
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 0 8px rgba(100, 180, 255, 0.3);
+    }
+
+    .temp-input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .temp-unit {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: 500;
+    }
+
     .item-memo {
-      font-size: 0.8rem;
+      font-size: 1.0rem;
       color: rgba(255, 255, 255, 0.65);
       line-height: 1.6;
       margin-top: 10px;
@@ -773,6 +832,51 @@
 
     .toast.show {
       transform: translateX(-50%) translateY(0);
+    }
+
+    .omission-banner {
+      margin: 8px 16px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(255, 59, 48, 0.15);
+      border: 1px solid rgba(255, 59, 48, 0.3);
+      animation: slideIn 0.3s ease;
+    }
+
+    .omission-banner-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #FF3B30;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .omission-banner-item {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.7);
+      padding: 3px 0;
+      padding-left: 12px;
+      border-left: 2px solid rgba(255, 59, 48, 0.4);
+      margin: 4px 0;
+    }
+
+    .omission-banner-item span {
+      font-size: 0.65rem;
+      color: rgba(255, 255, 255, 0.4);
+      margin-left: 6px;
+    }
+
+    .omission-dismiss {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.4);
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-top: 8px;
+      padding: 4px 8px;
+      font-family: inherit;
     }
 
     .loading {
@@ -1188,6 +1292,11 @@
             <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
           </svg>
         </button>
+        <button class="tab-btn" data-cat="氷プール" aria-label="氷プール">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 4.93-4.24 4.24"/><path d="m4.93 19.07 4.24-4.24"/><path d="m14.83 19.07-4.24-4.24"/><path d="M2 12h20"/><path d="m4.93 4.93 14.14 14.14"/><path d="m4.93 19.07 14.14-14.14"/>
+          </svg>
+        </button>
         <button class="tab-btn" data-cat="マニュアル" aria-label="マニュアル">
           <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
             <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
@@ -1225,6 +1334,9 @@
           <input class="form-input" id="newStaffName" placeholder="名前を入力" style="flex:1;">
           <button class="form-btn" id="addStaffBtn">追加</button>
         </div>
+      </div>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.1);">
+        <button class="manual-link" id="appManualBtn" style="width:100%;padding:12px;font-size:0.9rem;">アプリ操作マニュアルを開く</button>
       </div>
     </div>
   </div>
@@ -1282,7 +1394,8 @@
       operation: 'https://docs.google.com/document/d/13ab7F8hE_KwSqaL87ZILkn3qT9ZnVYs5GVfq5_NynxA/preview',
       cleaning: 'https://docs.google.com/document/d/1o8-EN_qPlq3jmuNuknB1UfmrY1eK47KorjYD4x13ETk/preview',
       prep: 'https://docs.google.com/document/d/1F0EX_yWKJARishurkfbn4rnBgoGScOeVUednsvp4vSw/preview',
-      hourensou: 'https://drive.google.com/file/d/1fnCViIAHL4zNWA4DfyCVfdKYZkvJ3hAk/preview'
+      hourensou: 'https://drive.google.com/file/d/1fnCViIAHL4zNWA4DfyCVfdKYZkvJ3hAk/preview',
+      appManual: 'https://drive.google.com/file/d/1-9dwtVo8x2NTff95BRHJsCnIzqNC28DE/preview'
     };
 
     // ===== API Helper =====
@@ -1385,7 +1498,16 @@
           { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI001', name:'便器の清掃', sortOrder:1, memo:'' },
           { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI002', name:'床の拭き掃除', sortOrder:2, memo:'' },
           { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI003', name:'手洗い場の清掃', sortOrder:3, memo:'' },
-          { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI004', name:'ペーパー補充確認', sortOrder:4, memo:'' }
+          { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI004', name:'ペーパー補充確認', sortOrder:4, memo:'' },
+          { storeId:'STORE001', category:'氷プール', timing:'出勤時', itemId:'ICE001', name:'氷補充', sortOrder:1, memo:'' },
+          { storeId:'STORE001', category:'氷プール', timing:'出勤時', itemId:'ICE002', name:'塩補充', sortOrder:2, memo:'' },
+          { storeId:'STORE001', category:'氷プール', timing:'出勤時', itemId:'ICE003', name:'温度計測', sortOrder:3, memo:'' },
+          { storeId:'STORE001', category:'氷プール', timing:'22時', itemId:'ICE004', name:'氷補充', sortOrder:4, memo:'' },
+          { storeId:'STORE001', category:'氷プール', timing:'22時', itemId:'ICE005', name:'塩補充', sortOrder:5, memo:'' },
+          { storeId:'STORE001', category:'氷プール', timing:'22時', itemId:'ICE006', name:'温度計測', sortOrder:6, memo:'' },
+          { storeId:'STORE001', category:'氷プール', timing:'退勤時', itemId:'ICE007', name:'氷補充', sortOrder:7, memo:'' },
+          { storeId:'STORE001', category:'氷プール', timing:'退勤時', itemId:'ICE008', name:'塩補充', sortOrder:8, memo:'' },
+          { storeId:'STORE001', category:'氷プール', timing:'退勤時', itemId:'ICE009', name:'温度計測', sortOrder:9, memo:'' }
         ]
       };
     }
@@ -1417,8 +1539,46 @@
         renderStaffSelect();
         hideLoading();
         renderChecklist();
+        // 未実施チェック取得（バックグラウンド）
+        loadOmissions();
       }).catch(handleErr);
     })();
+
+    function loadOmissions() {
+      api('getOmissions').then(function (items) {
+        if (!items || !items.length) return;
+        renderOmissionBanner(items);
+      }).catch(function () { /* 無視 */ });
+    }
+
+    function renderOmissionBanner(items) {
+      var existing = document.getElementById('omissionBanner');
+      if (existing) existing.remove();
+
+      var groups = {};
+      items.forEach(function (it) {
+        var cat = it.category || 'その他';
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(it.name);
+      });
+
+      var dateLabel = items[0].date ? '（' + items[0].date.replace(/^\d{4}-/, '').replace('-', '/') + '）' : '';
+      var html = '<div class="omission-banner-title">⚠ 前回の未実施項目' + dateLabel + '（' + items.length + '件）</div>';
+      for (var cat in groups) {
+        groups[cat].forEach(function (name) {
+          html += '<div class="omission-banner-item">' + esc(name) + '<span>' + esc(cat) + '</span></div>';
+        });
+      }
+      html += '<button class="omission-dismiss" onclick="this.parentElement.remove()">閉じる</button>';
+
+      var banner = document.createElement('div');
+      banner.className = 'omission-banner';
+      banner.id = 'omissionBanner';
+      banner.innerHTML = html;
+
+      var contentArea = els.contentArea;
+      contentArea.parentElement.insertBefore(banner, contentArea);
+    }
 
     function updateDateTime() {
       var n = new Date(), wd = ['日', '月', '火', '水', '木', '金', '土'];
@@ -1519,12 +1679,13 @@
 
       var g = {}, ord = [];
       f.forEach(function (i) { var t = i.timing || '(その他)'; if (!g[t]) { g[t] = []; ord.push(t); } g[t].push(i); });
-      var dc = { '出勤時': '#007AFF', '17:30〜': '#FF9500', '17:55〜': '#AF52DE', '閉店後': '#007AFF', '最終確認': '#FF3B30', '隔週(土)': '#34C759', '週1(土)': '#34C759', '随時': '#FF9500' };
+      var dc = { '出勤時': '#007AFF', '17:30〜': '#FF9500', '17:55〜': '#AF52DE', '閉店後': '#007AFF', '最終確認': '#FF3B30', '隔週(土)': '#34C759', '週1(土)': '#34C759', '随時': '#FF9500', '22時': '#FF9500', '退勤時': '#AF52DE' };
 
       ord.forEach(function (timing) {
         var items = g[timing];
         var sec = document.createElement('div'); sec.className = 'timing-group';
-        sec.innerHTML = '<div class="timing-header"><span class="timing-name">' + timing + '</span></div>';
+        var tColor = dc[timing] || 'rgba(255,255,255,0.4)';
+        sec.innerHTML = '<div class="timing-header" style="--timing-color:' + tColor + '"><span class="timing-name">' + timing + '</span></div>';
 
         items.forEach(function (item) {
           var card = document.createElement('div'); card.className = 'check-item'; card.dataset.id = item.itemId;
@@ -1532,6 +1693,7 @@
           if (isDone) card.classList.add('already-done', 'checked');
           if (checkedState[item.itemId]) card.classList.add('checked');
 
+          var isTemp = item.name === '温度計測';
           var ft = item.frequency && item.frequency !== '毎日' ? '<span class="tag">' + item.frequency + '</span>' : '';
           var ml = item.memo || '';
           var manEl = ml.indexOf('マニュアル参照') !== -1 ? '<span class="manual-link" data-manual="' + esc(item.name) + '">参照</span>' : '';
@@ -1539,7 +1701,9 @@
           var arrow = hasMemo ? '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' : '';
           var mc = hasMemo ? '<div class="item-memo">' + esc(item.memo).replace(/\n/g, '<br>') + '</div>' : '';
 
-          card.innerHTML = '<div class="checkbox-circle"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div><div class="item-body"><div class="item-name">' + esc(item.name) + '</div>' + mc + '</div><div style="flex-shrink:0; display:flex; align-items:center; gap:8px;">' + ft + manEl + arrow + '</div>';
+          var tempEl = isTemp ? '<div class="temp-input-wrap"><input type="number" step="0.1" class="temp-input" data-item-id="' + item.itemId + '" placeholder="--" inputmode="decimal"><span class="temp-unit">°C</span></div>' : '';
+
+          card.innerHTML = '<div class="checkbox-circle"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div><div class="item-body"><div class="item-name">' + esc(item.name) + '</div>' + mc + '</div><div style="flex-shrink:0; display:flex; align-items:center; gap:8px;">' + ft + tempEl + manEl + arrow + '</div>';
 
           card.setAttribute('role', 'checkbox');
           card.setAttribute('aria-checked', (isDone || checkedState[item.itemId]) ? 'true' : 'false');
@@ -1554,8 +1718,29 @@
             });
           }
 
+          if (isTemp) {
+            var tempInput = card.querySelector('.temp-input');
+            if (tempInput) {
+              tempInput.addEventListener('input', function () {
+                var val = this.value.trim();
+                if (val !== '' && !isNaN(parseFloat(val))) {
+                  card.classList.add('checked');
+                  checkedState[item.itemId] = parseFloat(val);
+                  card.setAttribute('aria-checked', 'true');
+                } else {
+                  card.classList.remove('checked');
+                  delete checkedState[item.itemId];
+                  card.setAttribute('aria-checked', 'false');
+                }
+                updateProgress(); updateSubmitBtn();
+              });
+              tempInput.addEventListener('click', function (e) { e.stopPropagation(); });
+            }
+          }
+
           card.addEventListener('click', function (e) {
             if (isDone) return;
+            if (isTemp) return;
             var isManual = e.target.classList.contains('manual-link');
             var isChevron = e.target.closest('.chevron');
 
@@ -1612,10 +1797,10 @@
         { key: 'operation', title: '営業中オペレーション', desc: '営業中の業務手順' }
       ];
       var c = document.createElement('div'); c.style.padding = '16px';
-      var h = '<div style="font-size:0.85rem;font-weight:600;color:#fff;margin-bottom:14px;text-shadow:0 1px 2px rgba(0,0,0,0.3);">業務マニュアル</div>';
+      var h = '<div style="font-size:1.06rem;font-weight:600;color:#fff;margin-bottom:14px;text-shadow:0 1px 2px rgba(0,0,0,0.3);">業務マニュアル</div>';
       manuals.forEach(function (m, i) {
         var border = i < manuals.length - 1 ? 'border-bottom:1px solid rgba(255,255,255,0.15);' : '';
-        h += '<div style="padding:12px 0;' + border + 'display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:0.85rem;font-weight:500;color:#fff;">' + m.title + '</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.5);margin-top:2px;">' + m.desc + '</div></div><button class="manual-link" data-key="' + m.key + '" data-title="' + m.title + '">開く</button></div>';
+        h += '<div style="padding:12px 0;' + border + 'display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:1.06rem;font-weight:500;color:#fff;">' + m.title + '</div><div style="font-size:0.81rem;color:rgba(255,255,255,0.5);margin-top:2px;">' + m.desc + '</div></div><button class="manual-link" data-key="' + m.key + '" data-title="' + m.title + '">開く</button></div>';
       });
       c.innerHTML = h;
       c.querySelectorAll('button[data-key]').forEach(function (btn) {
@@ -1673,7 +1858,12 @@
       var payload = {
         staffId: els.staffSelect.value, staffName: opt.dataset.name, category: currentCategory,
         items: allItems.filter(function (i) { return i.category === currentCategory && checkedState[i.itemId]; })
-          .map(function (i) { return { itemId: i.itemId, name: i.name, timing: i.timing, checked: true }; })
+          .map(function (i) {
+            var val = checkedState[i.itemId];
+            var obj = { itemId: i.itemId, name: i.name, timing: i.timing, checked: true };
+            if (typeof val === 'number') obj.temperature = val;
+            return obj;
+          })
       };
       if (!payload.items.length) { showToast('チェック項目を選択してください', 'rgba(255,59,48,0.85)'); return; }
       els.submitBtn.disabled = true; els.submitBtn.textContent = '送信中...';
@@ -1728,6 +1918,10 @@
     els.settingsBtn.addEventListener('click', function () { renderStaffListModal(); els.settingsModal.classList.add('open'); });
     els.closeSettings.addEventListener('click', function () { els.settingsModal.classList.remove('open'); });
     els.settingsModal.addEventListener('click', function (e) { if (e.target === els.settingsModal) els.settingsModal.classList.remove('open'); });
+    document.getElementById('appManualBtn').addEventListener('click', function () {
+      els.settingsModal.classList.remove('open');
+      openManual('appManual', 'アプリ操作マニュアル');
+    });
 
     // ===== Contact / Help =====
     els.helpBtn.addEventListener('click', function () { els.contactModal.classList.add('open'); });
