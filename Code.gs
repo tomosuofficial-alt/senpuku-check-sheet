@@ -109,7 +109,15 @@ function doPost(e) {
 
     switch (action) {
       case 'submitChecks':
-        result = submitChecks(body.data);
+        var pdata = body.data;
+        if (typeof pdata === 'string') {
+          try {
+            pdata = JSON.parse(pdata);
+          } catch (e2) {
+            throw new Error('data の JSON が不正です');
+          }
+        }
+        result = submitChecks(pdata);
         break;
       case 'contact':
         result = sendContactToNotion(body);
@@ -222,6 +230,45 @@ function businessDateFromTimestamp_(ts) {
   return Utilities.formatDate(d, 'Asia/Tokyo', 'yyyy-MM-dd');
 }
 
+/**
+ * チェック履歴シートの1行を正規化（店舗・カテゴリ・項目IDの列位置を統一）
+ * 新形式（ヘッダー準拠）: 日時 | 店舗ID | スタッフID | スタッフ名 | カテゴリ | 項目ID | 温度
+ * 旧誤形式: 日時 | 営業日 | 店舗ID | スタッフID | カテゴリ | 項目ID | TRUE … のように B が日付・G が TRUE の行
+ */
+function normalizeHistoryRow_(row) {
+  var r1 = row[1];
+  var r1s = '';
+  if (r1 instanceof Date) {
+    r1s = Utilities.formatDate(r1, 'Asia/Tokyo', 'yyyy-MM-dd');
+  } else {
+    r1s = String(r1).trim();
+  }
+  var r2 = String(row[2] || '');
+  var legacy = /^\d{4}-\d{2}-\d{2}$/.test(r1s) && /^STORE/.test(r2);
+  if (legacy) {
+    return {
+      legacy: true,
+      storeId: row[2],
+      staffId: row[3],
+      staffName: '',
+      staffDisplay: row[3] ? String(row[3]) : '',
+      category: row[4],
+      itemId: row[5],
+      temp: (row[6] === true || row[6] === 'TRUE') ? '' : String(row[6] || '')
+    };
+  }
+  return {
+    legacy: false,
+    storeId: row[1],
+    staffId: row[2],
+    staffName: row[3] ? String(row[3]) : '',
+    staffDisplay: row[3] ? String(row[3]) : '',
+    category: row[4],
+    itemId: row[5],
+    temp: (row[6] === true || row[6] === 'TRUE') ? '' : String(row[6] || '')
+  };
+}
+
 function getTodayChecked(storeId, category) {
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName(SHEETS.HISTORY);
@@ -229,12 +276,12 @@ function getTodayChecked(storeId, category) {
   var data = sheet.getDataRange().getValues();
   var bd = getBusinessDate_();
   var ids = [];
-  // 7列構造: チェック日時(0), 店舗ID(1), スタッフID(2), スタッフ名(3), カテゴリ(4), 項目ID(5), 温度(6)
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     var cd = businessDateFromTimestamp_(row[0]);
-    if (cd === bd && row[1] === storeId && row[4] === category) {
-      ids.push(row[5]);
+    var nr = normalizeHistoryRow_(row);
+    if (cd === bd && nr.storeId === storeId && nr.category === category) {
+      ids.push(nr.itemId);
     }
   }
   return ids;
@@ -276,6 +323,13 @@ function getOmissions(storeId) {
 // ============================================================
 
 function submitChecks(payload) {
+  if (typeof payload === 'string') {
+    try {
+      payload = JSON.parse(payload);
+    } catch (e) {
+      throw new Error('送信データの形式が不正です');
+    }
+  }
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName(SHEETS.HISTORY);
   var now = new Date();
@@ -285,14 +339,15 @@ function submitChecks(payload) {
   var staffName = payload.staffName || '';
   var checked = payload.items.filter(function(i) { return i.checked; });
 
-  // 重複チェック: 同じ営業日・店舗・カテゴリの既存itemIdを収集
+  // 重複チェック: 同じ営業日・店舗・カテゴリの既存itemId（新形式・旧B列=営業日の行の両方）
   var existing = {};
   if (sheet.getLastRow() > 1) {
     var data = sheet.getDataRange().getValues();
     for (var j = 1; j < data.length; j++) {
       var rowBd = businessDateFromTimestamp_(data[j][0]);
-      if (rowBd === bd && data[j][1] === storeId && data[j][4] === payload.category) {
-        existing[data[j][5]] = true;
+      var nr = normalizeHistoryRow_(data[j]);
+      if (rowBd === bd && nr.storeId === storeId && nr.category === payload.category) {
+        existing[nr.itemId] = true;
       }
     }
   }
@@ -304,6 +359,7 @@ function submitChecks(payload) {
     if (checked[i].temperature !== undefined && checked[i].temperature !== null) {
       temp = checked[i].temperature + '°C';
     }
+    // 必ず7列・営業日列は入れない（B=店舗ID）
     rows.push([dt, storeId, payload.staffId, staffName, payload.category, checked[i].itemId, temp]);
   }
   
@@ -369,16 +425,17 @@ function getHistory(storeId, dateStr) {
   for (var j = 1; j < histData.length; j++) {
     var h = histData[j];
     var bd = businessDateFromTimestamp_(h[0]);
-    if (bd !== targetDate || h[1] !== storeId) continue;
+    var nr = normalizeHistoryRow_(h);
+    if (bd !== targetDate || nr.storeId !== storeId) continue;
 
-    var category = h[4];
+    var category = nr.category;
     if (!catMap[category]) catMap[category] = { staffNames: {}, count: 0, itemIds: {}, timingChecked: {} };
 
-    var sName = h[3] || '';
+    var sName = nr.staffName || nr.staffDisplay || '';
     if (sName) catMap[category].staffNames[sName] = true;
     catMap[category].count++;
 
-    var itemId = h[5];
+    var itemId = nr.itemId;
     catMap[category].itemIds[itemId] = true;
 
     if (category === '氷プール') {
@@ -467,11 +524,13 @@ function checkOmissions() {
   var hist = ss.getSheetByName(SHEETS.HISTORY).getDataRange().getValues();
 
   // その営業日にチェック履歴があるカテゴリを収集
-  // 7列構造: チェック日時(0), 店舗ID(1), スタッフID(2), スタッフ名(3), カテゴリ(4), 項目ID(5), 温度(6)
   var activeCategories = {};
   for (var h = 1; h < hist.length; h++) {
     var hd = businessDateFromTimestamp_(hist[h][0]);
-    if (hd === bd) activeCategories[hist[h][4]] = true;
+    if (hd === bd) {
+      var nro = normalizeHistoryRow_(hist[h]);
+      activeCategories[nro.category] = true;
+    }
   }
   if (Object.keys(activeCategories).length === 0) {
     Logger.log('営業日 ' + bd + ' のチェック履歴なし（完全定休日）。スキップ');
@@ -494,8 +553,9 @@ function checkOmissions() {
     var doneIds = {};
     for (var j = 1; j < hist.length; j++) {
       var cd = businessDateFromTimestamp_(hist[j][0]);
-      if (cd === bd && hist[j][1] === storeId) {
-        doneIds[hist[j][5]] = true;
+      var nrm = normalizeHistoryRow_(hist[j]);
+      if (cd === bd && nrm.storeId === storeId) {
+        doneIds[nrm.itemId] = true;
       }
     }
     
