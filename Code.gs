@@ -63,6 +63,15 @@ function doGet(e) {
         var payload = JSON.parse(e.parameter.data);
         result = submitChecks(payload);
         break;
+      case 'debugData':
+        var raw = e.parameter.data || '(empty)';
+        var parsed2 = JSON.parse(e.parameter.data);
+        var items2 = parsed2.items || [];
+        var debugInfo = items2.map(function(it) {
+          return { itemId: it.itemId, temperature: it.temperature, type: typeof it.temperature };
+        });
+        result = { raw_length: raw.length, items: debugInfo, first_100: raw.substring(0, 100) };
+        break;
       case 'addStaff':
         result = addStaff(e.parameter.name);
         break;
@@ -464,9 +473,12 @@ function parseKaitenDoc_(docId) {
     '1７：３０': '17:30〜',
     '17：30': '17:30〜',
     '17:30': '17:30〜',
-    '１７：５５': '17:55〜',
-    '17：55': '17:55〜',
-    '17:55': '17:55〜'
+    '１７：５０': '17:50〜',
+    '17：50': '17:50〜',
+    '17:50': '17:50〜',
+    '１７：５５': '17:50〜',
+    '17：55': '17:50〜',
+    '17:55': '17:50〜'
   };
 
   for (var i = 0; i < lines.length; i++) {
