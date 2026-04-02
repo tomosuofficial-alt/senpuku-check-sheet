@@ -320,28 +320,44 @@ function getHistory(storeId, dateStr) {
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var targetDate = dateStr || getBusinessDate_();
 
-  // チェック項目マスタ → カテゴリ別の全項目数 & 項目名マップ
+  // チェック項目マスタ → カテゴリ別の全項目数 & タイミング別項目数
   var itemSheet = ss.getSheetByName(SHEETS.ITEMS);
   var itemData = itemSheet.getDataRange().getValues();
   var categoryTotals = {};
-  var itemNameMap = {};
+  var itemTimingMap = {};
+  var timingTotals = {};
   for (var i = 1; i < itemData.length; i++) {
     var row = itemData[i];
     if (row[0] !== storeId) continue;
     if (row[6] === false || row[6] === 'FALSE') continue;
     var cat = row[1];
+    var timing = row[2] || '';
     if (!categoryTotals[cat]) categoryTotals[cat] = 0;
     categoryTotals[cat]++;
-    itemNameMap[row[3]] = row[4];
+    itemTimingMap[row[3]] = timing;
+    if (cat === '氷プール') {
+      if (!timingTotals[timing]) timingTotals[timing] = 0;
+      timingTotals[timing]++;
+    }
   }
 
   // チェック履歴 → 対象日のデータを収集
-  // 7列構造: チェック日時(0), 店舗ID(1), スタッフID(2), スタッフ名(3), カテゴリ(4), 項目ID(5), 温度(6)
   var histSheet = ss.getSheetByName(SHEETS.HISTORY);
   if (!histSheet || histSheet.getLastRow() <= 1) {
     var emptyCats = [];
-    for (var c in categoryTotals) {
-      emptyCats.push({ name: c, total: categoryTotals[c], checked: 0, staffName: null, items: [] });
+    var catOrder0 = ['開店', '閉店', 'トイレ清掃', '氷プール'];
+    for (var c0 in categoryTotals) { if (catOrder0.indexOf(c0) === -1) catOrder0.push(c0); }
+    for (var e = 0; e < catOrder0.length; e++) {
+      var cn0 = catOrder0[e];
+      if (!categoryTotals[cn0]) continue;
+      var entry = { name: cn0, type: 'standard', total: categoryTotals[cn0], checked: 0, staffName: null };
+      if (cn0 === 'トイレ清掃') {
+        entry.type = 'count';
+        entry.itemsCovered = 0;
+        entry.logCount = 0;
+      }
+      if (cn0 === '氷プール') { entry.type = 'timing'; entry.timings = []; }
+      emptyCats.push(entry);
     }
     return { date: targetDate, categories: emptyCats };
   }
@@ -355,29 +371,24 @@ function getHistory(storeId, dateStr) {
     if (bd !== targetDate || h[1] !== storeId) continue;
 
     var category = h[4];
-    if (!catMap[category]) catMap[category] = { staffNames: {}, items: [] };
-
-    var timeStr = '';
-    if (h[0] instanceof Date) {
-      timeStr = Utilities.formatDate(h[0], 'Asia/Tokyo', 'HH:mm');
-    } else {
-      var match = String(h[0]).match(/(\d{2}:\d{2})/);
-      if (match) timeStr = match[1];
-    }
+    if (!catMap[category]) catMap[category] = { staffNames: {}, count: 0, itemIds: {}, timingChecked: {} };
 
     var sName = h[3] || '';
     if (sName) catMap[category].staffNames[sName] = true;
+    catMap[category].count++;
 
-    catMap[category].items.push({
-      itemId: h[5],
-      name: itemNameMap[h[5]] || h[5],
-      time: timeStr,
-      staffName: sName,
-      temperature: h[6] || ''
-    });
+    var itemId = h[5];
+    catMap[category].itemIds[itemId] = true;
+
+    if (category === '氷プール') {
+      var t = itemTimingMap[itemId] || '';
+      if (t) {
+        if (!catMap[category].timingChecked[t]) catMap[category].timingChecked[t] = 0;
+        catMap[category].timingChecked[t]++;
+      }
+    }
   }
 
-  // カテゴリ別にまとめる
   var categories = [];
   var catOrder = ['開店', '閉店', 'トイレ清掃', '氷プール'];
   for (var c in categoryTotals) {
@@ -387,15 +398,46 @@ function getHistory(storeId, dateStr) {
   for (var k = 0; k < catOrder.length; k++) {
     var cn = catOrder[k];
     if (!categoryTotals[cn]) continue;
-    var info = catMap[cn] || { staffNames: {}, items: [] };
+    var info = catMap[cn] || { staffNames: {}, count: 0, itemIds: {}, timingChecked: {} };
     var staffArr = Object.keys(info.staffNames);
-    categories.push({
-      name: cn,
-      total: categoryTotals[cn],
-      checked: info.items.length,
-      staffName: staffArr.length > 0 ? staffArr.join(', ') : null,
-      items: info.items
-    });
+
+    if (cn === 'トイレ清掃') {
+      var toiletUnique = Object.keys(info.itemIds).length;
+      categories.push({
+        name: cn,
+        type: 'count',
+        total: categoryTotals[cn],
+        itemsCovered: toiletUnique,
+        logCount: info.count,
+        staffName: staffArr.length > 0 ? staffArr.join(', ') : null
+      });
+    } else if (cn === '氷プール') {
+      var timingOrder = ['出勤時', '22時', '退勤時'];
+      var timings = [];
+      for (var ti = 0; ti < timingOrder.length; ti++) {
+        var tn = timingOrder[ti];
+        var total = timingTotals[tn] || 0;
+        if (total === 0) continue;
+        var done = info.timingChecked[tn] || 0;
+        timings.push({ name: tn, total: total, checked: done });
+      }
+      categories.push({
+        name: cn,
+        type: 'timing',
+        total: categoryTotals[cn],
+        checked: Object.keys(info.itemIds).length,
+        staffName: staffArr.length > 0 ? staffArr.join(', ') : null,
+        timings: timings
+      });
+    } else {
+      categories.push({
+        name: cn,
+        type: 'standard',
+        total: categoryTotals[cn],
+        checked: Object.keys(info.itemIds).length,
+        staffName: staffArr.length > 0 ? staffArr.join(', ') : null
+      });
+    }
   }
 
   return { date: targetDate, categories: categories };
