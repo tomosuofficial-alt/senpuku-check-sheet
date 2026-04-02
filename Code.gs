@@ -194,8 +194,8 @@ function getCheckItems(storeId) {
 }
 
 // ============================================================
-// チェック履歴 (storeId 対応 & 7カラム構成)
-// A: チェック日時  B: storeId  C: staffId  D: スタッフ名  E: category  F: itemId  G: comment
+// チェック履歴 (7カラム構成)
+// A: チェック日時  B: 店舗ID  C: staffId  D: スタッフ名  E: category  F: itemId  G: 温度
 // ============================================================
 
 function getBusinessDate_() {
@@ -225,7 +225,7 @@ function getTodayChecked(storeId, category) {
   var data = sheet.getDataRange().getValues();
   var bd = getBusinessDate_();
   var ids = [];
-  // 7列構造: timestamp(0), storeId(1), staffId(2), staffName(3), category(4), itemId(5), comment(6)
+  // 7列構造: チェック日時(0), 店舗ID(1), staffId(2), スタッフ名(3), category(4), itemId(5), 温度(6)
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     var cd = businessDateFromTimestamp_(row[0]);
@@ -318,7 +318,7 @@ function checkOmissions() {
   var hist = ss.getSheetByName(SHEETS.HISTORY).getDataRange().getValues();
 
   // その営業日にチェック履歴があるカテゴリを収集
-  // 7列構造: timestamp(0), storeId(1), staffId(2), staffName(3), category(4), itemId(5), comment(6)
+  // 7列構造: チェック日時(0), 店舗ID(1), staffId(2), スタッフ名(3), category(4), itemId(5), 温度(6)
   var activeCategories = {};
   for (var h = 1; h < hist.length; h++) {
     var hd = businessDateFromTimestamp_(hist[h][0]);
