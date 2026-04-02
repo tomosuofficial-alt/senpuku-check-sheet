@@ -1548,9 +1548,30 @@
         .catch(function(e) { clearTimeout(timer); throw e; });
     }
 
-    /** チェック送信（GET で JSON を data パラメータに載せる） */
+    /**
+     * チェック送信は POST のみ（GET に data を載せると URL 長制限で Failed to fetch になる）
+     */
     function submitChecksRequest(payload) {
-      return api('submitChecks', { data: JSON.stringify(payload) });
+      var ctrl = new AbortController();
+      var timer = setTimeout(function () { ctrl.abort(); }, 60000);
+      return fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        signal: ctrl.signal,
+        body: JSON.stringify({
+          action: 'submitChecks',
+          apiKey: API_KEY,
+          data: payload
+        })
+      })
+        .then(function (r) {
+          clearTimeout(timer);
+          return r.json();
+        })
+        .catch(function (e) {
+          clearTimeout(timer);
+          throw e;
+        });
     }
 
     // ===== Local preview mode =====
