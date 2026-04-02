@@ -1246,9 +1246,9 @@
     .history-date-tab {
       padding: 6px 14px;
       border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.6);
+      border: 1px solid rgba(0,0,0,0.1);
+      background: rgba(0,0,0,0.04);
+      color: rgba(0,0,0,0.5);
       font-size: 0.8rem;
       font-weight: 600;
       white-space: nowrap;
@@ -1256,9 +1256,9 @@
       transition: all 0.2s;
     }
     .history-date-tab.active {
-      background: rgba(0,122,255,0.3);
-      border-color: rgba(0,122,255,0.5);
-      color: #ffffff;
+      background: rgba(0,122,255,0.12);
+      border-color: rgba(0,122,255,0.3);
+      color: #007AFF;
     }
     .history-content {
       flex: 1;
@@ -1267,7 +1267,7 @@
     }
     .history-loading {
       text-align: center;
-      color: rgba(255,255,255,0.5);
+      color: rgba(0,0,0,0.4);
       padding: 40px 0;
       font-size: 0.9rem;
     }
@@ -1275,16 +1275,14 @@
       margin-bottom: 16px;
       border-radius: 14px;
       overflow: hidden;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.03);
+      border: 1px solid rgba(0,0,0,0.06);
     }
     .history-cat-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 12px 14px;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
     }
     .history-cat-left {
       display: flex;
@@ -1308,11 +1306,11 @@
     .history-cat-name {
       font-size: 0.9rem;
       font-weight: 600;
-      color: #ffffff;
+      color: #1a1a1a;
     }
     .history-cat-meta {
       font-size: 0.75rem;
-      color: rgba(255,255,255,0.45);
+      color: rgba(0,0,0,0.45);
       margin-top: 2px;
     }
     .history-cat-badge {
@@ -1333,48 +1331,23 @@
       background: rgba(255,59,48,0.15);
       color: #FF3B30;
     }
-    .history-items {
-      display: none;
-      border-top: 1px solid rgba(255,255,255,0.06);
-    }
-    .history-items.open {
-      display: block;
-    }
-    .history-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 14px 8px 52px;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      font-size: 0.8rem;
-    }
-    .history-item:last-child { border-bottom: none; }
-    .history-item-name {
-      color: rgba(255,255,255,0.75);
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .history-item-time {
-      color: rgba(255,255,255,0.35);
-      font-size: 0.75rem;
-      margin-left: 8px;
-      white-space: nowrap;
-    }
-    .history-item-staff {
-      color: rgba(255,255,255,0.35);
-      font-size: 0.75rem;
-      margin-left: 8px;
-      white-space: nowrap;
-    }
     .history-empty {
       text-align: center;
-      color: rgba(255,255,255,0.3);
+      color: rgba(0,0,0,0.3);
       padding: 30px 0;
       font-size: 0.85rem;
     }
+    .history-legend {
+      font-size: 0.68rem;
+      line-height: 1.45;
+      color: rgba(0,0,0,0.45);
+      margin: -4px 0 12px 0;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .history-legend strong { color: #1a1a1a; font-weight: 700; }
   </style>
 </head>
 
@@ -1485,7 +1458,7 @@
         </div>
       </div>
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.1);">
-        <button class="manual-link" id="appManualBtn" style="width:100%;padding:12px;font-size:0.9rem;">アプリ操作マニュアルを開く</button>
+        <button class="manual-link" id="appManualBtn" style="width:100%;padding:12px;font-size:0.9rem;color:#1a1a1a;">アプリ操作マニュアルを開く</button>
       </div>
     </div>
   </div>
@@ -1530,6 +1503,7 @@
       <div class="modal-handle"></div>
       <button class="modal-close" id="closeHistory">&times;</button>
       <div class="modal-title">チェック履歴</div>
+      <p class="history-legend">右のバッジは <strong>完了</strong>（その日の基準どおり）・<strong>一部</strong>（不足あり）・<strong>未実施</strong>（記録なし）。トイレ清掃の <strong>項目○/○</strong> は、マスタのチェック項目のうち当日ログが付いた件数です（下の回数は実施記録の合計）。</p>
       <div class="history-date-tabs" id="historyDateTabs"></div>
       <div class="history-content" id="historyContent">
         <div class="history-loading">読み込み中...</div>
@@ -2196,13 +2170,76 @@
       });
     }
 
+    function getLocalDummyHistory() {
+      var dates = getRecentDates();
+      var map = {};
+      map[dates[0]] = {
+        date: dates[0],
+        categories: [
+          { name: '開店', type: 'standard', total: 36, checked: 36, staffName: '田中太郎' },
+          { name: '閉店', type: 'standard', total: 30, checked: 22, staffName: '佐藤花子' },
+          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 8, logCount: 42, staffName: '田中太郎, 佐藤花子' },
+          { name: '氷プール', type: 'timing', total: 9, checked: 9, staffName: '田中太郎',
+            timings: [
+              { name: '出勤時', total: 3, checked: 3 },
+              { name: '22時', total: 3, checked: 3 },
+              { name: '退勤時', total: 3, checked: 3 }
+            ]
+          }
+        ]
+      };
+      map[dates[1]] = {
+        date: dates[1],
+        categories: [
+          { name: '開店', type: 'standard', total: 36, checked: 36, staffName: '鈴木一郎' },
+          { name: '閉店', type: 'standard', total: 30, checked: 30, staffName: '鈴木一郎' },
+          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 6, logCount: 30, staffName: '佐藤花子' },
+          { name: '氷プール', type: 'timing', total: 9, checked: 6, staffName: '鈴木一郎',
+            timings: [
+              { name: '出勤時', total: 3, checked: 3 },
+              { name: '22時', total: 3, checked: 3 },
+              { name: '退勤時', total: 3, checked: 0 }
+            ]
+          }
+        ]
+      };
+      map[dates[2]] = {
+        date: dates[2],
+        categories: [
+          { name: '開店', type: 'standard', total: 36, checked: 0, staffName: null },
+          { name: '閉店', type: 'standard', total: 30, checked: 0, staffName: null },
+          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 0, logCount: 0, staffName: null },
+          { name: '氷プール', type: 'timing', total: 9, checked: 0, staffName: null,
+            timings: [
+              { name: '出勤時', total: 3, checked: 0 },
+              { name: '22時', total: 3, checked: 0 },
+              { name: '退勤時', total: 3, checked: 0 }
+            ]
+          }
+        ]
+      };
+      return map;
+    }
+
     function loadHistory() {
       els.historyContent.innerHTML = '<div class="history-loading">読み込み中...</div>';
+      if (IS_LOCAL) {
+        var dummyMap = getLocalDummyHistory();
+        renderHistory(dummyMap[historySelectedDate] || { date: historySelectedDate, categories: [] });
+        return;
+      }
       api('getHistory', { date: historySelectedDate }).then(function (data) {
         renderHistory(data);
       }).catch(function () {
         els.historyContent.innerHTML = '<div class="history-empty">データの取得に失敗しました</div>';
       });
+    }
+
+    /** 管理者向け: 完了 / 一部 / 未実施 の三段階 */
+    function historyStatusBadge(done, partial) {
+      if (done) return { label: '完了', cls: 'done', sym: '✓' };
+      if (partial) return { label: '一部', cls: 'partial', sym: '…' };
+      return { label: '未実施', cls: 'none', sym: '−' };
     }
 
     function renderHistory(data) {
@@ -2211,53 +2248,77 @@
         return;
       }
       var html = '';
-      data.categories.forEach(function (cat, idx) {
-        var pct = cat.total > 0 ? Math.round(cat.checked / cat.total * 100) : 0;
-        var status, iconCls, badgeCls, badgeText;
-        if (cat.checked === 0) {
-          status = 'none'; iconCls = 'none'; badgeCls = 'none'; badgeText = '未実施';
-        } else if (cat.checked >= cat.total) {
-          status = 'done'; iconCls = 'done'; badgeCls = 'done'; badgeText = '完了';
-        } else {
-          status = 'partial'; iconCls = 'partial'; badgeCls = 'partial'; badgeText = cat.checked + '/' + cat.total;
-        }
-        var iconSymbol = status === 'done' ? '✓' : status === 'partial' ? '…' : '−';
+      data.categories.forEach(function (cat) {
+        var type = cat.type || 'standard';
 
-        html += '<div class="history-category">';
-        html += '<div class="history-cat-header" data-idx="' + idx + '">';
-        html += '<div class="history-cat-left">';
-        html += '<div class="history-cat-icon ' + iconCls + '">' + iconSymbol + '</div>';
-        html += '<div><div class="history-cat-name">' + esc(cat.name) + '</div>';
-        html += '<div class="history-cat-meta">';
-        if (cat.staffName) html += '担当: ' + esc(cat.staffName);
-        if (cat.checked > 0) html += (cat.staffName ? ' ・ ' : '') + cat.checked + '/' + cat.total + '項目';
-        html += '</div></div></div>';
-        html += '<span class="history-cat-badge ' + badgeCls + '">' + badgeText + '</span>';
-        html += '</div>';
+        if (type === 'count') {
+          var cov = cat.itemsCovered != null ? cat.itemsCovered : 0;
+          var logs = cat.logCount != null ? cat.logCount : 0;
+          var t = cat.total || 0;
+          var isDone = t > 0 && cov >= t;
+          var isPartial = cov > 0 && cov < t;
+          var st = historyStatusBadge(isDone, isPartial);
+          html += '<div class="history-category">';
+          html += '<div class="history-cat-header">';
+          html += '<div class="history-cat-left">';
+          html += '<div class="history-cat-icon ' + st.cls + '">' + st.sym + '</div>';
+          html += '<div><div class="history-cat-name">' + esc(cat.name) + '</div>';
+          html += '<div class="history-cat-meta">';
+          html += '項目 ' + cov + '/' + t;
+          if (logs > 0) html += ' ・ 記録' + logs + '回';
+          if (cat.staffName) html += ' ・ 実施者: ' + esc(cat.staffName);
+          html += '</div></div></div>';
+          html += '<span class="history-cat-badge ' + st.cls + '">' + st.label + '</span>';
+          html += '</div></div>';
 
-        html += '<div class="history-items" id="histItems' + idx + '">';
-        if (cat.items.length === 0) {
-          html += '<div class="history-item"><span class="history-item-name" style="color:rgba(255,255,255,0.3)">チェック記録なし</span></div>';
-        } else {
-          cat.items.forEach(function (item) {
-            html += '<div class="history-item">';
-            html += '<span class="history-item-name">' + esc(item.name) + '</span>';
-            if (item.temperature) html += '<span class="history-item-time">' + esc(item.temperature) + '</span>';
-            if (item.time) html += '<span class="history-item-time">' + item.time + '</span>';
+        } else if (type === 'timing') {
+          var allDone = cat.timings && cat.timings.length > 0 && cat.timings.every(function (x) { return x.checked >= x.total; });
+          var anyDone = cat.timings && cat.timings.some(function (x) { return x.checked > 0; });
+          var st2 = historyStatusBadge(allDone, anyDone && !allDone);
+          html += '<div class="history-category">';
+          html += '<div class="history-cat-header">';
+          html += '<div class="history-cat-left">';
+          html += '<div class="history-cat-icon ' + st2.cls + '">' + st2.sym + '</div>';
+          html += '<div><div class="history-cat-name">' + esc(cat.name) + '</div>';
+          html += '<div class="history-cat-meta">';
+          if (cat.staffName) html += '実施者: ' + esc(cat.staffName);
+          html += '</div></div></div>';
+          html += '<span class="history-cat-badge ' + st2.cls + '">' + st2.label + '</span>';
+          html += '</div>';
+          if (cat.timings && cat.timings.length > 0) {
+            html += '<div style="display:flex;gap:6px;padding:0 14px 12px 52px;flex-wrap:wrap;">';
+            cat.timings.forEach(function (t) {
+              var td = t.checked >= t.total;
+              var cls = td ? 'done' : t.checked > 0 ? 'partial' : 'none';
+              html += '<span class="history-cat-badge ' + cls + '" style="font-size:0.7rem;">';
+              html += esc(t.name) + ' ' + (td ? '✓' : t.checked + '/' + t.total);
+              html += '</span>';
+            });
             html += '</div>';
-          });
+          }
+          html += '</div>';
+
+        } else {
+          var chk = cat.checked || 0;
+          var tot = cat.total || 0;
+          var sDone = tot > 0 && chk >= tot;
+          var sPartial = chk > 0 && chk < tot;
+          var st3 = historyStatusBadge(sDone, sPartial);
+          html += '<div class="history-category">';
+          html += '<div class="history-cat-header">';
+          html += '<div class="history-cat-left">';
+          html += '<div class="history-cat-icon ' + st3.cls + '">' + st3.sym + '</div>';
+          html += '<div><div class="history-cat-name">' + esc(cat.name) + '</div>';
+          html += '<div class="history-cat-meta">';
+          if (cat.staffName) html += '実施者: ' + esc(cat.staffName);
+          html += (cat.staffName ? ' ・ ' : '') + chk + '/' + tot + '項目';
+          html += '</div></div></div>';
+          html += '<span class="history-cat-badge ' + st3.cls + '">' + st3.label + '</span>';
+          html += '</div></div>';
         }
-        html += '</div></div>';
       });
 
       els.historyContent.innerHTML = html;
-
-      els.historyContent.querySelectorAll('.history-cat-header').forEach(function (hdr) {
-        hdr.addEventListener('click', function () {
-          var items = document.getElementById('histItems' + this.dataset.idx);
-          if (items) items.classList.toggle('open');
-        });
-      });
     }
 
     function renderStaffListModal() {
