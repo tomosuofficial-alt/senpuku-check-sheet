@@ -172,14 +172,51 @@
       backdrop-filter: blur(var(--blur-heavy));
       -webkit-backdrop-filter: blur(var(--blur-heavy));
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      padding: 14px 16px;
+      padding: 14px max(12px, env(safe-area-inset-right)) 14px max(12px, env(safe-area-inset-left));
       padding-top: max(14px, env(safe-area-inset-top));
     }
 
     .header-top {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
+      gap: 6px;
+      min-height: 48px;
+    }
+
+    .header-left {
+      justify-self: start;
+      min-width: 0;
+    }
+
+    .header-left .date-time {
+      line-height: 1.2;
+      word-break: keep-all;
+    }
+
+    .header-center {
+      justify-self: center;
+      flex-shrink: 0;
+      max-width: min(42vw, 160px);
+    }
+
+    .header-center img {
+      display: block;
+      height: 44px;
+      width: auto;
+      max-width: 100%;
+      margin: 0 auto;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .header-right {
+      justify-self: end;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
     }
 
     .header h1 {
@@ -1374,15 +1411,19 @@
 
   <div class="app-shell">
     <div class="header">
-      <div class="header-top" style="position: relative;">
-        <div class="date-time" id="dateTime" style="font-size: 0.85rem; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,0.4);"></div>
-        <img src="logo_header.png" alt="千福" id="logoHeader" style="height:48px; width:auto; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3)); cursor:pointer; -webkit-tap-highlight-color:transparent;">
-        <div style="display:flex;align-items:center;gap:6px;">
-          <button class="help-btn" id="historyBtn" style="font-size:14px;line-height:1;">
+      <div class="header-top">
+        <div class="header-left">
+          <div class="date-time" id="dateTime" style="font-size: 0.85rem; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,0.4);"></div>
+        </div>
+        <div class="header-center">
+          <img src="logo_header.png" alt="千福" id="logoHeader">
+        </div>
+        <div class="header-right">
+          <button class="help-btn" id="historyBtn" type="button" aria-label="チェック履歴" style="font-size:14px;line-height:1;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </button>
-          <button class="help-btn" id="helpBtn">?</button>
-          <button class="settings-btn" id="settingsBtn">
+          <button class="help-btn" id="helpBtn" type="button" aria-label="ヘルプ">?</button>
+          <button class="settings-btn" id="settingsBtn" type="button" aria-label="設定">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="3" />
               <path
