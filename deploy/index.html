@@ -172,51 +172,58 @@
       backdrop-filter: blur(var(--blur-heavy));
       -webkit-backdrop-filter: blur(var(--blur-heavy));
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      padding: 14px max(12px, env(safe-area-inset-right)) 14px max(12px, env(safe-area-inset-left));
-      padding-top: max(14px, env(safe-area-inset-top));
+      padding: 10px max(12px, env(safe-area-inset-right)) 12px max(12px, env(safe-area-inset-left));
+      padding-top: max(10px, env(safe-area-inset-top));
     }
 
-    .header-top {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    /* 1行目: 日付と操作ボタンのみ（同じ行にロゴを置かない＝被り防止） */
+    .header-toolbar {
+      display: flex;
       align-items: center;
-      gap: 6px;
-      min-height: 48px;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 44px;
     }
 
-    .header-left {
-      justify-self: start;
+    .header-toolbar .date-time {
+      flex: 1;
       min-width: 0;
-    }
-
-    .header-left .date-time {
-      line-height: 1.2;
+      line-height: 1.25;
       word-break: keep-all;
     }
 
-    .header-center {
-      justify-self: center;
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 5px;
       flex-shrink: 0;
-      max-width: min(42vw, 160px);
     }
 
-    .header-center img {
+    /* 2行目: ロゴのみ中央（ボタンと縦に分離） */
+    .header-brand {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-top: 8px;
+    }
+
+    .header-brand img {
       display: block;
-      height: 44px;
+      height: 38px;
       width: auto;
-      max-width: 100%;
-      margin: 0 auto;
+      max-width: min(200px, 70vw);
       filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
 
-    .header-right {
-      justify-self: end;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
+    /* ヘッダー内の丸ボタンはややコンパクトにして3個が確実に収まる */
+    .header .help-btn,
+    .header .settings-btn {
+      min-width: 40px;
+      min-height: 40px;
+      width: 40px;
+      height: 40px;
     }
 
     .header h1 {
@@ -1411,13 +1418,8 @@
 
   <div class="app-shell">
     <div class="header">
-      <div class="header-top">
-        <div class="header-left">
-          <div class="date-time" id="dateTime" style="font-size: 0.85rem; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,0.4);"></div>
-        </div>
-        <div class="header-center">
-          <img src="logo_header.png" alt="千福" id="logoHeader">
-        </div>
+      <div class="header-toolbar">
+        <div class="date-time" id="dateTime" style="font-size: 0.85rem; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,0.4);"></div>
         <div class="header-right">
           <button class="help-btn" id="historyBtn" type="button" aria-label="チェック履歴" style="font-size:14px;line-height:1;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -1431,6 +1433,9 @@
             </svg>
           </button>
         </div>
+      </div>
+      <div class="header-brand">
+        <img src="logo_header.png" alt="千福" id="logoHeader">
       </div>
     </div>
     <div class="staff-bar">
