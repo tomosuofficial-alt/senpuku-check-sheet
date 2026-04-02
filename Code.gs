@@ -194,7 +194,8 @@ function getCheckItems(storeId) {
 }
 
 // ============================================================
-// チェック履歴 (storeId 対応 & 8カラム構成)
+// チェック履歴 (storeId 対応 & 7カラム構成)
+// A: チェック日時  B: storeId  C: staffId  D: スタッフ名  E: category  F: itemId  G: comment
 // ============================================================
 
 function getBusinessDate_() {
@@ -204,6 +205,19 @@ function getBusinessDate_() {
   return Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM-dd');
 }
 
+/** チェック日時(Date or 文字列)から営業日(yyyy-MM-dd)を算出 */
+function businessDateFromTimestamp_(ts) {
+  var d;
+  if (ts instanceof Date) {
+    d = ts;
+  } else {
+    d = new Date(String(ts));
+  }
+  var hour = parseInt(Utilities.formatDate(d, 'Asia/Tokyo', 'H'), 10);
+  if (hour < RESET_HOUR) d.setDate(d.getDate() - 1);
+  return Utilities.formatDate(d, 'Asia/Tokyo', 'yyyy-MM-dd');
+}
+
 function getTodayChecked(storeId, category) {
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName(SHEETS.HISTORY);
@@ -211,12 +225,12 @@ function getTodayChecked(storeId, category) {
   var data = sheet.getDataRange().getValues();
   var bd = getBusinessDate_();
   var ids = [];
-  // 新構造: timestamp, date, storeId, staffId, category, itemId, checked, comment
+  // 7列構造: timestamp(0), storeId(1), staffId(2), staffName(3), category(4), itemId(5), comment(6)
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
-    var cd = row[1] instanceof Date ? Utilities.formatDate(row[1], 'Asia/Tokyo', 'yyyy-MM-dd') : String(row[1]).substring(0, 10);
-    if (cd === bd && row[2] === storeId && row[4] === category && (row[6] === true || row[6] === 'TRUE')) {
-      ids.push(row[5]); // itemId
+    var cd = businessDateFromTimestamp_(row[0]);
+    if (cd === bd && row[1] === storeId && row[4] === category) {
+      ids.push(row[5]);
     }
   }
   return ids;
@@ -254,7 +268,7 @@ function getOmissions(storeId) {
 }
 
 // ============================================================
-// チェック結果送信 (8カラム構成)
+// チェック結果送信 (7カラム構成)
 // ============================================================
 
 function submitChecks(payload) {
@@ -262,22 +276,21 @@ function submitChecks(payload) {
   var sheet = ss.getSheetByName(SHEETS.HISTORY);
   var now = new Date();
   var dt = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
-  var bd = getBusinessDate_();
   var storeId = payload.storeId || 'STORE001';
+  var staffName = payload.staffName || '';
   var checked = payload.items.filter(function(i) { return i.checked; });
   var rows = [];
   
-  // 新構成: timestamp, date, storeId, staffId, category, itemId, checked, comment
   for (var i = 0; i < checked.length; i++) {
     var comment = '';
     if (checked[i].temperature !== undefined && checked[i].temperature !== null) {
       comment = checked[i].temperature + '°C';
     }
-    rows.push([dt, bd, storeId, payload.staffId, payload.category, checked[i].itemId, true, comment]);
+    rows.push([dt, storeId, payload.staffId, staffName, payload.category, checked[i].itemId, comment]);
   }
   
   if (rows.length > 0) {
-    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 8).setValues(rows);
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
   }
   return { status: 'success', count: rows.length };
 }
@@ -305,9 +318,10 @@ function checkOmissions() {
   var hist = ss.getSheetByName(SHEETS.HISTORY).getDataRange().getValues();
 
   // その営業日にチェック履歴があるカテゴリを収集
+  // 7列構造: timestamp(0), storeId(1), staffId(2), staffName(3), category(4), itemId(5), comment(6)
   var activeCategories = {};
   for (var h = 1; h < hist.length; h++) {
-    var hd = hist[h][1] instanceof Date ? Utilities.formatDate(hist[h][1], 'Asia/Tokyo', 'yyyy-MM-dd') : String(hist[h][1]).substring(0, 10);
+    var hd = businessDateFromTimestamp_(hist[h][0]);
     if (hd === bd) activeCategories[hist[h][4]] = true;
   }
   if (Object.keys(activeCategories).length === 0) {
@@ -330,8 +344,8 @@ function checkOmissions() {
     // 2. その店舗・その日の実施済み
     var doneIds = {};
     for (var j = 1; j < hist.length; j++) {
-      var cd = hist[j][1] instanceof Date ? Utilities.formatDate(hist[j][1], 'Asia/Tokyo', 'yyyy-MM-dd') : String(hist[j][1]).substring(0, 10);
-      if (cd === bd && hist[j][2] === storeId && (hist[j][6] === true || hist[j][6] === 'TRUE')) {
+      var cd = businessDateFromTimestamp_(hist[j][0]);
+      if (cd === bd && hist[j][1] === storeId) {
         doneIds[hist[j][5]] = true;
       }
     }
