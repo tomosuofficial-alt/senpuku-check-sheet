@@ -60,6 +60,7 @@ function doGet(e) {
         result = getOmissions(storeId);
         break;
       case 'submitChecks':
+        /* 互換用: 小さいペイロードのみ。通常は doPost（本文 JSON）を使用 */
         var payload = JSON.parse(e.parameter.data);
         result = submitChecks(payload);
         break;
