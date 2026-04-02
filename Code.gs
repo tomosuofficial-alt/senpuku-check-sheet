@@ -78,6 +78,9 @@ function doGet(e) {
       case 'toggleStaffStatus':
         result = toggleStaffStatus(e.parameter.staffId);
         break;
+      case 'getHistory':
+        result = getHistory(storeId, e.parameter.date || '');
+        break;
       default:
         result = { error: 'Unknown action: ' + action };
     }
@@ -307,6 +310,95 @@ function submitChecks(payload) {
     sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
   }
   return { status: 'success', count: rows.length };
+}
+
+// ============================================================
+// チェック履歴取得（アプリ内ビュー用）
+// ============================================================
+
+function getHistory(storeId, dateStr) {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var targetDate = dateStr || getBusinessDate_();
+
+  // チェック項目マスタ → カテゴリ別の全項目数 & 項目名マップ
+  var itemSheet = ss.getSheetByName(SHEETS.ITEMS);
+  var itemData = itemSheet.getDataRange().getValues();
+  var categoryTotals = {};
+  var itemNameMap = {};
+  for (var i = 1; i < itemData.length; i++) {
+    var row = itemData[i];
+    if (row[0] !== storeId) continue;
+    if (row[6] === false || row[6] === 'FALSE') continue;
+    var cat = row[1];
+    if (!categoryTotals[cat]) categoryTotals[cat] = 0;
+    categoryTotals[cat]++;
+    itemNameMap[row[3]] = row[4];
+  }
+
+  // チェック履歴 → 対象日のデータを収集
+  // 7列構造: チェック日時(0), 店舗ID(1), スタッフID(2), スタッフ名(3), カテゴリ(4), 項目ID(5), 温度(6)
+  var histSheet = ss.getSheetByName(SHEETS.HISTORY);
+  if (!histSheet || histSheet.getLastRow() <= 1) {
+    var emptyCats = [];
+    for (var c in categoryTotals) {
+      emptyCats.push({ name: c, total: categoryTotals[c], checked: 0, staffName: null, items: [] });
+    }
+    return { date: targetDate, categories: emptyCats };
+  }
+
+  var histData = histSheet.getDataRange().getValues();
+  var catMap = {};
+
+  for (var j = 1; j < histData.length; j++) {
+    var h = histData[j];
+    var bd = businessDateFromTimestamp_(h[0]);
+    if (bd !== targetDate || h[1] !== storeId) continue;
+
+    var category = h[4];
+    if (!catMap[category]) catMap[category] = { staffNames: {}, items: [] };
+
+    var timeStr = '';
+    if (h[0] instanceof Date) {
+      timeStr = Utilities.formatDate(h[0], 'Asia/Tokyo', 'HH:mm');
+    } else {
+      var match = String(h[0]).match(/(\d{2}:\d{2})/);
+      if (match) timeStr = match[1];
+    }
+
+    var sName = h[3] || '';
+    if (sName) catMap[category].staffNames[sName] = true;
+
+    catMap[category].items.push({
+      itemId: h[5],
+      name: itemNameMap[h[5]] || h[5],
+      time: timeStr,
+      staffName: sName,
+      temperature: h[6] || ''
+    });
+  }
+
+  // カテゴリ別にまとめる
+  var categories = [];
+  var catOrder = ['開店', '閉店', 'トイレ清掃', '氷プール'];
+  for (var c in categoryTotals) {
+    if (catOrder.indexOf(c) === -1) catOrder.push(c);
+  }
+
+  for (var k = 0; k < catOrder.length; k++) {
+    var cn = catOrder[k];
+    if (!categoryTotals[cn]) continue;
+    var info = catMap[cn] || { staffNames: {}, items: [] };
+    var staffArr = Object.keys(info.staffNames);
+    categories.push({
+      name: cn,
+      total: categoryTotals[cn],
+      checked: info.items.length,
+      staffName: staffArr.length > 0 ? staffArr.join(', ') : null,
+      items: info.items
+    });
+  }
+
+  return { date: targetDate, categories: categories };
 }
 
 // ============================================================
