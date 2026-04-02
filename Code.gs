@@ -195,7 +195,7 @@ function getCheckItems(storeId) {
 
 // ============================================================
 // チェック履歴 (7カラム構成)
-// A: チェック日時  B: 店舗ID  C: staffId  D: スタッフ名  E: category  F: itemId  G: 温度
+// A: チェック日時  B: 店舗ID  C: スタッフID  D: スタッフ名  E: カテゴリ  F: 項目ID  G: 温度
 // ============================================================
 
 function getBusinessDate_() {
@@ -225,7 +225,7 @@ function getTodayChecked(storeId, category) {
   var data = sheet.getDataRange().getValues();
   var bd = getBusinessDate_();
   var ids = [];
-  // 7列構造: チェック日時(0), 店舗ID(1), staffId(2), スタッフ名(3), category(4), itemId(5), 温度(6)
+  // 7列構造: チェック日時(0), 店舗ID(1), スタッフID(2), スタッフ名(3), カテゴリ(4), 項目ID(5), 温度(6)
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     var cd = businessDateFromTimestamp_(row[0]);
@@ -276,17 +276,31 @@ function submitChecks(payload) {
   var sheet = ss.getSheetByName(SHEETS.HISTORY);
   var now = new Date();
   var dt = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
+  var bd = getBusinessDate_();
   var storeId = payload.storeId || 'STORE001';
   var staffName = payload.staffName || '';
   var checked = payload.items.filter(function(i) { return i.checked; });
-  var rows = [];
-  
-  for (var i = 0; i < checked.length; i++) {
-    var comment = '';
-    if (checked[i].temperature !== undefined && checked[i].temperature !== null) {
-      comment = checked[i].temperature + '°C';
+
+  // 重複チェック: 同じ営業日・店舗・カテゴリの既存itemIdを収集
+  var existing = {};
+  if (sheet.getLastRow() > 1) {
+    var data = sheet.getDataRange().getValues();
+    for (var j = 1; j < data.length; j++) {
+      var rowBd = businessDateFromTimestamp_(data[j][0]);
+      if (rowBd === bd && data[j][1] === storeId && data[j][4] === payload.category) {
+        existing[data[j][5]] = true;
+      }
     }
-    rows.push([dt, storeId, payload.staffId, staffName, payload.category, checked[i].itemId, comment]);
+  }
+
+  var rows = [];
+  for (var i = 0; i < checked.length; i++) {
+    if (existing[checked[i].itemId]) continue;
+    var temp = '';
+    if (checked[i].temperature !== undefined && checked[i].temperature !== null) {
+      temp = checked[i].temperature + '°C';
+    }
+    rows.push([dt, storeId, payload.staffId, staffName, payload.category, checked[i].itemId, temp]);
   }
   
   if (rows.length > 0) {
@@ -318,7 +332,7 @@ function checkOmissions() {
   var hist = ss.getSheetByName(SHEETS.HISTORY).getDataRange().getValues();
 
   // その営業日にチェック履歴があるカテゴリを収集
-  // 7列構造: チェック日時(0), 店舗ID(1), staffId(2), スタッフ名(3), category(4), itemId(5), 温度(6)
+  // 7列構造: チェック日時(0), 店舗ID(1), スタッフID(2), スタッフ名(3), カテゴリ(4), 項目ID(5), 温度(6)
   var activeCategories = {};
   for (var h = 1; h < hist.length; h++) {
     var hd = businessDateFromTimestamp_(hist[h][0]);
