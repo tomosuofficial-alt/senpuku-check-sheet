@@ -1257,7 +1257,7 @@
     <div class="header">
       <div class="header-top" style="position: relative;">
         <div class="date-time" id="dateTime" style="font-size: 0.85rem; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,0.4);"></div>
-        <img src="logo_header.png" alt="千福" style="height:48px; width:auto; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3));">
+        <img src="logo_header.png" alt="千福" id="logoHeader" style="height:48px; width:auto; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3)); cursor:pointer; -webkit-tap-highlight-color:transparent;">
         <div style="display:flex;align-items:center;gap:6px;">
           <button class="help-btn" id="helpBtn">?</button>
           <button class="settings-btn" id="settingsBtn">
@@ -1479,8 +1479,8 @@
           { storeId:'STORE001', category:'開店', timing:'17:30〜', itemId:'KAI006', name:'おすすめの印刷', sortOrder:6, memo:'しっかり印刷されているか、不備はないか確認する' },
           { storeId:'STORE001', category:'開店', timing:'17:30〜', itemId:'KAI007', name:'フライヤーの火入れ', sortOrder:7, memo:'ガスのつまみを押して左に回しチャッカマンで着火させて30秒ほど待って点火' },
           { storeId:'STORE001', category:'開店', timing:'17:30〜', itemId:'KAI008', name:'ビールサーバーのセット', sortOrder:8, memo:'レバーを樽に取り付け右に回しガスを2〜2.5にセット。最初は泡しか出ないため泡がなくなるまで出し続ける' },
-          { storeId:'STORE001', category:'開店', timing:'17:55〜', itemId:'KAI009', name:'看板・提灯・街灯の点灯', sortOrder:9, memo:'' },
-          { storeId:'STORE001', category:'開店', timing:'17:55〜', itemId:'KAI010', name:'暖簾をかける', sortOrder:10, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'17:50〜', itemId:'KAI009', name:'看板・提灯・街灯の点灯', sortOrder:9, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'17:50〜', itemId:'KAI010', name:'暖簾をかける', sortOrder:10, memo:'' },
           { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI001', name:'シンク掃除', sortOrder:1, memo:'全体に洗剤をかけてスポンジで隅々まで擦り、蛇口もしっかりと擦る。水で流す。' },
           { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI002', name:'包丁・まな板・まきす消毒', sortOrder:2, memo:'ハイターでつけ置きしておき、熱湯をかけて殺菌。まきすはハンガーにかけ干す' },
           { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI003', name:'調理台・器具の清掃', sortOrder:3, memo:'アルコール・ダスターを使ってコンロやオーブン、冷蔵庫、調理台の汚れをしっかり拭く' },
@@ -1670,7 +1670,7 @@
 
       var g = {}, ord = [];
       f.forEach(function (i) { var t = i.timing || '(その他)'; if (!g[t]) { g[t] = []; ord.push(t); } g[t].push(i); });
-      var dc = { '出勤時': '#007AFF', '17:30〜': '#FF9500', '17:55〜': '#AF52DE', '閉店後': '#007AFF', '最終確認': '#FF3B30', '隔週(土)': '#34C759', '週1(土)': '#34C759', '随時': '#FF9500', '22時': '#FF9500', '退勤時': '#AF52DE' };
+      var dc = { '出勤時': '#007AFF', '17:30〜': '#FF9500', '17:50〜': '#AF52DE', '閉店後': '#007AFF', '最終確認': '#FF3B30', '隔週(土)': '#34C759', '週1(土)': '#34C759', '随時': '#FF9500', '22時': '#FF9500', '退勤時': '#AF52DE' };
 
       ord.forEach(function (timing) {
         var items = g[timing];
@@ -1904,6 +1904,11 @@
       if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
       try { var c = new (window.AudioContext || window.webkitAudioContext)(); var o = c.createOscillator(); var g = c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = 0.3; o.start(); setTimeout(function () { o.stop(); c.close(); }, 500); } catch (e) { }
     }
+
+    // ===== Logo reload =====
+    document.getElementById('logoHeader').addEventListener('click', function () {
+      location.reload();
+    });
 
     // ===== Settings =====
     els.settingsBtn.addEventListener('click', function () { renderStaffListModal(); els.settingsModal.classList.add('open'); });
