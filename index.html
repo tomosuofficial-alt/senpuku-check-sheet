@@ -1229,6 +1229,152 @@
       border: none;
       background: #fff;
     }
+
+    /* ===== History Modal ===== */
+    .history-modal {
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .history-date-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .history-date-tab {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.6);
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .history-date-tab.active {
+      background: rgba(0,122,255,0.3);
+      border-color: rgba(0,122,255,0.5);
+      color: #ffffff;
+    }
+    .history-content {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .history-loading {
+      text-align: center;
+      color: rgba(255,255,255,0.5);
+      padding: 40px 0;
+      font-size: 0.9rem;
+    }
+    .history-category {
+      margin-bottom: 16px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .history-cat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .history-cat-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .history-cat-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .history-cat-icon.done { background: rgba(52,199,89,0.3); }
+    .history-cat-icon.partial { background: rgba(255,149,0,0.3); }
+    .history-cat-icon.none { background: rgba(255,59,48,0.2); }
+    .history-cat-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #ffffff;
+    }
+    .history-cat-meta {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.45);
+      margin-top: 2px;
+    }
+    .history-cat-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+    }
+    .history-cat-badge.done {
+      background: rgba(52,199,89,0.2);
+      color: #34C759;
+    }
+    .history-cat-badge.partial {
+      background: rgba(255,149,0,0.2);
+      color: #FF9500;
+    }
+    .history-cat-badge.none {
+      background: rgba(255,59,48,0.15);
+      color: #FF3B30;
+    }
+    .history-items {
+      display: none;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .history-items.open {
+      display: block;
+    }
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px 8px 52px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.8rem;
+    }
+    .history-item:last-child { border-bottom: none; }
+    .history-item-name {
+      color: rgba(255,255,255,0.75);
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .history-item-time {
+      color: rgba(255,255,255,0.35);
+      font-size: 0.75rem;
+      margin-left: 8px;
+      white-space: nowrap;
+    }
+    .history-item-staff {
+      color: rgba(255,255,255,0.35);
+      font-size: 0.75rem;
+      margin-left: 8px;
+      white-space: nowrap;
+    }
+    .history-empty {
+      text-align: center;
+      color: rgba(255,255,255,0.3);
+      padding: 30px 0;
+      font-size: 0.85rem;
+    }
   </style>
 </head>
 
@@ -1259,6 +1405,9 @@
         <div class="date-time" id="dateTime" style="font-size: 0.85rem; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,0.4);"></div>
         <img src="logo_header.png" alt="千福" id="logoHeader" style="height:48px; width:auto; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3)); cursor:pointer; -webkit-tap-highlight-color:transparent;">
         <div style="display:flex;align-items:center;gap:6px;">
+          <button class="help-btn" id="historyBtn" style="font-size:14px;line-height:1;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </button>
           <button class="help-btn" id="helpBtn">?</button>
           <button class="settings-btn" id="settingsBtn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1376,6 +1525,18 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="historyModal">
+    <div class="modal-sheet history-modal">
+      <div class="modal-handle"></div>
+      <button class="modal-close" id="closeHistory">&times;</button>
+      <div class="modal-title">チェック履歴</div>
+      <div class="history-date-tabs" id="historyDateTabs"></div>
+      <div class="history-content" id="historyContent">
+        <div class="history-loading">読み込み中...</div>
+      </div>
+    </div>
+  </div>
+
   <div class="manual-viewer" id="manualViewer">
     <div class="manual-viewer-header">
       <span class="manual-viewer-title" id="manualViewerTitle"></span>
@@ -1460,7 +1621,12 @@
       contactName: document.getElementById('contactName'),
       contactEmail: document.getElementById('contactEmail'),
       contactMessage: document.getElementById('contactMessage'),
-      contactSubmitBtn: document.getElementById('contactSubmitBtn')
+      contactSubmitBtn: document.getElementById('contactSubmitBtn'),
+      historyBtn: document.getElementById('historyBtn'),
+      historyModal: document.getElementById('historyModal'),
+      closeHistory: document.getElementById('closeHistory'),
+      historyDateTabs: document.getElementById('historyDateTabs'),
+      historyContent: document.getElementById('historyContent')
     };
 
     function getLocalDummyData() {
@@ -1983,6 +2149,116 @@
         els.contactSubmitBtn.textContent = '送信する';
       });
     });
+
+    // ===== History Modal =====
+    els.historyBtn.addEventListener('click', function () {
+      els.historyModal.classList.add('open');
+      renderHistoryDateTabs();
+      loadHistory();
+    });
+    els.closeHistory.addEventListener('click', function () { els.historyModal.classList.remove('open'); });
+    els.historyModal.addEventListener('click', function (e) { if (e.target === els.historyModal) els.historyModal.classList.remove('open'); });
+
+    var historySelectedDate = '';
+
+    function getRecentDates() {
+      var dates = [];
+      var now = new Date();
+      var hour = now.getHours();
+      if (hour < 7) now.setDate(now.getDate() - 1);
+      for (var i = 0; i < 3; i++) {
+        var d = new Date(now);
+        d.setDate(d.getDate() - i);
+        var y = d.getFullYear();
+        var m = ('0' + (d.getMonth() + 1)).slice(-2);
+        var day = ('0' + d.getDate()).slice(-2);
+        dates.push(y + '-' + m + '-' + day);
+      }
+      return dates;
+    }
+
+    function renderHistoryDateTabs() {
+      var dates = getRecentDates();
+      if (!historySelectedDate) historySelectedDate = dates[0];
+      var labels = ['今日', '昨日', '一昨日'];
+      var html = '';
+      for (var i = 0; i < dates.length; i++) {
+        var cls = dates[i] === historySelectedDate ? ' active' : '';
+        html += '<button class="history-date-tab' + cls + '" data-date="' + dates[i] + '">' + labels[i] + '<br><span style="font-size:0.65rem;opacity:0.6">' + dates[i].substring(5) + '</span></button>';
+      }
+      els.historyDateTabs.innerHTML = html;
+      els.historyDateTabs.querySelectorAll('.history-date-tab').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          historySelectedDate = this.dataset.date;
+          renderHistoryDateTabs();
+          loadHistory();
+        });
+      });
+    }
+
+    function loadHistory() {
+      els.historyContent.innerHTML = '<div class="history-loading">読み込み中...</div>';
+      api('getHistory', { date: historySelectedDate }).then(function (data) {
+        renderHistory(data);
+      }).catch(function () {
+        els.historyContent.innerHTML = '<div class="history-empty">データの取得に失敗しました</div>';
+      });
+    }
+
+    function renderHistory(data) {
+      if (!data || !data.categories || data.categories.length === 0) {
+        els.historyContent.innerHTML = '<div class="history-empty">履歴データがありません</div>';
+        return;
+      }
+      var html = '';
+      data.categories.forEach(function (cat, idx) {
+        var pct = cat.total > 0 ? Math.round(cat.checked / cat.total * 100) : 0;
+        var status, iconCls, badgeCls, badgeText;
+        if (cat.checked === 0) {
+          status = 'none'; iconCls = 'none'; badgeCls = 'none'; badgeText = '未実施';
+        } else if (cat.checked >= cat.total) {
+          status = 'done'; iconCls = 'done'; badgeCls = 'done'; badgeText = '完了';
+        } else {
+          status = 'partial'; iconCls = 'partial'; badgeCls = 'partial'; badgeText = cat.checked + '/' + cat.total;
+        }
+        var iconSymbol = status === 'done' ? '✓' : status === 'partial' ? '…' : '−';
+
+        html += '<div class="history-category">';
+        html += '<div class="history-cat-header" data-idx="' + idx + '">';
+        html += '<div class="history-cat-left">';
+        html += '<div class="history-cat-icon ' + iconCls + '">' + iconSymbol + '</div>';
+        html += '<div><div class="history-cat-name">' + esc(cat.name) + '</div>';
+        html += '<div class="history-cat-meta">';
+        if (cat.staffName) html += '担当: ' + esc(cat.staffName);
+        if (cat.checked > 0) html += (cat.staffName ? ' ・ ' : '') + cat.checked + '/' + cat.total + '項目';
+        html += '</div></div></div>';
+        html += '<span class="history-cat-badge ' + badgeCls + '">' + badgeText + '</span>';
+        html += '</div>';
+
+        html += '<div class="history-items" id="histItems' + idx + '">';
+        if (cat.items.length === 0) {
+          html += '<div class="history-item"><span class="history-item-name" style="color:rgba(255,255,255,0.3)">チェック記録なし</span></div>';
+        } else {
+          cat.items.forEach(function (item) {
+            html += '<div class="history-item">';
+            html += '<span class="history-item-name">' + esc(item.name) + '</span>';
+            if (item.temperature) html += '<span class="history-item-time">' + esc(item.temperature) + '</span>';
+            if (item.time) html += '<span class="history-item-time">' + item.time + '</span>';
+            html += '</div>';
+          });
+        }
+        html += '</div></div>';
+      });
+
+      els.historyContent.innerHTML = html;
+
+      els.historyContent.querySelectorAll('.history-cat-header').forEach(function (hdr) {
+        hdr.addEventListener('click', function () {
+          var items = document.getElementById('histItems' + this.dataset.idx);
+          if (items) items.classList.toggle('open');
+        });
+      });
+    }
 
     function renderStaffListModal() {
       var el = els.staffListEl; el.innerHTML = '';
