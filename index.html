@@ -2206,7 +2206,7 @@
       var dates = [];
       var now = new Date();
       var hour = now.getHours();
-      if (hour < 7) now.setDate(now.getDate() - 1);
+      if (hour < 9) now.setDate(now.getDate() - 1);
       for (var i = 0; i < 3; i++) {
         var d = new Date(now);
         d.setDate(d.getDate() - i);
