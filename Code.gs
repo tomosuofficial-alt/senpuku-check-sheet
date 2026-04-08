@@ -14,7 +14,8 @@ const SHEETS = {
   OMISSIONS: '未実施チェック'
 };
 
-const RESET_HOUR = 7;
+// 営業時間: 18:00-29:00（翌朝5:00）。チェックタイムは 33:00（翌朝9:00）まで当日扱い。
+const RESET_HOUR = 9;
 /** スクリプトプロパティ API_KEY 未設定時のフォールバック（プロパティに移行推奨） */
 const API_KEY = 'senpuku-secret-key-2024';
 
