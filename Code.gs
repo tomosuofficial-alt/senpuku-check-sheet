@@ -87,6 +87,9 @@ function doGet(e) {
       case 'getKaitenConfirmationStatus':
         result = getKaitenConfirmationStatus(storeId);
         break;
+      case 'getConfirmationStatus':
+        result = getConfirmationStatus(storeId, e.parameter.category || '開店');
+        break;
       default:
         result = { error: 'Unknown action: ' + action };
     }
@@ -479,6 +482,14 @@ function getHistory(storeId, dateStr) {
       if (t) {
         if (!catMap[category].timingChecked[t]) catMap[category].timingChecked[t] = 0;
         catMap[category].timingChecked[t]++;
+        if (!catMap[category].timingStaff) catMap[category].timingStaff = {};
+        if (sName) catMap[category].timingStaff[t] = sName;
+        // 温度データを収集
+        var tempVal = nr.temp || '';
+        if (tempVal && tempVal !== '0' && tempVal.indexOf('°C') !== -1 || (!isNaN(parseFloat(tempVal)) && parseFloat(tempVal) !== 0)) {
+          if (!catMap[category].timingTemp) catMap[category].timingTemp = {};
+          catMap[category].timingTemp[t] = tempVal.replace('°C', '') + '°C';
+        }
       }
     }
   }
@@ -533,7 +544,9 @@ function getHistory(storeId, dateStr) {
         var total = timingTotals[tn] || 0;
         if (total === 0) continue;
         var done = info.timingChecked[tn] || 0;
-        timings.push({ name: tn, total: total, checked: done });
+        var tStaff = (info.timingStaff && info.timingStaff[tn]) ? info.timingStaff[tn] : '';
+        var tTemp = (info.timingTemp && info.timingTemp[tn]) ? info.timingTemp[tn] : '';
+        timings.push({ name: tn, total: total, checked: done, staff: tStaff, temperature: tTemp });
       }
       categories.push({
         name: cn,
@@ -554,53 +567,76 @@ function getHistory(storeId, dateStr) {
     }
   }
 
+  // 確認履歴から開店チェックの確認者を取得
+  var confSheet = ss.getSheetByName(SHEETS.CONFIRMATIONS);
+  var confirmerNames = {};
+  if (confSheet && confSheet.getLastRow() > 1) {
+    var confData = confSheet.getDataRange().getValues();
+    for (var ci = 1; ci < confData.length; ci++) {
+      var cr = confData[ci];
+      var confDate = businessDateFromTimestamp_(cr[0]);
+      if (confDate !== targetDate) continue;
+      if (String(cr[1]) !== storeId) continue;
+      var confCat = cr[4] || '';
+      var confName = cr[3] || '';
+      if (confName) confirmerNames[confCat] = confName;
+    }
+  }
+  // カテゴリにconfirmerNameを付与
+  for (var ci2 = 0; ci2 < categories.length; ci2++) {
+    if (confirmerNames[categories[ci2].name]) {
+      categories[ci2].confirmerName = confirmerNames[categories[ci2].name];
+    }
+  }
+
   return { date: targetDate, categories: categories };
 }
 
 // ============================================================
-// 開店チェック確認ステータス取得
+// チェック確認ステータス取得（開店・閉店共通）
 // ============================================================
 
-function getKaitenConfirmationStatus(storeId) {
+function getConfirmationStatus(storeId, category) {
+  category = category || '開店';
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var bd = getBusinessDate_();
 
-  // 1. 開店カテゴリの有効項目をマスタから取得
+  // 1. 対象カテゴリの有効項目をマスタから取得
   var itemSheet = ss.getSheetByName(SHEETS.ITEMS);
   var itemData = itemSheet.getDataRange().getValues();
-  var kaitenItems = [];
+  var targetItems = [];
   for (var i = 1; i < itemData.length; i++) {
     var row = itemData[i];
     if (row[0] !== storeId) continue;
-    if (row[1] !== '開店') continue;
+    if (row[1] !== category) continue;
     if (row[6] === false || row[6] === 'FALSE') continue;
-    kaitenItems.push({ itemId: row[3], name: row[4], memo: row[5] || '' });
+    targetItems.push({ itemId: row[3], name: row[4], memo: row[5] || '' });
   }
 
-  // 2. 当日のチェック履歴（開店）を取得
+  // 2. 当日のチェック履歴を取得
   var histSheet = ss.getSheetByName(SHEETS.HISTORY);
-  var checkedMap = {}; // itemId -> { staffName }
+  var checkedMap = {};
   if (histSheet && histSheet.getLastRow() > 1) {
     var histData = histSheet.getDataRange().getValues();
     for (var j = 1; j < histData.length; j++) {
       var hRow = histData[j];
       var hBd = businessDateFromTimestamp_(hRow[0]);
       var nr = normalizeHistoryRow_(hRow);
-      if (hBd === bd && nr.storeId === storeId && nr.category === '開店') {
+      if (hBd === bd && nr.storeId === storeId && nr.category === category) {
         checkedMap[nr.itemId] = { staffName: nr.staffName || nr.staffDisplay || '' };
       }
     }
   }
 
-  // 3. 当日の確認履歴（開店）を取得
+  // 3. 当日の確認履歴を取得
   var confSheet = ss.getSheetByName(SHEETS.CONFIRMATIONS);
-  var confirmedMap = {}; // itemId -> { confirmerName, confirmedAt }
+  var confirmedMap = {};
   if (confSheet && confSheet.getLastRow() > 1) {
     var confData = confSheet.getDataRange().getValues();
     for (var k = 1; k < confData.length; k++) {
       var cRow = confData[k];
       var cBd = businessDateFromTimestamp_(cRow[0]);
-      if (cBd === bd && cRow[1] === storeId && cRow[4] === '開店') {
+      if (cBd === bd && cRow[1] === storeId && cRow[4] === category) {
         confirmedMap[cRow[5]] = {
           confirmerName: cRow[3] || '',
           confirmedAt: cRow[0] instanceof Date
@@ -614,8 +650,8 @@ function getKaitenConfirmationStatus(storeId) {
 
   // 4. 各項目の状態をまとめて返す
   var items = [];
-  for (var m = 0; m < kaitenItems.length; m++) {
-    var it = kaitenItems[m];
+  for (var m = 0; m < targetItems.length; m++) {
+    var it = targetItems[m];
     var chk = checkedMap[it.itemId];
     var cnf = confirmedMap[it.itemId];
     items.push({
@@ -633,8 +669,13 @@ function getKaitenConfirmationStatus(storeId) {
   return { date: bd, items: items };
 }
 
+// 後方互換: 既存トリガー等から呼ばれる場合
+function getKaitenConfirmationStatus(storeId) {
+  return getConfirmationStatus(storeId, '開店');
+}
+
 // ============================================================
-// 開店チェック確認送信
+// チェック確認送信（開店・閉店共通）
 // ============================================================
 
 function submitConfirmation(data) {
@@ -644,6 +685,7 @@ function submitConfirmation(data) {
   var staffId = data.staffId || '';
   var staffName = data.staffName || '';
   var itemId = data.itemId || '';
+  var category = data.category || '開店';
   var status = data.status || 'confirmed';
 
   // 確認履歴シートを取得または作成
@@ -674,7 +716,7 @@ function submitConfirmation(data) {
       var hRow = histData[j];
       var hBd = businessDateFromTimestamp_(hRow[0]);
       var nr = normalizeHistoryRow_(hRow);
-      if (hBd === bd && nr.storeId === storeId && nr.category === '開店' && nr.itemId === itemId) {
+      if (hBd === bd && nr.storeId === storeId && nr.category === category && nr.itemId === itemId) {
         checkerName = nr.staffName || nr.staffDisplay || '';
         break;
       }
@@ -682,7 +724,7 @@ function submitConfirmation(data) {
   }
 
   // 確認履歴に追記
-  confSheet.appendRow([new Date(), storeId, staffId, staffName, '開店', itemId, status, checkerName]);
+  confSheet.appendRow([new Date(), storeId, staffId, staffName, category, itemId, status, checkerName]);
 
   return { ok: true };
 }
@@ -1139,14 +1181,60 @@ function notifyIncompleteChecks_(timeLabel, checks) {
     }
   }
 
-  if (incomplete.length > 0) {
-    var dateLabel = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'M月d日');
-    var msg = '⚠ ' + dateLabel + ' チェック未完了通知（' + timeLabel + '）\n\n' + incomplete.join('\n');
+  // トイレ清掃の未実施時間帯を取得
+  var toiletMissed = getToiletMissedSlots_(storeId, bd, histData);
+
+  if (incomplete.length > 0 || toiletMissed.length > 0) {
+    var now = new Date();
+    var dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+    var dateLabel = Utilities.formatDate(now, 'Asia/Tokyo', 'M月d日') + '(' + dayNames[now.getDay()] + ')';
+    var msg = '⚠ ' + dateLabel + ' チェック未完了通知（' + timeLabel + '）\n\n';
+    if (incomplete.length > 0) {
+      msg += incomplete.join('\n');
+    }
+    if (toiletMissed.length > 0) {
+      msg += '\n\nトイレ清掃 未実施時間帯:\n' + toiletMissed.join(', ');
+    }
     sendLineToAll_(msg);
     Logger.log('通知送信: ' + msg);
   } else {
     Logger.log(timeLabel + ' 時点で全チェック完了');
   }
+}
+
+/**
+ * トイレ清掃の未実施時間帯を取得
+ */
+function getToiletMissedSlots_(storeId, bd, histData) {
+  // 現在時刻から判定する時間帯
+  var now = new Date();
+  var currentHour = parseInt(Utilities.formatDate(now, 'Asia/Tokyo', 'H'), 10);
+  var currentLogical = currentHour < 9 ? currentHour + 24 : currentHour;
+
+  var slotOrder = [18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4];
+  var doneHours = {};
+
+  for (var i = 1; i < histData.length; i++) {
+    var h = histData[i];
+    var hbd = businessDateFromTimestamp_(h[0]);
+    var nr = normalizeHistoryRow_(h);
+    if (hbd !== bd || nr.storeId !== storeId || nr.category !== 'トイレ清掃') continue;
+    var ts = h[0];
+    var d = (ts instanceof Date) ? ts : new Date(String(ts));
+    var hh = parseInt(Utilities.formatDate(d, 'Asia/Tokyo', 'H'), 10);
+    doneHours[hh] = true;
+  }
+
+  var missed = [];
+  for (var s = 0; s < slotOrder.length; s++) {
+    var slot = slotOrder[s];
+    var slotLogical = slot < 9 ? slot + 24 : slot;
+    if (slotLogical >= currentLogical) break; // 未来のスロットはスキップ
+    if (!doneHours[slot]) {
+      missed.push((slot < 10 ? '0' : '') + slot + ':00');
+    }
+  }
+  return missed;
 }
 
 /** テスト用: LINE通知の動作確認（全員に送信） */
