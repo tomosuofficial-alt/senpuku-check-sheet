@@ -160,8 +160,19 @@ function doPost(e) {
         }
         result = submitPhotoCheck(ppdata);
         break;
+      case 'submitTemperaturePhoto':
+        var ptdata = body.data;
+        if (typeof ptdata === 'string') {
+          try {
+            ptdata = JSON.parse(ptdata);
+          } catch (e5) {
+            throw new Error('data の JSON が不正です');
+          }
+        }
+        result = submitTemperaturePhoto(ptdata);
+        break;
       default:
-        result = { error: 'POST は submitChecks / submitConfirmation / submitPhotoCheck のみ対応しています' };
+        result = { error: 'Unknown POST action: ' + action };
     }
   } catch (err) {
     result = { error: err.message };
@@ -1393,6 +1404,187 @@ function verifyPhotoWithAI_(base64Data, itemName, category) {
     Logger.log('JSON parse error: ' + e2.message + ' / text: ' + text);
     return { result: 'NG', reason: 'AI応答の解析に失敗', confidence: 0 };
   }
+}
+
+/**
+ * Claude Haiku Vision API で温度計の写真からOCR読み取り
+ * @param {string} base64Data - Base64画像データ
+ * @returns {{ temperature: number|null, unit: string, confidence: number, reason: string }}
+ */
+function readTemperatureWithAI_(base64Data) {
+  var claudeApiKey = PropertiesService.getScriptProperties().getProperty('CLAUDE_API_KEY');
+  if (!claudeApiKey) {
+    throw new Error('CLAUDE_API_KEY がスクリプトプロパティに設定されていません');
+  }
+
+  var raw = base64Data.replace(/^data:image\/\w+;base64,/, '');
+  var mediaType = 'image/jpeg';
+  if (base64Data.indexOf('data:image/png') === 0) mediaType = 'image/png';
+
+  var prompt = '飲食店の氷プール温度管理用の写真です。温度計（デジタルまたはアナログ）の表示を読み取ってください。\n\n'
+    + '読み取り手順:\n'
+    + '1. 写真内の温度計・温度表示を特定する\n'
+    + '2. 表示されている数値を正確に読み取る\n'
+    + '3. 単位（℃ or °F）を確認する（不明なら℃と仮定）\n\n'
+    + '以下のJSON形式のみで回答してください（他のテキストは不要）:\n'
+    + '{"temperature": 数値（小数点1桁まで、読み取れない場合はnull）, "unit": "℃" or "°F", "confidence": 0.0-1.0, "reason": "読み取り状況（日本語20文字以内）"}';
+
+  var payload = {
+    model: 'claude-haiku-4-20250414',
+    max_tokens: 256,
+    messages: [{
+      role: 'user',
+      content: [
+        {
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: mediaType,
+            data: raw
+          }
+        },
+        {
+          type: 'text',
+          text: prompt
+        }
+      ]
+    }]
+  };
+
+  var options = {
+    method: 'post',
+    headers: {
+      'x-api-key': claudeApiKey,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json'
+    },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+
+  var response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', options);
+  var code = response.getResponseCode();
+  var body = response.getContentText();
+
+  if (code !== 200) {
+    Logger.log('Claude API error (temp OCR): HTTP ' + code + ' - ' + body);
+    throw new Error('温度読み取りでエラーが発生しました (HTTP ' + code + ')');
+  }
+
+  var parsed = JSON.parse(body);
+  var text = '';
+  if (parsed.content && parsed.content.length > 0) {
+    text = parsed.content[0].text || '';
+  }
+
+  var jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    Logger.log('Claude temp OCR response not JSON: ' + text);
+    return { temperature: null, unit: '℃', confidence: 0, reason: '読み取り失敗' };
+  }
+
+  try {
+    var result = JSON.parse(jsonMatch[0]);
+    var temp = result.temperature;
+    if (temp !== null && temp !== undefined) {
+      temp = Math.round(parseFloat(temp) * 10) / 10;
+    }
+    return {
+      temperature: temp,
+      unit: result.unit || '℃',
+      confidence: parseFloat(result.confidence) || 0,
+      reason: result.reason || ''
+    };
+  } catch (e2) {
+    Logger.log('JSON parse error (temp): ' + e2.message + ' / text: ' + text);
+    return { temperature: null, unit: '℃', confidence: 0, reason: '読み取り失敗' };
+  }
+}
+
+/**
+ * 温度計写真OCR送信
+ * POST body: { action: 'submitTemperaturePhoto', apiKey, data: { storeId, staffId, staffName, category, itemId, itemName, timing, photo (base64) } }
+ */
+function submitTemperaturePhoto(data) {
+  var storeId = data.storeId || 'STORE001';
+  var staffId = data.staffId || '';
+  var staffName = data.staffName || '';
+  var category = data.category || '';
+  var itemId = data.itemId || '';
+  var itemName = data.itemName || '';
+  var timing = data.timing || '';
+  var photo = data.photo || '';
+
+  if (!photo) throw new Error('写真データがありません');
+
+  // 1. AI OCR読み取り
+  var ocrResult = readTemperatureWithAI_(photo);
+
+  // 2. Drive に保存
+  var bd = getBusinessDate_();
+  var now = new Date();
+  var ts = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyyMMdd_HHmmss');
+  var fileName = itemId + '_temp_' + ts + '.jpg';
+  var resultLabel = (ocrResult.temperature !== null) ? 'OK' : 'NG';
+  var saved = savePhotoToDrive_(photo, fileName, resultLabel);
+
+  // 3. 写真判定履歴シートに記録
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var pjSheet = ss.getSheetByName(SHEETS.PHOTO_JUDGMENTS);
+  if (!pjSheet) {
+    pjSheet = ss.insertSheet(SHEETS.PHOTO_JUDGMENTS);
+    pjSheet.appendRow(['判定日時', '店舗ID', 'スタッフID', 'スタッフ名', 'カテゴリ', '項目ID', '項目名', '判定結果', '判定理由', '確信度', 'ファイルID', 'ファイルURL']);
+  }
+  var tempStr = (ocrResult.temperature !== null) ? ocrResult.temperature + '℃' : '読取失敗';
+  pjSheet.appendRow([
+    now, storeId, staffId, staffName, category, itemId, itemName + '(' + timing + ')',
+    resultLabel, tempStr + ' / ' + ocrResult.reason, ocrResult.confidence,
+    saved.fileId, saved.fileUrl
+  ]);
+
+  // 4. 読み取り成功ならチェック履歴にも記録
+  if (ocrResult.temperature !== null) {
+    var histSheet = ss.getSheetByName(SHEETS.HISTORY);
+    var dt = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
+    var isDup = false;
+    if (histSheet.getLastRow() > 1) {
+      var histData = histSheet.getDataRange().getValues();
+      for (var j = 1; j < histData.length; j++) {
+        var hBd = businessDateFromTimestamp_(histData[j][0]);
+        var nr = normalizeHistoryRow_(histData[j]);
+        if (hBd === bd && nr.storeId === storeId && nr.category === category && nr.itemId === itemId) {
+          isDup = true;
+          break;
+        }
+      }
+    }
+    if (!isDup) {
+      histSheet.appendRow([dt, storeId, staffId, staffName, category, itemId, ocrResult.temperature + '°C']);
+    }
+  }
+
+  // 5. 読み取り失敗時はLINE通知
+  if (ocrResult.temperature === null) {
+    var dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+    var dateLabel = Utilities.formatDate(now, 'Asia/Tokyo', 'M月d日') + '(' + dayNames[now.getDay()] + ')';
+    var timeLabel = Utilities.formatDate(now, 'Asia/Tokyo', 'HH:mm');
+    var ngMsg = '⚠ 温度読み取り失敗\n\n'
+      + '日時: ' + dateLabel + ' ' + timeLabel + '\n'
+      + 'スタッフ: ' + staffName + '\n'
+      + '項目: ' + itemName + '(' + timing + ')\n'
+      + '理由: ' + ocrResult.reason + '\n\n'
+      + '写真: ' + saved.fileUrl;
+    sendLineToAll_(ngMsg);
+  }
+
+  return {
+    status: 'success',
+    temperature: ocrResult.temperature,
+    unit: ocrResult.unit,
+    confidence: ocrResult.confidence,
+    reason: ocrResult.reason,
+    fileUrl: saved.fileUrl
+  };
 }
 
 /**
