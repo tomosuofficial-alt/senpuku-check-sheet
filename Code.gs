@@ -992,6 +992,19 @@ function parseHeitenDoc_(docId) {
 
 var LINE_CHANNEL_TOKEN = 'sHBVG+uBIJvfIHp1jUGT203t7vPZGh9nz0EzsctysgBh53NSqF6hqOsV+SWeISiF2uqf4ATnxStT26JV9F9S93bvGZEJePmwlHmXkvxGghdvvk09XGPk2wJ2RAKIEGCiLW5msN4SqzhJ8g6A97doUQdB04t89/1O/w1cDnyilFU=';
 
+/** 通知先ユーザーIDリスト */
+var LINE_NOTIFY_USERS = [
+  'U609974c9d975effb1786fb7542b63e7c',  // 大内
+  'Ueabc7f9ca3d49ab9d7be086c38a87bcb'   // 代表
+];
+
+/** 全通知先にメッセージ送信 */
+function sendLineToAll_(text) {
+  for (var i = 0; i < LINE_NOTIFY_USERS.length; i++) {
+    sendLineMessage_(LINE_NOTIFY_USERS[i], text);
+  }
+}
+
 /** LINE Webhook受信: フォロー・メッセージイベントからユーザーIDを記録 */
 function handleLineWebhook_(events) {
   for (var i = 0; i < events.length; i++) {
@@ -1078,12 +1091,6 @@ function checkAndNotify_0700() {
 }
 
 function notifyIncompleteChecks_(timeLabel, checks) {
-  var userId = PropertiesService.getScriptProperties().getProperty('LINE_USER_ID');
-  if (!userId) {
-    Logger.log('LINE_USER_ID が未設定です');
-    return;
-  }
-
   var storeId = 'STORE001';
   var bd = getBusinessDate_();
   var ss = SpreadsheetApp.openById(SHEET_ID);
@@ -1133,22 +1140,18 @@ function notifyIncompleteChecks_(timeLabel, checks) {
   }
 
   if (incomplete.length > 0) {
-    var msg = '⚠ チェック未完了通知（' + timeLabel + '）\n\n' + incomplete.join('\n');
-    sendLineMessage_(userId, msg);
+    var dateLabel = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'M月d日');
+    var msg = '⚠ ' + dateLabel + ' チェック未完了通知（' + timeLabel + '）\n\n' + incomplete.join('\n');
+    sendLineToAll_(msg);
     Logger.log('通知送信: ' + msg);
   } else {
     Logger.log(timeLabel + ' 時点で全チェック完了');
   }
 }
 
-/** テスト用: LINE通知の動作確認 */
+/** テスト用: LINE通知の動作確認（全員に送信） */
 function testLineNotification() {
-  var userId = PropertiesService.getScriptProperties().getProperty('LINE_USER_ID');
-  if (!userId) {
-    Logger.log('LINE_USER_ID が未設定です。LINEボットにメッセージを送ってください。');
-    return;
-  }
-  sendLineMessage_(userId, 'テスト通知: 店舗チェック通知が正常に動作しています。');
-  Logger.log('テスト通知を送信しました (userId: ' + userId + ')');
+  sendLineToAll_('テスト通知: 店舗チェック通知が正常に動作しています。');
+  Logger.log('テスト通知を全員に送信しました');
 }
 
