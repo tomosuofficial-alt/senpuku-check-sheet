@@ -1605,6 +1605,218 @@
       line-height: 1.4;
       letter-spacing: -0.08px;
     }
+
+    /* === Photo verification === */
+    .photo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: rgba(255, 149, 0, 0.12);
+      color: #C93400;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0;
+      flex-shrink: 0;
+    }
+    .photo-badge svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .check-item.photo-required .checkbox-circle {
+      border-color: var(--apple-orange);
+    }
+    .check-item.photo-required.checked .checkbox-circle {
+      background: var(--apple-orange);
+      border-color: var(--apple-orange);
+    }
+
+    .photo-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .photo-modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .photo-modal {
+      width: 100%;
+      max-width: 428px;
+      background: var(--apple-bg-grouped);
+      border-radius: 20px 20px 0 0;
+      padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0, 0, 0.2, 1);
+    }
+    .photo-modal-overlay.open .photo-modal {
+      transform: translateY(0);
+    }
+    .photo-modal-handle {
+      width: 36px;
+      height: 4px;
+      background: rgba(60, 60, 67, 0.18);
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+    .photo-modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--apple-label);
+      margin-bottom: 4px;
+      letter-spacing: 0.38px;
+    }
+    .photo-modal-subtitle {
+      font-size: 13px;
+      color: var(--apple-secondary-label);
+      margin-bottom: 20px;
+    }
+    .photo-preview-area {
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: rgba(120, 120, 128, 0.08);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .photo-preview-area img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+    .photo-preview-area.has-photo img {
+      display: block;
+    }
+    .photo-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--apple-tertiary-label);
+    }
+    .photo-preview-area.has-photo .photo-placeholder {
+      display: none;
+    }
+    .photo-placeholder svg {
+      width: 48px;
+      height: 48px;
+    }
+    .photo-capture-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: var(--apple-blue);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 10px;
+    }
+    .photo-capture-btn:active {
+      transform: scale(0.97);
+      filter: brightness(0.95);
+    }
+    .photo-submit-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: #34C759;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 10px;
+    }
+    .photo-submit-btn:active {
+      transform: scale(0.97);
+    }
+    .photo-submit-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .photo-cancel-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: var(--apple-fill);
+      color: var(--apple-label);
+      font-size: 17px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .photo-cancel-btn:active {
+      transform: scale(0.97);
+    }
+    .photo-judging {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 24px;
+    }
+    .photo-judging .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(120, 120, 128, 0.12);
+      border-top-color: var(--apple-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .photo-result {
+      text-align: center;
+      padding: 20px;
+    }
+    .photo-result-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+    .photo-result-label {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .photo-result-reason {
+      font-size: 15px;
+      color: var(--apple-secondary-label);
+      margin-bottom: 16px;
+    }
+    .photo-result.ok .photo-result-label { color: #248A3D; }
+    .photo-result.ng .photo-result-label { color: #D70015; }
   </style>
 </head>
 
@@ -1628,6 +1840,31 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <!-- Photo verification modal -->
+  <div class="photo-modal-overlay" id="photoModal">
+    <div class="photo-modal">
+      <div class="photo-modal-handle"></div>
+      <div id="photoModalContent">
+        <div class="photo-modal-title" id="photoModalTitle">写真を撮影</div>
+        <div class="photo-modal-subtitle" id="photoModalSubtitle">項目名</div>
+        <div class="photo-preview-area" id="photoPreviewArea">
+          <div class="photo-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            <span style="font-size:13px;">タップして撮影</span>
+          </div>
+          <img id="photoPreviewImg" alt="撮影プレビュー">
+        </div>
+        <input type="file" accept="image/*" capture="environment" id="photoCameraInput" style="display:none;">
+        <button class="photo-capture-btn" id="photoCaptureBtn">📷 写真を撮影</button>
+        <button class="photo-submit-btn" id="photoSubmitBtn" disabled>AI判定に送信</button>
+        <button class="photo-cancel-btn" id="photoCancelBtn">キャンセル</button>
+      </div>
+    </div>
+  </div>
 
   <div class="app-shell">
     <div class="header">
@@ -1893,10 +2130,10 @@
           { id: 'STAFF003', name: '小野川 達矢', active: true }
         ],
         items: [
-          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI001', name:'店内清掃（清掃マニュアル参照）', sortOrder:1, memo:'清掃マニュアル参照' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI001', name:'店内清掃（清掃マニュアル参照）', sortOrder:1, memo:'清掃マニュアル参照', photoRequired: true },
           { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI002', name:'仕込み（仕込みマニュアル参照）', sortOrder:2, memo:'仕込みマニュアル参照' },
-          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI003', name:'神棚の水を替える', sortOrder:3, memo:'' },
-          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI001', name:'シンク掃除', sortOrder:1, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI003', name:'神棚の水を替える', sortOrder:3, memo:'', photoRequired: true },
+          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI001', name:'シンク掃除', sortOrder:1, memo:'', photoRequired: true },
           { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI002', name:'包丁・まな板消毒', sortOrder:2, memo:'' },
           { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI001', name:'便器の清掃', sortOrder:1, memo:'' },
           { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI002', name:'床の拭き掃除', sortOrder:2, memo:'' },
@@ -2192,7 +2429,10 @@
           if (checkedState[item.itemId]) card.classList.add('checked');
 
           var isTemp = item.name === '温度計測';
+          var isPhoto = !!item.photoRequired;
+          if (isPhoto) card.classList.add('photo-required');
           var ft = item.frequency && item.frequency !== '毎日' ? '<span class="tag">' + item.frequency + '</span>' : '';
+          var photoBadge = isPhoto ? '<span class="photo-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>写真</span>' : '';
           var ml = item.memo || '';
           var manEl = ml.indexOf('マニュアル参照') !== -1 ? '<span class="manual-link" data-manual="' + esc(item.name) + '">参照</span>' : '';
           var hasMemo = item.memo && ml.indexOf('マニュアル参照') === -1;
@@ -2201,7 +2441,7 @@
 
           var tempEl = isTemp ? '<div class="temp-input-wrap"><input type="number" step="0.1" class="temp-input" data-item-id="' + item.itemId + '" placeholder="--"><span class="temp-unit">°C</span></div>' : '';
 
-          card.innerHTML = '<div class="checkbox-circle"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div><div class="item-body"><div class="item-name">' + esc(item.name) + '</div>' + mc + '</div><div style="flex-shrink:0; display:flex; align-items:center; gap:8px;">' + ft + tempEl + manEl + arrow + '</div>';
+          card.innerHTML = '<div class="checkbox-circle"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div><div class="item-body"><div class="item-name">' + esc(item.name) + '</div>' + mc + '</div><div style="flex-shrink:0; display:flex; align-items:center; gap:8px;">' + ft + photoBadge + tempEl + manEl + arrow + '</div>';
 
           card.setAttribute('role', 'checkbox');
           card.setAttribute('aria-checked', (isDone || checkedState[item.itemId]) ? 'true' : 'false');
@@ -2252,6 +2492,12 @@
 
             if (isChevron) {
               card.classList.toggle('expanded');
+              return;
+            }
+
+            // 写真必須項目: クリックでカメラモーダル表示
+            if (isPhoto && !checkedState[item.itemId]) {
+              openPhotoModal(item);
               return;
             }
 
@@ -2358,7 +2604,15 @@
 
     // ===== Submit =====
     function updateSubmitBtn() {
-      var n = Object.keys(checkedState).filter(function (k) { return checkedState[k]; }).length;
+      // Count only non-photo items for the submit button
+      var n = 0;
+      var checkedKeys = Object.keys(checkedState);
+      for (var ci = 0; ci < checkedKeys.length; ci++) {
+        if (!checkedState[checkedKeys[ci]]) continue;
+        var matchItem = allItems.find(function (it) { return it.itemId === checkedKeys[ci]; });
+        if (matchItem && matchItem.photoRequired) continue; // photo items are auto-submitted
+        n++;
+      }
       var staffOk = !!els.staffSelect.value;
       els.submitBtn.disabled = n === 0 || !staffOk;
       if (n === 0) els.submitBtn.textContent = 'チェック完了を送信';
@@ -2372,7 +2626,7 @@
       if (!els.staffSelect.value) { showToast('担当者を選択してください', 'rgba(255,59,48,0.85)'); return; }
       var payload = {
         staffId: els.staffSelect.value, staffName: opt.dataset.name, category: currentCategory,
-        items: allItems.filter(function (i) { return i.category === currentCategory && checkedState[i.itemId]; })
+        items: allItems.filter(function (i) { return i.category === currentCategory && checkedState[i.itemId] && !i.photoRequired; })
           .map(function (i) {
             var val = checkedState[i.itemId];
             var obj = { itemId: i.itemId, name: i.name, timing: i.timing, checked: true };
@@ -2441,6 +2695,204 @@
       if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
       try { var c = new (window.AudioContext || window.webkitAudioContext)(); var o = c.createOscillator(); var g = c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = 0.3; o.start(); setTimeout(function () { o.stop(); c.close(); }, 500); } catch (e) { }
     }
+
+    // ===== Photo verification =====
+    var photoModalEl = document.getElementById('photoModal');
+    var photoPreviewArea = document.getElementById('photoPreviewArea');
+    var photoPreviewImg = document.getElementById('photoPreviewImg');
+    var photoCameraInput = document.getElementById('photoCameraInput');
+    var photoCaptureBtn = document.getElementById('photoCaptureBtn');
+    var photoSubmitBtn = document.getElementById('photoSubmitBtn');
+    var photoCancelBtn = document.getElementById('photoCancelBtn');
+    var photoModalContent = document.getElementById('photoModalContent');
+    var currentPhotoItem = null;
+    var currentPhotoBase64 = null;
+
+    function openPhotoModal(item) {
+      currentPhotoItem = item;
+      currentPhotoBase64 = null;
+      document.getElementById('photoModalTitle').textContent = '📷 写真を撮影';
+      document.getElementById('photoModalSubtitle').textContent = item.name;
+      photoPreviewArea.classList.remove('has-photo');
+      photoPreviewImg.src = '';
+      photoSubmitBtn.disabled = true;
+      photoCaptureBtn.style.display = '';
+      photoSubmitBtn.style.display = '';
+      photoCancelBtn.style.display = '';
+      photoCaptureBtn.textContent = '📷 写真を撮影';
+      photoSubmitBtn.textContent = 'AI判定に送信';
+      // Reset content (remove any judging/result UI)
+      var judgingEl = photoModalContent.querySelector('.photo-judging');
+      if (judgingEl) judgingEl.remove();
+      var resultEl = photoModalContent.querySelector('.photo-result');
+      if (resultEl) resultEl.remove();
+      photoModalEl.classList.add('open');
+    }
+
+    function closePhotoModal() {
+      photoModalEl.classList.remove('open');
+      currentPhotoItem = null;
+      currentPhotoBase64 = null;
+    }
+
+    photoCancelBtn.addEventListener('click', closePhotoModal);
+    photoModalEl.addEventListener('click', function (e) {
+      if (e.target === photoModalEl) closePhotoModal();
+    });
+
+    photoCaptureBtn.addEventListener('click', function () {
+      photoCameraInput.click();
+    });
+    photoPreviewArea.addEventListener('click', function () {
+      if (!currentPhotoBase64) photoCameraInput.click();
+    });
+
+    /** Canvas API で画像を圧縮（最大800px、JPEG 70%品質） */
+    function compressImage(file, maxSize, quality, callback) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var w = img.width, h = img.height;
+          if (w > maxSize || h > maxSize) {
+            var ratio = Math.min(maxSize / w, maxSize / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          var dataUrl = canvas.toDataURL('image/jpeg', quality);
+          callback(dataUrl);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    photoCameraInput.addEventListener('change', function () {
+      var file = this.files[0];
+      if (!file) return;
+      compressImage(file, 800, 0.7, function (dataUrl) {
+        currentPhotoBase64 = dataUrl;
+        photoPreviewImg.src = dataUrl;
+        photoPreviewArea.classList.add('has-photo');
+        photoSubmitBtn.disabled = false;
+        photoCaptureBtn.textContent = '📷 撮り直す';
+      });
+      // Reset input so same file can be selected again
+      this.value = '';
+    });
+
+    photoSubmitBtn.addEventListener('click', function () {
+      if (!currentPhotoBase64 || !currentPhotoItem) return;
+      var staffOpt = els.staffSelect.options[els.staffSelect.selectedIndex];
+      if (!els.staffSelect.value) {
+        showToast('担当者を選択してください', 'rgba(255,59,48,0.85)');
+        return;
+      }
+
+      // Show judging state
+      photoCaptureBtn.style.display = 'none';
+      photoSubmitBtn.style.display = 'none';
+      photoCancelBtn.style.display = 'none';
+      var judgingHtml = '<div class="photo-judging"><div class="spinner"></div><div style="font-size:15px;color:var(--apple-secondary-label);">AIが判定中...</div></div>';
+      photoModalContent.insertAdjacentHTML('beforeend', judgingHtml);
+
+      var payload = {
+        storeId: 'STORE001',
+        staffId: els.staffSelect.value,
+        staffName: staffOpt.dataset.name,
+        category: currentPhotoItem.category,
+        itemId: currentPhotoItem.itemId,
+        itemName: currentPhotoItem.name,
+        photo: currentPhotoBase64
+      };
+
+      if (IS_LOCAL) {
+        // ローカルテスト用ダミー応答
+        setTimeout(function () {
+          showPhotoResult({ result: 'OK', reason: 'テスト: 正常に完了しています', confidence: 0.95 });
+        }, 1500);
+        return;
+      }
+
+      var ctrl = new AbortController();
+      var timer = setTimeout(function () { ctrl.abort(); }, 120000); // 2分タイムアウト
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        signal: ctrl.signal,
+        body: JSON.stringify({
+          action: 'submitPhotoCheck',
+          apiKey: API_KEY,
+          data: payload
+        })
+      })
+      .then(function (r) { clearTimeout(timer); return r.json(); })
+      .then(function (r) {
+        if (r.error) throw new Error(r.error);
+        showPhotoResult(r);
+      })
+      .catch(function (e) {
+        clearTimeout(timer);
+        // Remove judging UI and show buttons again
+        var jEl = photoModalContent.querySelector('.photo-judging');
+        if (jEl) jEl.remove();
+        photoCaptureBtn.style.display = '';
+        photoSubmitBtn.style.display = '';
+        photoCancelBtn.style.display = '';
+        showToast('エラー: ' + (e.message || e), 'rgba(255,59,48,0.85)');
+      });
+    });
+
+    function showPhotoResult(r) {
+      var jEl = photoModalContent.querySelector('.photo-judging');
+      if (jEl) jEl.remove();
+
+      var isOk = r.result === 'OK';
+      var icon = isOk ? '✅' : '❌';
+      var label = isOk ? '判定OK' : '判定NG';
+      var cls = isOk ? 'ok' : 'ng';
+
+      var html = '<div class="photo-result ' + cls + '">'
+        + '<div class="photo-result-icon">' + icon + '</div>'
+        + '<div class="photo-result-label">' + label + '</div>'
+        + '<div class="photo-result-reason">' + esc(r.reason || '') + '</div>'
+        + '<div style="font-size:13px;color:var(--apple-tertiary-label);margin-bottom:16px;">確信度: ' + Math.round((r.confidence || 0) * 100) + '%</div>'
+        + '<button class="photo-cancel-btn" onclick="closePhotoAndUpdate(' + (isOk ? 'true' : 'false') + ')">' + (isOk ? '閉じる' : 'もう一度撮影') + '</button>'
+        + (isOk ? '' : '<button class="photo-cancel-btn" style="margin-top:8px;" onclick="closePhotoModal()">キャンセル</button>')
+        + '</div>';
+      photoModalContent.insertAdjacentHTML('beforeend', html);
+    }
+
+    window.closePhotoAndUpdate = function (isOk) {
+      if (isOk && currentPhotoItem) {
+        // チェック状態を更新
+        checkedState[currentPhotoItem.itemId] = true;
+        var card = document.querySelector('.check-item[data-id="' + currentPhotoItem.itemId + '"]');
+        if (card) {
+          card.classList.add('checked');
+          card.setAttribute('aria-checked', 'true');
+          card.classList.remove('check-flash');
+          void card.offsetWidth;
+          card.classList.add('check-flash');
+        }
+        updateProgress();
+        updateSubmitBtn();
+        showToast('写真判定OK ✓');
+      } else {
+        // NGの場合：写真モーダルをリセットして再撮影
+        if (currentPhotoItem) {
+          var item = currentPhotoItem;
+          closePhotoModal();
+          openPhotoModal(item);
+          return;
+        }
+      }
+      closePhotoModal();
+    };
 
     // ===== Logo reload =====
     document.getElementById('logoHeader').addEventListener('click', function () {
