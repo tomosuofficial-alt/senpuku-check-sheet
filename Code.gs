@@ -12,7 +12,8 @@ const SHEETS = {
   ITEMS:    'チェック項目マスタ',
   HISTORY:  'チェック履歴',
   OMISSIONS: '未実施チェック',
-  CONFIRMATIONS: '確認履歴'
+  CONFIRMATIONS: '確認履歴',
+  PHOTO_JUDGMENTS: '写真判定履歴'
 };
 
 // 営業時間: 18:00-29:00（翌朝5:00）。チェックタイムは 33:00（翌朝9:00）まで当日扱い。
@@ -148,8 +149,19 @@ function doPost(e) {
         }
         result = submitConfirmation(pcdata);
         break;
+      case 'submitPhotoCheck':
+        var ppdata = body.data;
+        if (typeof ppdata === 'string') {
+          try {
+            ppdata = JSON.parse(ppdata);
+          } catch (e4) {
+            throw new Error('data の JSON が不正です');
+          }
+        }
+        result = submitPhotoCheck(ppdata);
+        break;
       default:
-        result = { error: 'POST は submitChecks / submitConfirmation のみ対応しています' };
+        result = { error: 'POST は submitChecks / submitConfirmation / submitPhotoCheck のみ対応しています' };
     }
   } catch (err) {
     result = { error: err.message };
@@ -217,15 +229,17 @@ function getCheckItems(storeId) {
   var sheet = ss.getSheetByName(SHEETS.ITEMS);
   var data = sheet.getDataRange().getValues();
   var items = [];
-  // 列構造: A:storeId, B:category, C:timing, D:itemId, E:itemName, F:memo, G:active
+  // 列構造: A:storeId, B:category, C:timing, D:itemId, E:itemName, F:memo, G:active, H:photoRequired
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     if (row[0] !== storeId) continue;
     if (row[6] === false || row[6] === 'FALSE') continue;
+    var photoReq = row[7] === true || row[7] === 'TRUE';
     items.push({
       storeId: row[0], category: row[1], timing: row[2],
       itemId: row[3], name: row[4], sortOrder: i,
-      memo: row[5] || '', minutes: '', priority: '', frequency: ''
+      memo: row[5] || '', minutes: '', priority: '', frequency: '',
+      photoRequired: photoReq
     });
   }
   return items;
@@ -1241,5 +1255,290 @@ function getToiletMissedSlots_(storeId, bd, histData) {
 function testLineNotification() {
   sendLineToAll_('テスト通知: 店舗チェック通知が正常に動作しています。');
   Logger.log('テスト通知を全員に送信しました');
+}
+
+// ============================================================
+// 写真AI判定機能
+// ============================================================
+
+/** Google Drive の写真保存フォルダを取得・作成 */
+function getOrCreatePhotoFolder_() {
+  var parentName = 'チェックシート写真';
+  var folders = DriveApp.getFoldersByName(parentName);
+  if (folders.hasNext()) return folders.next();
+  return DriveApp.createFolder(parentName);
+}
+
+/** 営業日ごとのサブフォルダを取得・作成 */
+function getDateFolder_(parentFolder, dateStr) {
+  var subs = parentFolder.getFoldersByName(dateStr);
+  if (subs.hasNext()) return subs.next();
+  return parentFolder.createFolder(dateStr);
+}
+
+/**
+ * Base64画像をDriveに保存
+ * @param {string} base64Data - data:image/jpeg;base64,... 形式またはbase64文字列
+ * @param {string} fileName - ファイル名
+ * @param {string} result - 'OK' or 'NG' (NGフォルダに分類)
+ * @returns {{ fileId: string, fileUrl: string }}
+ */
+function savePhotoToDrive_(base64Data, fileName, result) {
+  var raw = base64Data.replace(/^data:image\/\w+;base64,/, '');
+  var blob = Utilities.newBlob(Utilities.base64Decode(raw), 'image/jpeg', fileName);
+
+  var parent = getOrCreatePhotoFolder_();
+  var bd = getBusinessDate_();
+  var dateFolder = getDateFolder_(parent, bd);
+
+  // OK/NG サブフォルダ
+  var resultLabel = (result === 'NG') ? 'NG' : 'OK';
+  var resultFolders = dateFolder.getFoldersByName(resultLabel);
+  var resultFolder = resultFolders.hasNext() ? resultFolders.next() : dateFolder.createFolder(resultLabel);
+
+  var file = resultFolder.createFile(blob);
+  return { fileId: file.getId(), fileUrl: file.getUrl() };
+}
+
+/**
+ * Claude Haiku Vision API で写真を判定
+ * @param {string} base64Data - Base64画像データ
+ * @param {string} itemName - チェック項目名
+ * @param {string} category - カテゴリ名
+ * @returns {{ result: 'OK'|'NG', reason: string, confidence: number }}
+ */
+function verifyPhotoWithAI_(base64Data, itemName, category) {
+  var claudeApiKey = PropertiesService.getScriptProperties().getProperty('CLAUDE_API_KEY');
+  if (!claudeApiKey) {
+    throw new Error('CLAUDE_API_KEY がスクリプトプロパティに設定されていません');
+  }
+
+  var raw = base64Data.replace(/^data:image\/\w+;base64,/, '');
+  var mediaType = 'image/jpeg';
+  if (base64Data.indexOf('data:image/png') === 0) mediaType = 'image/png';
+
+  var prompt = '飲食店の業務チェックリストの写真判定を行ってください。\n\n'
+    + 'カテゴリ: ' + category + '\n'
+    + 'チェック項目: ' + itemName + '\n\n'
+    + 'この写真が「' + itemName + '」の作業が適切に完了していることを示しているか判定してください。\n\n'
+    + '判定基準:\n'
+    + '- OK: 作業が完了している、または完了を示す状態が確認できる\n'
+    + '- NG: 作業が未完了、不適切、または関係のない写真\n\n'
+    + '以下のJSON形式のみで回答してください（他のテキストは不要）:\n'
+    + '{"result": "OK" or "NG", "reason": "判定理由（日本語30文字以内）", "confidence": 0.0-1.0}';
+
+  var payload = {
+    model: 'claude-haiku-4-20250414',
+    max_tokens: 256,
+    messages: [{
+      role: 'user',
+      content: [
+        {
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: mediaType,
+            data: raw
+          }
+        },
+        {
+          type: 'text',
+          text: prompt
+        }
+      ]
+    }]
+  };
+
+  var options = {
+    method: 'post',
+    headers: {
+      'x-api-key': claudeApiKey,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json'
+    },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+
+  var response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', options);
+  var code = response.getResponseCode();
+  var body = response.getContentText();
+
+  if (code !== 200) {
+    Logger.log('Claude API error: HTTP ' + code + ' - ' + body);
+    throw new Error('AI判定でエラーが発生しました (HTTP ' + code + ')');
+  }
+
+  var parsed = JSON.parse(body);
+  var text = '';
+  if (parsed.content && parsed.content.length > 0) {
+    text = parsed.content[0].text || '';
+  }
+
+  // JSON部分を抽出
+  var jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    Logger.log('Claude response not JSON: ' + text);
+    return { result: 'NG', reason: 'AI応答の解析に失敗', confidence: 0 };
+  }
+
+  try {
+    var judgment = JSON.parse(jsonMatch[0]);
+    return {
+      result: (judgment.result === 'OK') ? 'OK' : 'NG',
+      reason: judgment.reason || '',
+      confidence: parseFloat(judgment.confidence) || 0
+    };
+  } catch (e2) {
+    Logger.log('JSON parse error: ' + e2.message + ' / text: ' + text);
+    return { result: 'NG', reason: 'AI応答の解析に失敗', confidence: 0 };
+  }
+}
+
+/**
+ * 写真付きチェック送信
+ * POST body: { action: 'submitPhotoCheck', apiKey, data: { storeId, staffId, staffName, category, itemId, itemName, photo (base64) } }
+ */
+function submitPhotoCheck(data) {
+  var storeId = data.storeId || 'STORE001';
+  var staffId = data.staffId || '';
+  var staffName = data.staffName || '';
+  var category = data.category || '';
+  var itemId = data.itemId || '';
+  var itemName = data.itemName || '';
+  var photo = data.photo || '';
+
+  if (!photo) throw new Error('写真データがありません');
+
+  // 1. AI判定
+  var judgment = verifyPhotoWithAI_(photo, itemName, category);
+
+  // 2. Drive に保存
+  var bd = getBusinessDate_();
+  var now = new Date();
+  var ts = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyyMMdd_HHmmss');
+  var fileName = itemId + '_' + ts + '.jpg';
+  var saved = savePhotoToDrive_(photo, fileName, judgment.result);
+
+  // 3. 写真判定履歴シートに記録
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var pjSheet = ss.getSheetByName(SHEETS.PHOTO_JUDGMENTS);
+  if (!pjSheet) {
+    pjSheet = ss.insertSheet(SHEETS.PHOTO_JUDGMENTS);
+    pjSheet.appendRow(['判定日時', '店舗ID', 'スタッフID', 'スタッフ名', 'カテゴリ', '項目ID', '項目名', '判定結果', '判定理由', '確信度', 'ファイルID', 'ファイルURL']);
+  }
+  pjSheet.appendRow([
+    now, storeId, staffId, staffName, category, itemId, itemName,
+    judgment.result, judgment.reason, judgment.confidence,
+    saved.fileId, saved.fileUrl
+  ]);
+
+  // 4. OKならチェック履歴にも記録（通常のチェック完了と同じ扱い）
+  if (judgment.result === 'OK') {
+    var histSheet = ss.getSheetByName(SHEETS.HISTORY);
+    var dt = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
+    // 重複チェック
+    var isDup = false;
+    if (histSheet.getLastRow() > 1) {
+      var histData = histSheet.getDataRange().getValues();
+      for (var j = 1; j < histData.length; j++) {
+        var hBd = businessDateFromTimestamp_(histData[j][0]);
+        var nr = normalizeHistoryRow_(histData[j]);
+        if (hBd === bd && nr.storeId === storeId && nr.category === category && nr.itemId === itemId) {
+          isDup = true;
+          break;
+        }
+      }
+    }
+    if (!isDup) {
+      histSheet.appendRow([dt, storeId, staffId, staffName, category, itemId, '📷OK']);
+    }
+  }
+
+  // 5. NGの場合はLINE通知
+  if (judgment.result === 'NG') {
+    var dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+    var dateLabel = Utilities.formatDate(now, 'Asia/Tokyo', 'M月d日') + '(' + dayNames[now.getDay()] + ')';
+    var timeLabel = Utilities.formatDate(now, 'Asia/Tokyo', 'HH:mm');
+    var ngMsg = '🚨 写真判定NG通知\n\n'
+      + '日時: ' + dateLabel + ' ' + timeLabel + '\n'
+      + 'スタッフ: ' + staffName + '\n'
+      + 'カテゴリ: ' + category + '\n'
+      + '項目: ' + itemName + '\n'
+      + '理由: ' + judgment.reason + '\n'
+      + '確信度: ' + Math.round(judgment.confidence * 100) + '%\n\n'
+      + '写真: ' + saved.fileUrl;
+    sendLineToAll_(ngMsg);
+  }
+
+  return {
+    status: 'success',
+    result: judgment.result,
+    reason: judgment.reason,
+    confidence: judgment.confidence,
+    fileUrl: saved.fileUrl
+  };
+}
+
+/**
+ * 古い写真を自動削除（OK判定のみ30日経過で削除）
+ * GASの日次トリガーで実行（例: 毎朝5時）
+ */
+function cleanupOldPhotos() {
+  var parent = null;
+  var folders = DriveApp.getFoldersByName('チェックシート写真');
+  if (!folders.hasNext()) { Logger.log('写真フォルダなし'); return; }
+  parent = folders.next();
+
+  var cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+
+  var dateFolders = parent.getFolders();
+  var deletedCount = 0;
+
+  while (dateFolders.hasNext()) {
+    var dateFolder = dateFolders.next();
+    var folderName = dateFolder.getName();
+    // yyyy-MM-dd 形式チェック
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(folderName)) continue;
+    var folderDate = new Date(folderName + 'T00:00:00+09:00');
+    if (isNaN(folderDate.getTime())) continue;
+
+    if (folderDate < cutoff) {
+      // OKフォルダのみ削除、NGフォルダは保持
+      var okFolders = dateFolder.getFoldersByName('OK');
+      if (okFolders.hasNext()) {
+        var okFolder = okFolders.next();
+        var files = okFolder.getFiles();
+        while (files.hasNext()) {
+          files.next().setTrashed(true);
+          deletedCount++;
+        }
+        okFolder.setTrashed(true);
+      }
+
+      // NGフォルダが無い場合、日付フォルダ自体も削除
+      var ngFolders = dateFolder.getFoldersByName('NG');
+      if (!ngFolders.hasNext()) {
+        // NG無し → 日付フォルダごと削除
+        dateFolder.setTrashed(true);
+      }
+    }
+  }
+
+  Logger.log('写真クリーンアップ完了: ' + deletedCount + '枚削除');
+  return { status: 'success', deleted: deletedCount };
+}
+
+/**
+ * 写真判定履歴シートの初期化（手動実行用）
+ */
+function setupPhotoJudgments() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var pjSheet = ss.getSheetByName(SHEETS.PHOTO_JUDGMENTS) || ss.insertSheet(SHEETS.PHOTO_JUDGMENTS);
+  if (pjSheet.getLastRow() === 0) {
+    pjSheet.appendRow(['判定日時', '店舗ID', 'スタッフID', 'スタッフ名', 'カテゴリ', '項目ID', '項目名', '判定結果', '判定理由', '確信度', 'ファイルID', 'ファイルURL']);
+  }
+  Logger.log('写真判定履歴シート作成完了');
 }
 
