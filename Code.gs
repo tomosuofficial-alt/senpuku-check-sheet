@@ -11,7 +11,8 @@ const SHEETS = {
   STAFF:    'スタッフマスタ',
   ITEMS:    'チェック項目マスタ',
   HISTORY:  'チェック履歴',
-  OMISSIONS: '未実施チェック'
+  OMISSIONS: '未実施チェック',
+  CONFIRMATIONS: '確認履歴'
 };
 
 // 営業時間: 18:00-29:00（翌朝5:00）。チェックタイムは 33:00（翌朝9:00）まで当日扱い。
@@ -83,6 +84,9 @@ function doGet(e) {
       case 'getHistory':
         result = getHistory(storeId, e.parameter.date || '');
         break;
+      case 'getKaitenConfirmationStatus':
+        result = getKaitenConfirmationStatus(storeId);
+        break;
       default:
         result = { error: 'Unknown action: ' + action };
     }
@@ -105,6 +109,13 @@ function doPost(e) {
     if (e.postData && e.postData.contents) {
       body = JSON.parse(e.postData.contents);
     }
+
+    // LINE Webhook イベント処理
+    if (body.events) {
+      handleLineWebhook_(body.events);
+      return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+    }
+
     var action = body.action || '';
     assertApiKey_(body.apiKey || '');
 
@@ -123,8 +134,19 @@ function doPost(e) {
       case 'contact':
         result = sendContactToNotion(body);
         break;
+      case 'submitConfirmation':
+        var pcdata = body.data;
+        if (typeof pcdata === 'string') {
+          try {
+            pcdata = JSON.parse(pcdata);
+          } catch (e3) {
+            throw new Error('data の JSON が不正です');
+          }
+        }
+        result = submitConfirmation(pcdata);
+        break;
       default:
-        result = { error: 'POST は submitChecks のみ対応しています' };
+        result = { error: 'POST は submitChecks / submitConfirmation のみ対応しています' };
     }
   } catch (err) {
     result = { error: err.message };
@@ -439,6 +461,19 @@ function getHistory(storeId, dateStr) {
     var itemId = nr.itemId;
     catMap[category].itemIds[itemId] = true;
 
+    if (category === 'トイレ清掃') {
+      var ts = h[0];
+      var d = (ts instanceof Date) ? ts : new Date(String(ts));
+      var hh = parseInt(Utilities.formatDate(d, 'Asia/Tokyo', 'H'), 10);
+      var mm = Utilities.formatDate(d, 'Asia/Tokyo', 'mm');
+      if (!catMap[category].hourlyLogs) catMap[category].hourlyLogs = [];
+      catMap[category].hourlyLogs.push({
+        hour: hh,
+        time: Utilities.formatDate(d, 'Asia/Tokyo', 'HH:mm'),
+        staffName: sName
+      });
+    }
+
     if (category === '氷プール') {
       var t = itemTimingMap[itemId] || '';
       if (t) {
@@ -462,13 +497,33 @@ function getHistory(storeId, dateStr) {
 
     if (cn === 'トイレ清掃') {
       var toiletUnique = Object.keys(info.itemIds).length;
+      var hourlyLogs = info.hourlyLogs || [];
+
+      // Build hourly slots: 18-23, then 0-4
+      var slotOrder = [18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4];
+      var hourlySlots = [];
+      for (var si = 0; si < slotOrder.length; si++) {
+        var slotHour = slotOrder[si];
+        var logsInHour = hourlyLogs.filter(function(l) { return l.hour === slotHour; });
+        var label = (slotHour < 10 ? '0' : '') + slotHour + ':00';
+        hourlySlots.push({
+          hour: slotHour,
+          label: label,
+          done: logsInHour.length > 0,
+          count: logsInHour.length,
+          times: logsInHour.map(function(l) { return l.time; }),
+          staff: logsInHour.length > 0 ? logsInHour[0].staffName : ''
+        });
+      }
+
       categories.push({
         name: cn,
         type: 'count',
         total: categoryTotals[cn],
         itemsCovered: toiletUnique,
         logCount: info.count,
-        staffName: staffArr.length > 0 ? staffArr.join(', ') : null
+        staffName: staffArr.length > 0 ? staffArr.join(', ') : null,
+        hourlySlots: hourlySlots
       });
     } else if (cn === '氷プール') {
       var timingOrder = ['出勤時', '22時', '退勤時'];
@@ -503,6 +558,136 @@ function getHistory(storeId, dateStr) {
 }
 
 // ============================================================
+// 開店チェック確認ステータス取得
+// ============================================================
+
+function getKaitenConfirmationStatus(storeId) {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var bd = getBusinessDate_();
+
+  // 1. 開店カテゴリの有効項目をマスタから取得
+  var itemSheet = ss.getSheetByName(SHEETS.ITEMS);
+  var itemData = itemSheet.getDataRange().getValues();
+  var kaitenItems = [];
+  for (var i = 1; i < itemData.length; i++) {
+    var row = itemData[i];
+    if (row[0] !== storeId) continue;
+    if (row[1] !== '開店') continue;
+    if (row[6] === false || row[6] === 'FALSE') continue;
+    kaitenItems.push({ itemId: row[3], name: row[4], memo: row[5] || '' });
+  }
+
+  // 2. 当日のチェック履歴（開店）を取得
+  var histSheet = ss.getSheetByName(SHEETS.HISTORY);
+  var checkedMap = {}; // itemId -> { staffName }
+  if (histSheet && histSheet.getLastRow() > 1) {
+    var histData = histSheet.getDataRange().getValues();
+    for (var j = 1; j < histData.length; j++) {
+      var hRow = histData[j];
+      var hBd = businessDateFromTimestamp_(hRow[0]);
+      var nr = normalizeHistoryRow_(hRow);
+      if (hBd === bd && nr.storeId === storeId && nr.category === '開店') {
+        checkedMap[nr.itemId] = { staffName: nr.staffName || nr.staffDisplay || '' };
+      }
+    }
+  }
+
+  // 3. 当日の確認履歴（開店）を取得
+  var confSheet = ss.getSheetByName(SHEETS.CONFIRMATIONS);
+  var confirmedMap = {}; // itemId -> { confirmerName, confirmedAt }
+  if (confSheet && confSheet.getLastRow() > 1) {
+    var confData = confSheet.getDataRange().getValues();
+    for (var k = 1; k < confData.length; k++) {
+      var cRow = confData[k];
+      var cBd = businessDateFromTimestamp_(cRow[0]);
+      if (cBd === bd && cRow[1] === storeId && cRow[4] === '開店') {
+        confirmedMap[cRow[5]] = {
+          confirmerName: cRow[3] || '',
+          confirmedAt: cRow[0] instanceof Date
+            ? Utilities.formatDate(cRow[0], 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss')
+            : String(cRow[0]),
+          status: cRow[6] || 'confirmed'
+        };
+      }
+    }
+  }
+
+  // 4. 各項目の状態をまとめて返す
+  var items = [];
+  for (var m = 0; m < kaitenItems.length; m++) {
+    var it = kaitenItems[m];
+    var chk = checkedMap[it.itemId];
+    var cnf = confirmedMap[it.itemId];
+    items.push({
+      itemId: it.itemId,
+      name: it.name,
+      memo: it.memo,
+      checked: !!chk,
+      checkerName: chk ? chk.staffName : '',
+      confirmed: !!cnf,
+      confirmerName: cnf ? cnf.confirmerName : '',
+      confirmedAt: cnf ? cnf.confirmedAt : ''
+    });
+  }
+
+  return { date: bd, items: items };
+}
+
+// ============================================================
+// 開店チェック確認送信
+// ============================================================
+
+function submitConfirmation(data) {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var bd = getBusinessDate_();
+  var storeId = data.storeId || 'STORE001';
+  var staffId = data.staffId || '';
+  var staffName = data.staffName || '';
+  var itemId = data.itemId || '';
+  var status = data.status || 'confirmed';
+
+  // 確認履歴シートを取得または作成
+  var confSheet = ss.getSheetByName(SHEETS.CONFIRMATIONS);
+  if (!confSheet) {
+    confSheet = ss.insertSheet(SHEETS.CONFIRMATIONS);
+    confSheet.appendRow(['確認日時', '店舗ID', '確認者ID', '確認者名', 'カテゴリ', '項目ID', 'ステータス', 'チェック者名']);
+  }
+
+  // 重複チェック: 同営業日 + 同店舗 + 同項目 + 同確認者
+  if (confSheet.getLastRow() > 1) {
+    var confData = confSheet.getDataRange().getValues();
+    for (var i = 1; i < confData.length; i++) {
+      var cRow = confData[i];
+      var cBd = businessDateFromTimestamp_(cRow[0]);
+      if (cBd === bd && cRow[1] === storeId && cRow[5] === itemId && cRow[2] === staffId) {
+        return { ok: true, duplicate: true };
+      }
+    }
+  }
+
+  // チェック履歴から該当項目のチェック者名を取得
+  var checkerName = '';
+  var histSheet = ss.getSheetByName(SHEETS.HISTORY);
+  if (histSheet && histSheet.getLastRow() > 1) {
+    var histData = histSheet.getDataRange().getValues();
+    for (var j = 1; j < histData.length; j++) {
+      var hRow = histData[j];
+      var hBd = businessDateFromTimestamp_(hRow[0]);
+      var nr = normalizeHistoryRow_(hRow);
+      if (hBd === bd && nr.storeId === storeId && nr.category === '開店' && nr.itemId === itemId) {
+        checkerName = nr.staffName || nr.staffDisplay || '';
+        break;
+      }
+    }
+  }
+
+  // 確認履歴に追記
+  confSheet.appendRow([new Date(), storeId, staffId, staffName, '開店', itemId, status, checkerName]);
+
+  return { ok: true };
+}
+
+// ============================================================
 // スプレッドシート初期化（ヘッダー作成用）
 // ============================================================
 
@@ -513,6 +698,12 @@ function setupSpreadsheet() {
   var omSheet = ss.getSheetByName(SHEETS.OMISSIONS) || ss.insertSheet(SHEETS.OMISSIONS);
   if (omSheet.getLastRow() === 0) {
     omSheet.appendRow(['storeId', 'date', 'category', 'itemId', 'itemName']);
+  }
+
+  // 確認履歴シート
+  var confSheet = ss.getSheetByName(SHEETS.CONFIRMATIONS) || ss.insertSheet(SHEETS.CONFIRMATIONS);
+  if (confSheet.getLastRow() === 0) {
+    confSheet.appendRow(['確認日時', '店舗ID', '確認者ID', '確認者名', 'カテゴリ', '項目ID', 'ステータス', 'チェック者名']);
   }
 
   Logger.log('Spreadsheet setup complete.');
@@ -793,5 +984,171 @@ function parseHeitenDoc_(docId) {
   }
 
   return items;
+}
+
+// ============================================================
+// LINE 通知機能
+// ============================================================
+
+var LINE_CHANNEL_TOKEN = 'sHBVG+uBIJvfIHp1jUGT203t7vPZGh9nz0EzsctysgBh53NSqF6hqOsV+SWeISiF2uqf4ATnxStT26JV9F9S93bvGZEJePmwlHmXkvxGghdvvk09XGPk2wJ2RAKIEGCiLW5msN4SqzhJ8g6A97doUQdB04t89/1O/w1cDnyilFU=';
+
+/** LINE Webhook受信: フォロー・メッセージイベントからユーザーIDを記録 */
+function handleLineWebhook_(events) {
+  for (var i = 0; i < events.length; i++) {
+    var ev = events[i];
+    var userId = ev.source && ev.source.userId ? ev.source.userId : '';
+    if (!userId) continue;
+
+    // スクリプトプロパティに保存（最新のユーザーIDを代表として使用）
+    PropertiesService.getScriptProperties().setProperty('LINE_USER_ID', userId);
+
+    // フォローイベント時にウェルカムメッセージ
+    if (ev.type === 'follow') {
+      sendLineMessage_(userId, '店舗チェック通知を開始しました。チェック未完了時に通知が届きます。');
+    }
+
+    // メッセージ受信時にユーザーIDを返信（デバッグ用）
+    if (ev.type === 'message' && ev.replyToken) {
+      replyLineMessage_(ev.replyToken, 'あなたのユーザーID:\n' + userId);
+    }
+  }
+}
+
+/** LINE Push Message: 指定ユーザーにメッセージ送信 */
+function sendLineMessage_(userId, text) {
+  var url = 'https://api.line.me/v2/bot/message/push';
+  var payload = {
+    to: userId,
+    messages: [{ type: 'text', text: text }]
+  };
+  UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'Authorization': 'Bearer ' + LINE_CHANNEL_TOKEN },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+}
+
+/** LINE Reply Message: Webhookイベントに返信 */
+function replyLineMessage_(replyToken, text) {
+  var url = 'https://api.line.me/v2/bot/message/reply';
+  var payload = {
+    replyToken: replyToken,
+    messages: [{ type: 'text', text: text }]
+  };
+  UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'Authorization': 'Bearer ' + LINE_CHANNEL_TOKEN },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+}
+
+// ============================================================
+// 定期チェック通知（GASトリガーで実行）
+// ============================================================
+
+/**
+ * 未完了チェック通知
+ * GASの時間ベーストリガーで以下を設定:
+ *   - checkAndNotify_1800: 毎日 18:00 に実行
+ *   - checkAndNotify_2230: 毎日 22:30 に実行
+ *   - checkAndNotify_0700: 毎日 7:00 に実行
+ */
+function checkAndNotify_1800() {
+  notifyIncompleteChecks_('18:00', [
+    { category: '開店', label: '開店チェック' },
+    { category: '氷プール', timing: '出勤時', label: '氷プールチェック（出勤時）' }
+  ]);
+}
+
+function checkAndNotify_2230() {
+  notifyIncompleteChecks_('22:30', [
+    { category: '氷プール', timing: '22時', label: '氷プールチェック（22時）' }
+  ]);
+}
+
+function checkAndNotify_0700() {
+  notifyIncompleteChecks_('7:00', [
+    { category: '閉店', label: '閉店チェック' },
+    { category: '氷プール', timing: '退勤時', label: '氷プールチェック（退勤時）' }
+  ]);
+}
+
+function notifyIncompleteChecks_(timeLabel, checks) {
+  var userId = PropertiesService.getScriptProperties().getProperty('LINE_USER_ID');
+  if (!userId) {
+    Logger.log('LINE_USER_ID が未設定です');
+    return;
+  }
+
+  var storeId = 'STORE001';
+  var bd = getBusinessDate_();
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+
+  // チェック項目マスタ
+  var itemSheet = ss.getSheetByName(SHEETS.ITEMS);
+  var itemData = itemSheet.getDataRange().getValues();
+
+  // チェック履歴
+  var histSheet = ss.getSheetByName(SHEETS.HISTORY);
+  var histData = (histSheet && histSheet.getLastRow() > 1) ? histSheet.getDataRange().getValues() : [];
+
+  // 当日のチェック済み項目IDを収集
+  var checkedIds = {};
+  for (var i = 1; i < histData.length; i++) {
+    var h = histData[i];
+    var hbd = businessDateFromTimestamp_(h[0]);
+    var nr = normalizeHistoryRow_(h);
+    if (hbd === bd && nr.storeId === storeId) {
+      var key = nr.category + '|' + nr.itemId;
+      checkedIds[key] = true;
+    }
+  }
+
+  var incomplete = [];
+
+  for (var c = 0; c < checks.length; c++) {
+    var chk = checks[c];
+    var totalCount = 0;
+    var checkedCount = 0;
+
+    for (var j = 1; j < itemData.length; j++) {
+      var row = itemData[j];
+      if (row[0] !== storeId) continue;
+      if (row[1] !== chk.category) continue;
+      if (row[6] === false || row[6] === 'FALSE') continue;
+      if (chk.timing && row[2] !== chk.timing) continue;
+
+      totalCount++;
+      var key2 = chk.category + '|' + row[3];
+      if (checkedIds[key2]) checkedCount++;
+    }
+
+    if (totalCount > 0 && checkedCount < totalCount) {
+      incomplete.push(chk.label + 'が未完了です（' + checkedCount + '/' + totalCount + '）');
+    }
+  }
+
+  if (incomplete.length > 0) {
+    var msg = '⚠ チェック未完了通知（' + timeLabel + '）\n\n' + incomplete.join('\n');
+    sendLineMessage_(userId, msg);
+    Logger.log('通知送信: ' + msg);
+  } else {
+    Logger.log(timeLabel + ' 時点で全チェック完了');
+  }
+}
+
+/** テスト用: LINE通知の動作確認 */
+function testLineNotification() {
+  var userId = PropertiesService.getScriptProperties().getProperty('LINE_USER_ID');
+  if (!userId) {
+    Logger.log('LINE_USER_ID が未設定です。LINEボットにメッセージを送ってください。');
+    return;
+  }
+  sendLineMessage_(userId, 'テスト通知: 店舗チェック通知が正常に動作しています。');
+  Logger.log('テスト通知を送信しました (userId: ' + userId + ')');
 }
 

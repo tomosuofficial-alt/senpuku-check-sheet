@@ -1375,6 +1375,43 @@
       background: rgba(255,59,48,0.15);
       color: #FF3B30;
     }
+    .toilet-hourly-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px 14px 14px 14px;
+    }
+    .toilet-hour-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px 8px;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      min-width: 44px;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .toilet-hour-slot.done {
+      background: rgba(52,199,89,0.12);
+      color: rgba(52,199,89,1);
+      border-color: rgba(52,199,89,0.2);
+    }
+    .toilet-hour-slot.missed {
+      background: rgba(255,59,48,0.08);
+      color: rgba(255,59,48,0.6);
+      border-color: rgba(255,59,48,0.15);
+    }
+    .toilet-hour-slot.future {
+      background: rgba(0,0,0,0.03);
+      color: rgba(0,0,0,0.25);
+      border-color: rgba(0,0,0,0.04);
+    }
+    .toilet-hour-time {
+      font-size: 0.65rem;
+      opacity: 0.7;
+      margin-top: 2px;
+    }
     .history-empty {
       text-align: center;
       color: rgba(0,0,0,0.3);
@@ -1392,6 +1429,164 @@
       border: 1px solid rgba(0,0,0,0.06);
     }
     .history-legend strong { color: #1a1a1a; font-weight: 700; }
+
+    /* ===== Confirmation Mode ===== */
+    .confirmation-banner {
+      margin: 8px 16px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(52, 199, 89, 0.15);
+      border: 1px solid rgba(52, 199, 89, 0.3);
+      animation: slideIn 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .confirmation-banner span {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .confirmation-banner button {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 10px;
+      background: #34C759;
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
+      transition: all 0.2s ease;
+    }
+    .confirmation-banner button:active {
+      transform: scale(0.95);
+      background: #2DB84E;
+    }
+
+    .confirm-mode-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      margin: 8px 16px 4px;
+      border-radius: 14px;
+      background: rgba(0, 122, 255, 0.12);
+      border: 1px solid rgba(0, 122, 255, 0.25);
+    }
+    .confirm-mode-header .confirm-mode-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .confirm-mode-header .confirm-mode-progress {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 2px;
+    }
+    .confirm-mode-header .confirm-back-btn {
+      padding: 6px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.8rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .confirm-mode-header .confirm-back-btn:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .check-item.confirm-pending {
+      border-left: 3px solid rgba(0, 122, 255, 0.6);
+      cursor: default;
+    }
+    .check-item.confirm-pending:active {
+      transform: none;
+    }
+
+    .check-item.confirm-done {
+      opacity: 0.45;
+      pointer-events: none;
+      border-left: 3px solid rgba(52, 199, 89, 0.5);
+    }
+
+    .check-item.not-checked-warning {
+      border-left: 3px solid rgba(255, 149, 0, 0.7);
+      background: linear-gradient(
+        135deg,
+        rgba(255, 149, 0, 0.12) 0%,
+        rgba(255, 149, 0, 0.04) 50%,
+        rgba(255, 255, 255, 0.02) 100%
+      );
+      border-color: rgba(255, 149, 0, 0.3);
+      border-left: 3px solid rgba(255, 149, 0, 0.7);
+      cursor: default;
+    }
+    .check-item.not-checked-warning:active {
+      transform: none;
+    }
+
+    .confirm-btn {
+      padding: 6px 14px;
+      border: none;
+      border-radius: 8px;
+      background: #007AFF;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 122, 255, 0.3);
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .confirm-btn:active {
+      transform: scale(0.95);
+      background: #0066DD;
+    }
+    .confirm-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .report-btn {
+      padding: 6px 14px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255, 149, 0, 0.85);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(255, 149, 0, 0.3);
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .report-btn:active {
+      transform: scale(0.95);
+      background: rgba(230, 130, 0, 0.9);
+    }
+    .report-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .confirm-status {
+      font-size: 0.72rem;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
   </style>
 </head>
 
@@ -1633,6 +1828,8 @@
     // ===== State =====
     var allItems = [], staffList = [], todayChecked = [], currentCategory = '開店', checkedState = {};
     var timerInterval = null, timerEndTime = null, timerRunning = false;
+    var confirmationMode = false;
+    var confirmationItems = [];
 
     var els = {
       staffSelect: document.getElementById('staffSelect'),
@@ -1829,7 +2026,13 @@
       btn.classList.add('active');
       currentCategory = btn.dataset.cat;
       checkedState = {};
-      
+      confirmationMode = false;
+      confirmationItems = [];
+
+      // Remove confirmation banner if present
+      var confBanner = document.getElementById('confirmationBanner');
+      if (confBanner) confBanner.remove();
+
       if (currentCategory === 'マニュアル') {
         els.submitBar.style.display = 'none';
         if (els.progressContainer) els.progressContainer.style.display = 'none';
@@ -1851,6 +2054,9 @@
     // ===== Checklist =====
     function renderChecklist() {
       var a = els.contentArea; a.innerHTML = '';
+      // Remove any existing confirmation banner
+      var existingBanner = document.getElementById('confirmationBanner');
+      if (existingBanner) existingBanner.remove();
       var f = allItems.filter(function (i) { return i.category === currentCategory; });
       if (!f.length) {
         a.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.5);">該当する項目がありません</div>';
@@ -1983,6 +2189,23 @@
         a.appendChild(sec);
       });
       updateProgress(); updateSubmitBtn();
+
+      // Show confirmation banner if all 開店 items are already checked
+      if (currentCategory === '開店' && !confirmationMode) {
+        var kaitenItems = allItems.filter(function (i) { return i.category === '開店'; });
+        if (kaitenItems.length > 0) {
+          var allDone = kaitenItems.every(function (i) { return todayChecked.indexOf(i.itemId) !== -1; });
+          if (allDone) {
+            var existing = document.getElementById('confirmationBanner');
+            if (existing) existing.remove();
+            var banner = document.createElement('div');
+            banner.className = 'confirmation-banner';
+            banner.id = 'confirmationBanner';
+            banner.innerHTML = '<span>\u2705 開店チェックは完了済みです</span><button onclick="enterConfirmationMode()">確認する</button>';
+            a.parentElement.insertBefore(banner, a);
+          }
+        }
+      }
     }
 
     // ===== Manual =====
@@ -2245,7 +2468,20 @@
         categories: [
           { name: '開店', type: 'standard', total: 36, checked: 36, staffName: '田中太郎' },
           { name: '閉店', type: 'standard', total: 30, checked: 22, staffName: '佐藤花子' },
-          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 8, logCount: 42, staffName: '田中太郎, 佐藤花子' },
+          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 8, logCount: 42, staffName: '田中太郎, 佐藤花子',
+            hourlySlots: [
+              { hour: 18, label: '18:00', done: true, count: 1, times: ['18:15'], staff: '田中太郎' },
+              { hour: 19, label: '19:00', done: true, count: 1, times: ['19:20'], staff: '田中太郎' },
+              { hour: 20, label: '20:00', done: true, count: 1, times: ['20:05'], staff: '佐藤花子' },
+              { hour: 21, label: '21:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 22, label: '22:00', done: true, count: 1, times: ['22:10'], staff: '佐藤花子' },
+              { hour: 23, label: '23:00', done: true, count: 1, times: ['23:30'], staff: '田中太郎' },
+              { hour: 0, label: '00:00', done: true, count: 1, times: ['00:15'], staff: '田中太郎' },
+              { hour: 1, label: '01:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 2, label: '02:00', done: true, count: 1, times: ['02:45'], staff: '佐藤花子' },
+              { hour: 3, label: '03:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 4, label: '04:00', done: false, count: 0, times: [], staff: '' }
+            ] },
           { name: '氷プール', type: 'timing', total: 9, checked: 9, staffName: '田中太郎',
             timings: [
               { name: '出勤時', total: 3, checked: 3 },
@@ -2260,7 +2496,20 @@
         categories: [
           { name: '開店', type: 'standard', total: 36, checked: 36, staffName: '鈴木一郎' },
           { name: '閉店', type: 'standard', total: 30, checked: 30, staffName: '鈴木一郎' },
-          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 6, logCount: 30, staffName: '佐藤花子' },
+          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 6, logCount: 30, staffName: '佐藤花子',
+            hourlySlots: [
+              { hour: 18, label: '18:00', done: true, count: 1, times: ['18:30'], staff: '佐藤花子' },
+              { hour: 19, label: '19:00', done: true, count: 1, times: ['19:45'], staff: '佐藤花子' },
+              { hour: 20, label: '20:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 21, label: '21:00', done: true, count: 1, times: ['21:10'], staff: '佐藤花子' },
+              { hour: 22, label: '22:00', done: true, count: 1, times: ['22:55'], staff: '佐藤花子' },
+              { hour: 23, label: '23:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 0, label: '00:00', done: true, count: 1, times: ['00:20'], staff: '佐藤花子' },
+              { hour: 1, label: '01:00', done: true, count: 1, times: ['01:35'], staff: '佐藤花子' },
+              { hour: 2, label: '02:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 3, label: '03:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 4, label: '04:00', done: false, count: 0, times: [], staff: '' }
+            ] },
           { name: '氷プール', type: 'timing', total: 9, checked: 6, staffName: '鈴木一郎',
             timings: [
               { name: '出勤時', total: 3, checked: 3 },
@@ -2275,7 +2524,20 @@
         categories: [
           { name: '開店', type: 'standard', total: 36, checked: 0, staffName: null },
           { name: '閉店', type: 'standard', total: 30, checked: 0, staffName: null },
-          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 0, logCount: 0, staffName: null },
+          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 0, logCount: 0, staffName: null,
+            hourlySlots: [
+              { hour: 18, label: '18:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 19, label: '19:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 20, label: '20:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 21, label: '21:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 22, label: '22:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 23, label: '23:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 0, label: '00:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 1, label: '01:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 2, label: '02:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 3, label: '03:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 4, label: '04:00', done: false, count: 0, times: [], staff: '' }
+            ] },
           { name: '氷プール', type: 'timing', total: 9, checked: 0, staffName: null,
             timings: [
               { name: '出勤時', total: 3, checked: 0 },
@@ -2336,7 +2598,47 @@
           if (cat.staffName) html += ' ・ 実施者: ' + esc(cat.staffName);
           html += '</div></div></div>';
           html += '<span class="history-cat-badge ' + st.cls + '">' + st.label + '</span>';
-          html += '</div></div>';
+          html += '</div>';
+
+          if (cat.hourlySlots && cat.hourlySlots.length > 0) {
+            html += '<div class="toilet-hourly-grid">';
+            var now = new Date();
+            var currentHour = now.getHours();
+            var isToday = (data.date === getRecentDates()[0]);
+
+            cat.hourlySlots.forEach(function(slot) {
+              var cls = '';
+              if (slot.done) {
+                cls = 'done';
+              } else if (isToday) {
+                var slotLogical = slot.hour < 9 ? slot.hour + 24 : slot.hour;
+                var currentLogical = currentHour < 9 ? currentHour + 24 : currentHour;
+                if (slotLogical < currentLogical) {
+                  cls = 'missed';
+                } else {
+                  cls = 'future';
+                }
+              } else {
+                cls = 'missed';
+              }
+
+              html += '<div class="toilet-hour-slot ' + cls + '">';
+              html += '<span>' + slot.label + '</span>';
+              if (slot.done) {
+                html += '<span class="toilet-hour-time">\u2713';
+                if (slot.times && slot.times.length > 0) html += ' ' + slot.times[0];
+                html += '</span>';
+              } else if (cls === 'missed') {
+                html += '<span class="toilet-hour-time">\u2212</span>';
+              } else {
+                html += '<span class="toilet-hour-time">\u2026</span>';
+              }
+              html += '</div>';
+            });
+            html += '</div>';
+          }
+
+          html += '</div>';
 
         } else if (type === 'timing') {
           var allDone = cat.timings && cat.timings.length > 0 && cat.timings.every(function (x) { return x.checked >= x.total; });
@@ -2420,6 +2722,252 @@
         els.addStaffBtn.disabled = false; els.addStaffBtn.textContent = '追加'; handleErr(e);
       });
     });
+
+    // ===== Confirmation Mode =====
+    function enterConfirmationMode() {
+      var opt = els.staffSelect.options[els.staffSelect.selectedIndex];
+      if (!els.staffSelect.value) {
+        showToast('確認者を選択してください（担当者ドロップダウン）', 'rgba(255,59,48,0.85)');
+        return;
+      }
+      confirmationMode = true;
+      showLoading();
+
+      // Remove confirmation banner if present
+      var banner = document.getElementById('confirmationBanner');
+      if (banner) banner.remove();
+
+      if (IS_LOCAL) {
+        // Dummy data for local dev
+        var kaitenItems = allItems.filter(function (i) { return i.category === '開店'; });
+        confirmationItems = kaitenItems.map(function (i, idx) {
+          return {
+            itemId: i.itemId,
+            name: i.name,
+            memo: i.memo || '',
+            checked: idx < kaitenItems.length - 1,
+            checkerName: idx < kaitenItems.length - 1 ? '田中太郎' : '',
+            confirmed: idx < 2,
+            confirmerName: idx < 2 ? '社員A' : '',
+            confirmedAt: idx < 2 ? '18:30' : ''
+          };
+        });
+        hideLoading();
+        renderConfirmationItems();
+        return;
+      }
+
+      api('getKaitenConfirmationStatus', { storeId: 'STORE001' })
+        .then(function (data) {
+          confirmationItems = data.items || [];
+          hideLoading();
+          renderConfirmationItems();
+        })
+        .catch(function (e) {
+          hideLoading();
+          confirmationMode = false;
+          showToast('確認データの取得に失敗しました', 'rgba(255,59,48,0.85)');
+        });
+    }
+
+    function renderConfirmationItems() {
+      var a = els.contentArea;
+      a.innerHTML = '';
+
+      // Hide submit bar, show confirmation header
+      els.submitBar.style.display = 'none';
+
+      var confirmedCount = 0;
+      var totalCount = confirmationItems.length;
+      confirmationItems.forEach(function (item) {
+        if (item.confirmed) confirmedCount++;
+      });
+
+      // Header
+      var header = document.createElement('div');
+      header.className = 'confirm-mode-header';
+      header.innerHTML = '<div><div class="confirm-mode-title">開店チェック確認中</div><div class="confirm-mode-progress">確認済み: ' + confirmedCount + ' / ' + totalCount + '</div></div><button class="confirm-back-btn" onclick="exitConfirmationMode()">戻る</button>';
+      a.appendChild(header);
+
+      // Render each item
+      confirmationItems.forEach(function (item) {
+        var card = document.createElement('div');
+        card.className = 'check-item';
+        card.dataset.id = item.itemId;
+        card.style.cursor = 'default';
+
+        var bodyHtml = '<div class="item-body"><div class="item-name">' + esc(item.name) + '</div>';
+
+        if (item.confirmed) {
+          card.classList.add('confirm-done');
+          bodyHtml += '<div class="confirm-status">\u2713 確認済み - ' + esc(item.confirmerName) + (item.confirmedAt ? ' (' + esc(item.confirmedAt) + ')' : '') + '</div>';
+          if (item.checkerName) {
+            bodyHtml += '<div class="confirm-status">チェック: ' + esc(item.checkerName) + '</div>';
+          }
+          bodyHtml += '</div>';
+          card.innerHTML = bodyHtml;
+        } else if (item.checked) {
+          card.classList.add('confirm-pending');
+          bodyHtml += '<div class="confirm-status">チェック済み: ' + esc(item.checkerName) + '</div>';
+          if (item.memo) {
+            bodyHtml += '<div class="confirm-status" style="margin-top:6px;font-size:0.7rem;color:rgba(255,255,255,0.4);">' + esc(item.memo) + '</div>';
+          }
+          bodyHtml += '</div>';
+          bodyHtml += '<button class="confirm-btn" data-item-id="' + esc(item.itemId) + '">確認する</button>';
+          card.innerHTML = bodyHtml;
+          card.querySelector('.confirm-btn').addEventListener('click', function (e) {
+            e.stopPropagation();
+            confirmItem(this.dataset.itemId);
+          });
+        } else {
+          card.classList.add('not-checked-warning');
+          bodyHtml += '<div class="confirm-status" style="color:rgba(255,149,0,0.9);">\u26A0 未チェック - 社員に報告してください</div>';
+          bodyHtml += '</div>';
+          bodyHtml += '<button class="report-btn" data-item-id="' + esc(item.itemId) + '">未実施を記録</button>';
+          card.innerHTML = bodyHtml;
+          card.querySelector('.report-btn').addEventListener('click', function (e) {
+            e.stopPropagation();
+            reportNotChecked(this.dataset.itemId);
+          });
+        }
+
+        a.appendChild(card);
+      });
+    }
+
+    function confirmItem(itemId) {
+      var opt = els.staffSelect.options[els.staffSelect.selectedIndex];
+      if (!els.staffSelect.value) {
+        showToast('担当者を選択してください', 'rgba(255,59,48,0.85)');
+        return;
+      }
+
+      // Disable the button immediately
+      var btns = els.contentArea.querySelectorAll('.confirm-btn[data-item-id="' + itemId + '"]');
+      btns.forEach(function (b) { b.disabled = true; b.textContent = '送信中...'; });
+
+      if (IS_LOCAL) {
+        // Simulate success locally
+        setTimeout(function () {
+          for (var i = 0; i < confirmationItems.length; i++) {
+            if (confirmationItems[i].itemId === itemId) {
+              confirmationItems[i].confirmed = true;
+              confirmationItems[i].confirmerName = opt.dataset.name;
+              confirmationItems[i].confirmedAt = new Date().getHours() + ':' + ('0' + new Date().getMinutes()).slice(-2);
+              break;
+            }
+          }
+          renderConfirmationItems();
+        }, 300);
+        return;
+      }
+
+      var payload = {
+        action: 'submitConfirmation',
+        apiKey: API_KEY,
+        data: {
+          storeId: 'STORE001',
+          staffId: els.staffSelect.value,
+          staffName: opt.dataset.name,
+          itemId: itemId,
+          status: 'confirmed'
+        }
+      };
+
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.error) throw new Error(data.error);
+        for (var i = 0; i < confirmationItems.length; i++) {
+          if (confirmationItems[i].itemId === itemId) {
+            confirmationItems[i].confirmed = true;
+            confirmationItems[i].confirmerName = opt.dataset.name;
+            confirmationItems[i].confirmedAt = new Date().getHours() + ':' + ('0' + new Date().getMinutes()).slice(-2);
+            break;
+          }
+        }
+        renderConfirmationItems();
+      })
+      .catch(function (e) {
+        showToast('確認送信エラー: ' + (e.message || e), 'rgba(255,59,48,0.85)');
+        btns.forEach(function (b) { b.disabled = false; b.textContent = '確認する'; });
+      });
+    }
+
+    function reportNotChecked(itemId) {
+      var opt = els.staffSelect.options[els.staffSelect.selectedIndex];
+      if (!els.staffSelect.value) {
+        showToast('担当者を選択してください', 'rgba(255,59,48,0.85)');
+        return;
+      }
+
+      // Disable the button immediately
+      var btns = els.contentArea.querySelectorAll('.report-btn[data-item-id="' + itemId + '"]');
+      btns.forEach(function (b) { b.disabled = true; b.textContent = '送信中...'; });
+
+      if (IS_LOCAL) {
+        setTimeout(function () {
+          for (var i = 0; i < confirmationItems.length; i++) {
+            if (confirmationItems[i].itemId === itemId) {
+              confirmationItems[i].confirmed = true;
+              confirmationItems[i].confirmerName = opt.dataset.name + ' (未実施報告)';
+              confirmationItems[i].confirmedAt = new Date().getHours() + ':' + ('0' + new Date().getMinutes()).slice(-2);
+              break;
+            }
+          }
+          renderConfirmationItems();
+          showToast('未実施を記録しました。社員に報告してください。', 'rgba(255,149,0,0.85)');
+        }, 300);
+        return;
+      }
+
+      var payload = {
+        action: 'submitConfirmation',
+        apiKey: API_KEY,
+        data: {
+          storeId: 'STORE001',
+          staffId: els.staffSelect.value,
+          staffName: opt.dataset.name,
+          itemId: itemId,
+          status: 'not_checked'
+        }
+      };
+
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.error) throw new Error(data.error);
+        for (var i = 0; i < confirmationItems.length; i++) {
+          if (confirmationItems[i].itemId === itemId) {
+            confirmationItems[i].confirmed = true;
+            confirmationItems[i].confirmerName = opt.dataset.name + ' (未実施報告)';
+            confirmationItems[i].confirmedAt = new Date().getHours() + ':' + ('0' + new Date().getMinutes()).slice(-2);
+            break;
+          }
+        }
+        renderConfirmationItems();
+        showToast('未実施を記録しました。社員に報告してください。', 'rgba(255,149,0,0.85)');
+      })
+      .catch(function (e) {
+        showToast('記録送信エラー: ' + (e.message || e), 'rgba(255,59,48,0.85)');
+        btns.forEach(function (b) { b.disabled = false; b.textContent = '未実施を記録'; });
+      });
+    }
+
+    function exitConfirmationMode() {
+      confirmationMode = false;
+      confirmationItems = [];
+      els.submitBar.style.display = '';
+      renderChecklist();
+    }
 
     // ===== Utilities =====
     function showToast(m, bg) { els.toast.textContent = m; els.toast.style.background = bg || 'rgba(52,199,89,0.85)'; els.toast.classList.add('show'); setTimeout(function () { els.toast.classList.remove('show'); }, 3000); }
