@@ -1817,6 +1817,33 @@
     }
     .photo-result.ok .photo-result-label { color: #248A3D; }
     .photo-result.ng .photo-result-label { color: #D70015; }
+
+    /* Temperature camera button */
+    .temp-camera-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 8px;
+      background: var(--apple-blue);
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+    .temp-camera-btn:active {
+      transform: scale(0.93);
+    }
+    .temp-read-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--apple-blue);
+      text-align: center;
+      margin: 8px 0;
+    }
   </style>
 </head>
 
@@ -2439,7 +2466,7 @@
           var arrow = hasMemo ? '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' : '';
           var mc = hasMemo ? '<div class="item-memo">' + esc(item.memo).replace(/\n/g, '<br>') + '</div>' : '';
 
-          var tempEl = isTemp ? '<div class="temp-input-wrap"><input type="number" step="0.1" class="temp-input" data-item-id="' + item.itemId + '" placeholder="--"><span class="temp-unit">°C</span></div>' : '';
+          var tempEl = isTemp ? '<div class="temp-input-wrap"><input type="number" step="0.1" class="temp-input" data-item-id="' + item.itemId + '" placeholder="--" readonly><span class="temp-unit">°C</span></div><button class="temp-camera-btn" data-item-id="' + item.itemId + '" title="写真で計測">📷</button>' : '';
 
           card.innerHTML = '<div class="checkbox-circle"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div><div class="item-body"><div class="item-name">' + esc(item.name) + '</div>' + mc + '</div><div style="flex-shrink:0; display:flex; align-items:center; gap:8px;">' + ft + photoBadge + tempEl + manEl + arrow + '</div>';
 
@@ -2458,21 +2485,15 @@
 
           if (isTemp) {
             var tempInput = card.querySelector('.temp-input');
+            var tempCameraBtn = card.querySelector('.temp-camera-btn');
             if (tempInput) {
-              tempInput.addEventListener('input', function () {
-                var val = this.value.trim();
-                if (val !== '' && !isNaN(parseFloat(val))) {
-                  card.classList.add('checked');
-                  checkedState[item.itemId] = parseFloat(val);
-                  card.setAttribute('aria-checked', 'true');
-                } else {
-                  card.classList.remove('checked');
-                  delete checkedState[item.itemId];
-                  card.setAttribute('aria-checked', 'false');
-                }
-                updateProgress(); updateSubmitBtn();
-              });
               tempInput.addEventListener('click', function (e) { e.stopPropagation(); });
+            }
+            if (tempCameraBtn) {
+              tempCameraBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                openTempPhotoModal(item);
+              });
             }
           }
 
@@ -2785,67 +2806,7 @@
       this.value = '';
     });
 
-    photoSubmitBtn.addEventListener('click', function () {
-      if (!currentPhotoBase64 || !currentPhotoItem) return;
-      var staffOpt = els.staffSelect.options[els.staffSelect.selectedIndex];
-      if (!els.staffSelect.value) {
-        showToast('担当者を選択してください', 'rgba(255,59,48,0.85)');
-        return;
-      }
-
-      // Show judging state
-      photoCaptureBtn.style.display = 'none';
-      photoSubmitBtn.style.display = 'none';
-      photoCancelBtn.style.display = 'none';
-      var judgingHtml = '<div class="photo-judging"><div class="spinner"></div><div style="font-size:15px;color:var(--apple-secondary-label);">AIが判定中...</div></div>';
-      photoModalContent.insertAdjacentHTML('beforeend', judgingHtml);
-
-      var payload = {
-        storeId: 'STORE001',
-        staffId: els.staffSelect.value,
-        staffName: staffOpt.dataset.name,
-        category: currentPhotoItem.category,
-        itemId: currentPhotoItem.itemId,
-        itemName: currentPhotoItem.name,
-        photo: currentPhotoBase64
-      };
-
-      if (IS_LOCAL) {
-        // ローカルテスト用ダミー応答
-        setTimeout(function () {
-          showPhotoResult({ result: 'OK', reason: 'テスト: 正常に完了しています', confidence: 0.95 });
-        }, 1500);
-        return;
-      }
-
-      var ctrl = new AbortController();
-      var timer = setTimeout(function () { ctrl.abort(); }, 120000); // 2分タイムアウト
-      fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        signal: ctrl.signal,
-        body: JSON.stringify({
-          action: 'submitPhotoCheck',
-          apiKey: API_KEY,
-          data: payload
-        })
-      })
-      .then(function (r) { clearTimeout(timer); return r.json(); })
-      .then(function (r) {
-        if (r.error) throw new Error(r.error);
-        showPhotoResult(r);
-      })
-      .catch(function (e) {
-        clearTimeout(timer);
-        // Remove judging UI and show buttons again
-        var jEl = photoModalContent.querySelector('.photo-judging');
-        if (jEl) jEl.remove();
-        photoCaptureBtn.style.display = '';
-        photoSubmitBtn.style.display = '';
-        photoCancelBtn.style.display = '';
-        showToast('エラー: ' + (e.message || e), 'rgba(255,59,48,0.85)');
-      });
-    });
+    // photoSubmitBtn handler is unified in the Temperature photo OCR section below
 
     function showPhotoResult(r) {
       var jEl = photoModalContent.querySelector('.photo-judging');
@@ -2892,6 +2853,179 @@
         }
       }
       closePhotoModal();
+    };
+
+    // ===== Temperature photo OCR =====
+    var tempPhotoMode = false;
+    var currentTempItem = null;
+
+    function openTempPhotoModal(item) {
+      tempPhotoMode = true;
+      currentTempItem = item;
+      currentPhotoItem = item;
+      currentPhotoBase64 = null;
+      document.getElementById('photoModalTitle').textContent = '🌡️ 温度計を撮影';
+      document.getElementById('photoModalSubtitle').textContent = item.name + '（' + (item.timing || '') + '）';
+      photoPreviewArea.classList.remove('has-photo');
+      photoPreviewImg.src = '';
+      photoSubmitBtn.disabled = true;
+      photoCaptureBtn.style.display = '';
+      photoSubmitBtn.style.display = '';
+      photoCancelBtn.style.display = '';
+      photoCaptureBtn.textContent = '📷 温度計を撮影';
+      photoSubmitBtn.textContent = 'AI読み取り開始';
+      var judgingEl = photoModalContent.querySelector('.photo-judging');
+      if (judgingEl) judgingEl.remove();
+      var resultEl = photoModalContent.querySelector('.photo-result');
+      if (resultEl) resultEl.remove();
+      photoModalEl.classList.add('open');
+    }
+
+    // Unified photo submit handler (handles both photo verification and temperature OCR)
+    photoSubmitBtn.addEventListener('click', function () {
+      if (!currentPhotoBase64) return;
+      var staffOpt = els.staffSelect.options[els.staffSelect.selectedIndex];
+      if (!els.staffSelect.value) {
+        showToast('担当者を選択してください', 'rgba(255,59,48,0.85)');
+        return;
+      }
+
+      // Show judging state
+      photoCaptureBtn.style.display = 'none';
+      photoSubmitBtn.style.display = 'none';
+      photoCancelBtn.style.display = 'none';
+
+      if (tempPhotoMode && currentTempItem) {
+        // === Temperature OCR mode ===
+        var judgingHtml = '<div class="photo-judging"><div class="spinner"></div><div style="font-size:15px;color:var(--apple-secondary-label);">温度を読み取り中...</div></div>';
+        photoModalContent.insertAdjacentHTML('beforeend', judgingHtml);
+
+        var payload = {
+          storeId: 'STORE001',
+          staffId: els.staffSelect.value,
+          staffName: staffOpt.dataset.name,
+          category: currentTempItem.category,
+          itemId: currentTempItem.itemId,
+          itemName: currentTempItem.name,
+          timing: currentTempItem.timing || '',
+          photo: currentPhotoBase64
+        };
+
+        if (IS_LOCAL) {
+          setTimeout(function () {
+            showTempResult({ temperature: 2.3, unit: '℃', confidence: 0.92, reason: 'デジタル温度計を読取' });
+          }, 1500);
+          return;
+        }
+
+        var ctrl = new AbortController();
+        var timer = setTimeout(function () { ctrl.abort(); }, 120000);
+        fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          signal: ctrl.signal,
+          body: JSON.stringify({ action: 'submitTemperaturePhoto', apiKey: API_KEY, data: payload })
+        })
+        .then(function (r) { clearTimeout(timer); return r.json(); })
+        .then(function (r) { if (r.error) throw new Error(r.error); showTempResult(r); })
+        .catch(function (e) {
+          clearTimeout(timer);
+          var jEl = photoModalContent.querySelector('.photo-judging'); if (jEl) jEl.remove();
+          photoCaptureBtn.style.display = ''; photoSubmitBtn.style.display = ''; photoCancelBtn.style.display = '';
+          showToast('エラー: ' + (e.message || e), 'rgba(255,59,48,0.85)');
+        });
+
+      } else {
+        // === Normal photo verification mode ===
+        var judgingHtml2 = '<div class="photo-judging"><div class="spinner"></div><div style="font-size:15px;color:var(--apple-secondary-label);">AIが判定中...</div></div>';
+        photoModalContent.insertAdjacentHTML('beforeend', judgingHtml2);
+
+        var payload2 = {
+          storeId: 'STORE001',
+          staffId: els.staffSelect.value,
+          staffName: staffOpt.dataset.name,
+          category: currentPhotoItem.category,
+          itemId: currentPhotoItem.itemId,
+          itemName: currentPhotoItem.name,
+          photo: currentPhotoBase64
+        };
+
+        if (IS_LOCAL) {
+          setTimeout(function () {
+            showPhotoResult({ result: 'OK', reason: 'テスト: 正常に完了しています', confidence: 0.95 });
+          }, 1500);
+          return;
+        }
+
+        var ctrl2 = new AbortController();
+        var timer2 = setTimeout(function () { ctrl2.abort(); }, 120000);
+        fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          signal: ctrl2.signal,
+          body: JSON.stringify({ action: 'submitPhotoCheck', apiKey: API_KEY, data: payload2 })
+        })
+        .then(function (r) { clearTimeout(timer2); return r.json(); })
+        .then(function (r) { if (r.error) throw new Error(r.error); showPhotoResult(r); })
+        .catch(function (e) {
+          clearTimeout(timer2);
+          var jEl = photoModalContent.querySelector('.photo-judging'); if (jEl) jEl.remove();
+          photoCaptureBtn.style.display = ''; photoSubmitBtn.style.display = ''; photoCancelBtn.style.display = '';
+          showToast('エラー: ' + (e.message || e), 'rgba(255,59,48,0.85)');
+        });
+      }
+    });
+
+    function showTempResult(r) {
+      var jEl = photoModalContent.querySelector('.photo-judging');
+      if (jEl) jEl.remove();
+
+      var hasTemp = r.temperature !== null && r.temperature !== undefined;
+      var icon = hasTemp ? '🌡️' : '❌';
+      var label = hasTemp ? r.temperature + r.unit : '読み取り失敗';
+      var cls = hasTemp ? 'ok' : 'ng';
+
+      var html = '<div class="photo-result ' + cls + '">'
+        + '<div class="photo-result-icon">' + icon + '</div>'
+        + '<div class="temp-read-value">' + label + '</div>'
+        + '<div class="photo-result-reason">' + esc(r.reason || '') + '</div>'
+        + '<div style="font-size:13px;color:var(--apple-tertiary-label);margin-bottom:16px;">確信度: ' + Math.round((r.confidence || 0) * 100) + '%</div>'
+        + '<button class="photo-submit-btn" onclick="closeTempAndUpdate(' + (hasTemp ? r.temperature : 'null') + ')">' + (hasTemp ? 'この温度で記録' : 'もう一度撮影') + '</button>'
+        + (hasTemp ? '<button class="photo-cancel-btn" style="margin-top:8px;" onclick="closeTempRetry()">撮り直す</button>' : '<button class="photo-cancel-btn" style="margin-top:8px;" onclick="closePhotoModal(); tempPhotoMode=false;">キャンセル</button>')
+        + '</div>';
+      photoModalContent.insertAdjacentHTML('beforeend', html);
+    }
+
+    window.closeTempAndUpdate = function (temp) {
+      if (temp !== null && currentTempItem) {
+        var itemId = currentTempItem.itemId;
+        checkedState[itemId] = temp;
+        var card = document.querySelector('.check-item[data-id="' + itemId + '"]');
+        if (card) {
+          card.classList.add('checked');
+          card.setAttribute('aria-checked', 'true');
+          var inp = card.querySelector('.temp-input');
+          if (inp) inp.value = temp;
+          card.classList.remove('check-flash');
+          void card.offsetWidth;
+          card.classList.add('check-flash');
+        }
+        updateProgress();
+        updateSubmitBtn();
+        showToast(temp + '°C を記録しました');
+      }
+      tempPhotoMode = false;
+      currentTempItem = null;
+      closePhotoModal();
+    };
+
+    window.closeTempRetry = function () {
+      if (currentTempItem) {
+        var item = currentTempItem;
+        tempPhotoMode = false;
+        closePhotoModal();
+        openTempPhotoModal(item);
+      }
     };
 
     // ===== Logo reload =====
