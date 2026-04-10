@@ -1339,7 +1339,7 @@ function verifyPhotoWithAI_(base64Data, itemName, category) {
     + '{"result": "OK" or "NG", "reason": "判定理由（日本語30文字以内）", "confidence": 0.0-1.0}';
 
   var payload = {
-    model: 'claude-haiku-4-20250414',
+    model: 'claude-3-5-haiku-20241022',
     max_tokens: 256,
     messages: [{
       role: 'user',
@@ -1430,7 +1430,7 @@ function readTemperatureWithAI_(base64Data) {
     + '{"temperature": 数値（小数点1桁まで、読み取れない場合はnull）, "unit": "℃" or "°F", "confidence": 0.0-1.0, "reason": "読み取り状況（日本語20文字以内）"}';
 
   var payload = {
-    model: 'claude-haiku-4-20250414',
+    model: 'claude-3-5-haiku-20241022',
     max_tokens: 256,
     messages: [{
       role: 'user',
