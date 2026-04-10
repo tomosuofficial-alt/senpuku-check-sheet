@@ -15,6 +15,7 @@
     rel="stylesheet">
   <style>
     :root {
+      /* === 和風 Header tokens === */
       --glass-bg: rgba(255, 255, 255, 0.08);
       --glass-bg-heavy: rgba(255, 255, 255, 0.12);
       --glass-border: rgba(255, 255, 255, 0.15);
@@ -40,7 +41,22 @@
       --purple: #8a7445;
       --radius: 20px;
       --radius-sm: 14px;
-      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition: 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+
+      /* === Apple Design tokens === */
+      --apple-blue: #007AFF;
+      --apple-green: #34C759;
+      --apple-red: #FF3B30;
+      --apple-orange: #FF9500;
+      --apple-label: #000000;
+      --apple-secondary-label: rgba(60, 60, 67, 0.6);
+      --apple-tertiary-label: rgba(60, 60, 67, 0.3);
+      --apple-bg-grouped: #F2F2F7;
+      --apple-bg-card: #FFFFFF;
+      --apple-separator: rgba(60, 60, 67, 0.29);
+      --apple-fill: rgba(120, 120, 128, 0.12);
+      --apple-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+      --apple-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
     }
 
     * {
@@ -56,9 +72,11 @@
     }
 
     body {
-      font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, sans-serif;
-      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+        'Helvetica Neue', 'Noto Sans JP', sans-serif;
+      color: var(--apple-label);
       -webkit-tap-highlight-color: transparent;
+      background: var(--apple-bg-grouped);
     }
 
     .splash {
@@ -119,41 +137,15 @@
     }
 
     .bg-image {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      background:
-        radial-gradient(ellipse at 20% 0%, rgba(0, 180, 160, 0.35), transparent 55%),
-        radial-gradient(ellipse at 80% 10%, rgba(0, 100, 200, 0.3), transparent 50%),
-        radial-gradient(ellipse at 50% 60%, rgba(10, 40, 80, 0.8), transparent 70%),
-        radial-gradient(ellipse at 30% 100%, rgba(0, 60, 120, 0.4), transparent 60%),
-        linear-gradient(160deg, #0a1628 0%, #0d2847 30%, #0a3a5c 55%, #072a3f 80%, #060e1a 100%);
+      display: none;
     }
 
     .bg-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      background: radial-gradient(ellipse at 30% 20%, rgba(195, 13, 35, 0.03), transparent 60%),
-                  radial-gradient(ellipse at 70% 80%, rgba(255, 255, 255, 0.02), transparent 50%);
+      display: none;
     }
 
     .bg-progress {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 0%;
-      z-index: 1;
-      background: linear-gradient(
-        to top,
-        rgba(52, 199, 89, 0.25) 0%,
-        rgba(52, 199, 89, 0.12) 40%,
-        rgba(52, 199, 89, 0.04) 75%,
-        transparent 100%
-      );
-      transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-      pointer-events: none;
+      display: none;
     }
 
     .app-shell {
@@ -164,14 +156,13 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      background: var(--apple-bg-grouped);
     }
 
     .header {
       flex-shrink: 0;
-      background: rgba(18, 18, 16, 0.85);
-      backdrop-filter: blur(var(--blur-heavy));
-      -webkit-backdrop-filter: blur(var(--blur-heavy));
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      background: linear-gradient(160deg, #0a1628 0%, #0d2847 40%, #0a3a5c 70%, #0d2847 100%);
+      border-bottom: none;
       padding: 10px max(12px, env(safe-area-inset-right)) 12px max(12px, env(safe-area-inset-left));
       padding-top: max(10px, env(safe-area-inset-top));
     }
@@ -283,96 +274,96 @@
 
     .staff-bar {
       flex-shrink: 0;
-      padding: 8px 16px;
+      padding: 12px 16px 4px;
     }
 
     .staff-select {
       width: 100%;
       padding: 12px 30px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: var(--radius-sm);
-      backdrop-filter: blur(var(--blur));
-      -webkit-backdrop-filter: blur(var(--blur));
-      background: rgba(255, 255, 255, 0.04);
-      color: var(--text-white);
-      font-size: 0.9rem;
+      border: none;
+      border-radius: 12px;
+      background: var(--apple-bg-card);
+      color: var(--apple-label);
+      font-size: 15px;
       font-family: inherit;
       font-weight: 500;
-      letter-spacing: 0.05em;
+      letter-spacing: -0.24px;
       appearance: none;
       -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23f5f4f0' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 16px center;
       text-align: center;
       text-align-last: center;
+      box-shadow: var(--apple-shadow-sm);
+      transition: box-shadow 0.2s ease;
+    }
+
+    .staff-select:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25), var(--apple-shadow-sm);
     }
 
     .staff-select option {
       color: #1a1a18;
-      background: #f5f4f0;
+      background: #ffffff;
     }
 
     .tab-bar {
       flex-shrink: 0;
       display: flex;
-      padding: 4px;
+      padding: 2px;
       gap: 0;
-      background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.1) 0%,
-        rgba(255, 255, 255, 0.04) 100%
-      );
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-top-color: rgba(255, 255, 255, 0.25);
-      margin: 8px 24px;
-      border-radius: 999px;
-      backdrop-filter: blur(20px) saturate(1.4);
-      -webkit-backdrop-filter: blur(20px) saturate(1.4);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+      background: var(--apple-fill);
+      border: none;
+      margin: 8px 16px;
+      border-radius: 10px;
     }
 
     .tab-btn {
       flex: 1;
-      padding: 11px 4px;
+      padding: 8px 4px;
       border: none;
-      border-radius: 999px;
+      border-radius: 8px;
       background: transparent;
-      color: rgba(255, 255, 255, 0.25);
+      color: var(--apple-secondary-label);
       font-size: 0;
       font-family: inherit;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
     .tab-btn svg {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       stroke: currentColor;
       stroke-width: 1.5;
       fill: none;
-      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    .tab-btn:active {
+      transform: scale(0.97);
     }
 
     .tab-btn.active {
-      background: rgba(195, 13, 35, 0.12);
-      color: #ffffff;
-      box-shadow: 0 0 16px rgba(195, 13, 35, 0.1);
+      background: var(--apple-bg-card);
+      color: var(--red);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
     }
 
     .tab-btn.active svg {
-      stroke-width: 1.8;
-      filter: drop-shadow(0 0 4px rgba(195, 13, 35, 0.4));
+      stroke-width: 2;
     }
 
     .main-card {
       flex: 1;
       display: flex;
       flex-direction: column;
-      margin: 0 8px 12px;
+      margin: 0;
       background: transparent;
       border: none;
       border-radius: 0;
@@ -384,11 +375,16 @@
       flex: 1;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding: 0 4px;
+      padding: 0 16px;
     }
 
     .progress-card {
-      display: none;
+      display: block;
+      background: var(--apple-bg-card);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 0 16px 8px;
+      box-shadow: var(--apple-shadow-sm);
     }
 
     .progress-top {
@@ -399,43 +395,40 @@
     }
 
     .progress-label {
-      font-size: 0.72rem;
+      font-size: 13px;
       font-weight: 400;
-      color: rgba(255, 255, 255, 0.5);
-      letter-spacing: 0.08em;
+      color: var(--apple-secondary-label);
+      letter-spacing: -0.08px;
     }
 
     .progress-pct {
-      font-size: 1.2rem;
+      font-size: 17px;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--apple-label);
+      letter-spacing: -0.41px;
     }
 
     .progress-bar-bg {
-      height: 3px;
-      background: rgba(255, 255, 255, 0.08);
+      height: 4px;
+      background: var(--apple-fill);
       border-radius: 999px;
       overflow: hidden;
     }
 
     .progress-bar-fill {
       height: 100%;
-      background: linear-gradient(90deg, #8b0818, var(--red));
+      background: linear-gradient(90deg, var(--red), #e8415a);
       border-radius: 999px;
-      transition: width 0.5s ease;
-      box-shadow: 0 0 6px rgba(195, 13, 35, 0.35);
+      transition: width 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
     }
 
     .timer-card {
-      backdrop-filter: blur(var(--blur-heavy));
-      -webkit-backdrop-filter: blur(var(--blur-heavy));
-      background: rgba(255, 159, 10, 0.15);
-      border: 1px solid rgba(255, 159, 10, 0.25);
-      border-top-color: rgba(255, 159, 10, 0.4);
-      border-radius: 0;
+      background: var(--apple-bg-card);
+      border: none;
+      border-radius: 12px;
       padding: 16px 20px;
-      margin-bottom: 0;
-      box-shadow: var(--glass-shadow), inset 0 1px 1px rgba(255, 159, 10, 0.2);
+      margin-bottom: 8px;
+      box-shadow: var(--apple-shadow-sm);
       display: none;
     }
 
@@ -444,20 +437,20 @@
     }
 
     .timer-label {
-      font-size: 0.75rem;
+      font-size: 13px;
       font-weight: 500;
-      color: var(--text-white);
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      color: var(--apple-secondary-label);
+      letter-spacing: -0.08px;
     }
 
     .timer-display {
-      font-size: 1.8rem;
+      font-size: 34px;
       font-weight: 700;
-      color: var(--text-white);
+      color: var(--apple-orange);
       text-align: center;
       margin: 8px 0;
       font-variant-numeric: tabular-nums;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      letter-spacing: 0.37px;
     }
 
     .timer-controls {
@@ -467,34 +460,35 @@
     }
 
     .timer-btn {
-      padding: 6px 20px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.2);
-      color: var(--text-white);
-      font-size: 0.8rem;
+      padding: 8px 24px;
+      border: none;
+      border-radius: 9999px;
+      background: var(--apple-fill);
+      color: var(--apple-label);
+      font-size: 15px;
       font-weight: 500;
       font-family: inherit;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
 
     .timer-btn:active {
-      background: rgba(255, 255, 255, 0.35);
+      transform: scale(0.97);
     }
 
     .timer-btn.primary {
-      background: var(--orange);
-      border-color: var(--orange);
+      background: var(--apple-orange);
+      color: #fff;
     }
 
     .timing-group {
       background: transparent;
       border: none;
-      margin-bottom: 0;
+      margin-bottom: 4px;
       overflow: visible;
       box-shadow: none;
       border-radius: 0;
-      padding: 0 12px;
+      padding: 0;
     }
 
     .timing-group:last-child {
@@ -505,22 +499,22 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 10px 16px;
+      padding: 8px 4px;
       margin: 8px 0 2px;
     }
 
     .timing-header::before {
       content: '';
       flex: 1;
-      height: 1px;
-      background: linear-gradient(to right, transparent, var(--timing-color, rgba(255,255,255,0.15)));
+      height: 0.5px;
+      background: linear-gradient(to right, transparent, var(--apple-separator));
     }
 
     .timing-header::after {
       content: '';
       flex: 1;
-      height: 1px;
-      background: linear-gradient(to left, transparent, var(--timing-color, rgba(255,255,255,0.15)));
+      height: 0.5px;
+      background: linear-gradient(to left, transparent, var(--apple-separator));
     }
 
     .timing-dot {
@@ -531,21 +525,20 @@
     }
 
     .timing-name {
-      font-size: 0.94rem;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.4);
-      letter-spacing: 0.12em;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--apple-secondary-label);
+      letter-spacing: -0.08px;
       white-space: nowrap;
-      padding: 4px 14px;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: var(--apple-fill);
+      border: none;
     }
 
     .timing-count {
-      font-size: 0.6rem;
-      color: rgba(255, 255, 255, 0.25);
+      font-size: 11px;
+      color: var(--apple-tertiary-label);
       margin-left: auto;
     }
 
@@ -554,29 +547,39 @@
       display: flex;
       align-items: center;
       gap: 14px;
-      padding: 15px 18px;
-      margin: 5px 0;
+      padding: 14px 16px;
+      margin: 0;
       cursor: pointer;
       -webkit-user-select: none;
       user-select: none;
-      border-radius: 16px;
-      background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.12) 0%,
-        rgba(255, 255, 255, 0.05) 40%,
-        rgba(255, 255, 255, 0.02) 100%
-      );
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-top-color: rgba(255, 255, 255, 0.3);
-      border-left-color: rgba(255, 255, 255, 0.22);
-      box-shadow:
-        0 4px 24px rgba(0, 0, 0, 0.2),
-        0 1px 3px rgba(0, 0, 0, 0.15),
-        inset 0 1px 1px rgba(255, 255, 255, 0.15),
-        inset 0 -1px 2px rgba(0, 0, 0, 0.05);
-      backdrop-filter: blur(20px) saturate(1.4);
-      -webkit-backdrop-filter: blur(20px) saturate(1.4);
-      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 0;
+      background: var(--apple-bg-card);
+      border: none;
+      border-bottom: 0.5px solid var(--apple-separator);
+      box-shadow: none;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+
+    .check-item:first-of-type {
+      border-radius: 12px 12px 0 0;
+    }
+
+    .check-item:last-of-type {
+      border-radius: 0 0 12px 12px;
+      border-bottom: none;
+    }
+
+    .check-item:only-of-type {
+      border-radius: 12px;
+      border-bottom: none;
+    }
+
+    .timing-group .check-item:first-of-type {
+      border-radius: 12px 12px 0 0;
+    }
+    .timing-group .check-item:last-child {
+      border-radius: 0 0 12px 12px;
+      border-bottom: none;
     }
 
     .check-item::after {
@@ -585,56 +588,31 @@
 
     .check-item:active {
       transform: scale(0.97);
-      background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.18) 0%,
-        rgba(255, 255, 255, 0.08) 40%,
-        rgba(255, 255, 255, 0.04) 100%
-      );
+      background: rgba(0, 0, 0, 0.03);
     }
 
     .check-item.checked {
-      background: linear-gradient(
-        135deg,
-        rgba(195, 13, 35, 0.15) 0%,
-        rgba(195, 13, 35, 0.06) 50%,
-        rgba(255, 255, 255, 0.03) 100%
-      );
-      border-color: rgba(195, 13, 35, 0.25);
-      border-top-color: rgba(195, 13, 35, 0.35);
-      box-shadow:
-        0 0 18px rgba(195, 13, 35, 0.15),
-        0 4px 16px rgba(0, 0, 0, 0.2),
-        inset 0 1px 1px rgba(195, 13, 35, 0.2);
+      background: rgba(195, 13, 35, 0.04);
     }
 
     .check-item.checked .item-name {
-      color: rgba(255, 255, 255, 0.35);
+      color: var(--apple-tertiary-label);
       text-decoration: line-through;
       text-decoration-color: rgba(195, 13, 35, 0.3);
     }
 
     @keyframes checkGlow {
-      0% {
-        box-shadow: 0 0 14px rgba(195, 13, 35, 0.12), 0 2px 8px rgba(0, 0, 0, 0.2),
-                    inset 0 1px 0 rgba(195, 13, 35, 0.15);
-      }
-      50% {
-        box-shadow: 0 0 28px rgba(195, 13, 35, 0.4), 0 2px 12px rgba(0, 0, 0, 0.25),
-                    inset 0 1px 0 rgba(195, 13, 35, 0.3);
-      }
-      100% {
-        box-shadow: 0 0 14px rgba(195, 13, 35, 0.12), 0 2px 8px rgba(0, 0, 0, 0.2),
-                    inset 0 1px 0 rgba(195, 13, 35, 0.15);
-      }
+      0% { background: rgba(195, 13, 35, 0.04); }
+      50% { background: rgba(195, 13, 35, 0.12); }
+      100% { background: rgba(195, 13, 35, 0.04); }
     }
 
     .check-item.check-flash {
-      animation: checkGlow 0.6s ease;
+      animation: checkGlow 0.5s ease;
     }
 
     .check-item.already-done {
-      opacity: 0.2;
+      opacity: 0.35;
       pointer-events: none;
     }
 
@@ -648,25 +626,25 @@
     }
 
     .item-name {
-      font-size: 1.1rem;
+      font-size: 17px;
       font-weight: 400;
-      color: rgba(255, 255, 255, 0.85);
-      line-height: 1.5;
-      letter-spacing: 0.02em;
+      color: var(--apple-label);
+      line-height: 1.4;
+      letter-spacing: -0.41px;
     }
 
     .chevron {
       flex-shrink: 0;
-      width: 20px;
-      height: 20px;
-      color: rgba(255, 255, 255, 0.25);
+      width: 18px;
+      height: 18px;
+      color: var(--apple-tertiary-label);
       transition: transform var(--transition), color var(--transition);
       transform: rotate(180deg);
     }
 
     .check-item.expanded .chevron {
       transform: rotate(0deg);
-      color: #ffffff;
+      color: var(--apple-secondary-label);
     }
 
     .item-tags {
@@ -678,72 +656,50 @@
     }
 
     .tag {
-      font-size: 0.6rem;
+      font-size: 11px;
       font-weight: 500;
-      padding: 3px 8px;
+      padding: 2px 8px;
       border-radius: 6px;
-      background: rgba(255, 255, 255, 0.06);
-      color: rgba(255, 255, 255, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: var(--apple-fill);
+      color: var(--apple-secondary-label);
+      border: none;
     }
 
     .tag-high {
-      color: #ffffff;
-      background: var(--red);
-      box-shadow: 0 0 10px rgba(255, 69, 58, 0.3);
+      color: #fff;
+      background: var(--apple-red);
       border: none;
-      font-weight: 700;
-      letter-spacing: 0.02em;
+      font-weight: 600;
     }
 
     .tag-mid {
-      color: var(--orange);
-      background: rgba(255, 159, 10, 0.15);
-      border: 1px solid rgba(255, 159, 10, 0.3);
+      color: #C93400;
+      background: rgba(255, 149, 0, 0.12);
+      border: none;
     }
 
     .tag-low {
-      color: var(--purple);
-      background: rgba(191, 90, 242, 0.15);
-      border: 1px solid rgba(191, 90, 242, 0.3);
+      color: #8A7445;
+      background: rgba(138, 116, 69, 0.1);
+      border: none;
     }
 
     .manual-link {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #ffffff;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--apple-blue);
       padding: 5px 12px;
       border-radius: 8px;
-      background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.22) 0%,
-        rgba(255, 255, 255, 0.06) 100%
-      );
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      border-top-color: rgba(255, 255, 255, 0.4);
-      border-bottom-color: rgba(0, 0, 0, 0.15);
-      box-shadow:
-        0 2px 4px rgba(0, 0, 0, 0.25),
-        0 1px 1px rgba(0, 0, 0, 0.15),
-        inset 0 1px 1px rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(12px) saturate(1.4);
-      -webkit-backdrop-filter: blur(12px) saturate(1.4);
+      background: rgba(0, 122, 255, 0.1);
+      border: none;
       cursor: pointer;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-      transition: all 0.15s ease;
-      letter-spacing: 0.04em;
+      transition: all 0.2s ease;
+      letter-spacing: -0.08px;
     }
 
     .manual-link:active {
-      transform: translateY(1px);
-      box-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.2),
-        inset 0 1px 3px rgba(0, 0, 0, 0.15);
-      background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.1) 0%,
-        rgba(255, 255, 255, 0.04) 100%
-      );
+      transform: scale(0.97);
+      background: rgba(0, 122, 255, 0.18);
     }
 
     .temp-input-wrap {
@@ -755,47 +711,45 @@
 
     .temp-input {
       width: 60px;
-      padding: 5px 8px;
+      padding: 6px 8px;
       border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
-      font-size: 0.85rem;
+      border: 1px solid var(--apple-separator);
+      background: var(--apple-bg-grouped);
+      color: var(--apple-label);
+      font-size: 15px;
       font-family: inherit;
       text-align: right;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
       outline: none;
       transition: all 0.2s ease;
     }
 
     .temp-input:focus {
-      border-color: rgba(255, 255, 255, 0.5);
-      background: rgba(255, 255, 255, 0.18);
-      box-shadow: 0 0 8px rgba(100, 180, 255, 0.3);
+      border-color: var(--apple-blue);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
     }
 
     .temp-input::placeholder {
-      color: rgba(255, 255, 255, 0.3);
+      color: var(--apple-tertiary-label);
     }
 
     .temp-unit {
-      font-size: 0.75rem;
-      color: rgba(255, 255, 255, 0.5);
+      font-size: 13px;
+      color: var(--apple-secondary-label);
       font-weight: 500;
     }
 
     .item-memo {
-      font-size: 1.0rem;
-      color: rgba(255, 255, 255, 0.65);
-      line-height: 1.6;
-      margin-top: 10px;
-      padding: 10px 14px;
-      background: rgba(255, 255, 255, 0.04);
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 15px;
+      color: var(--apple-secondary-label);
+      line-height: 1.5;
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: var(--apple-bg-grouped);
+      border-radius: 8px;
+      border: none;
       display: none;
-      animation: slideIn 0.3s ease;
+      animation: slideIn 0.25s cubic-bezier(0, 0, 0.2, 1);
     }
 
     @keyframes slideIn {
@@ -808,52 +762,51 @@
     }
 
     .memo-btn {
-      font-size: 0.65rem;
+      font-size: 11px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.9);
+      color: var(--apple-blue);
       cursor: pointer;
       padding: 3px 8px;
       border-radius: 6px;
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 122, 255, 0.1);
+      border: none;
     }
 
     .submit-bar {
       flex-shrink: 0;
       padding: 8px 16px;
       padding-bottom: max(8px, env(safe-area-inset-bottom));
-      background: rgba(10, 22, 40, 0.85);
-      backdrop-filter: blur(20px) saturate(1.4);
-      -webkit-backdrop-filter: blur(20px) saturate(1.4);
-      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(242, 242, 247, 0.92);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-top: 0.5px solid var(--apple-separator);
     }
 
     .submit-btn {
       width: 100%;
-      padding: 15px;
+      padding: 16px;
       border: none;
-      border-radius: var(--radius-sm);
-      background: #34C759;
+      border-radius: 14px;
+      background: var(--red);
       color: #ffffff;
-      font-size: 0.95rem;
+      font-size: 17px;
       font-weight: 600;
       font-family: inherit;
-      letter-spacing: 0.05em;
+      letter-spacing: -0.41px;
       cursor: pointer;
-      box-shadow: 0 4px 16px rgba(52, 199, 89, 0.35);
-      transition: all var(--transition);
+      transition: all 0.2s ease;
     }
 
     .submit-btn:active {
-      transform: scale(0.96) translateY(2px);
-      background: #2DB84E;
-      box-shadow: 0 2px 8px rgba(52, 199, 89, 0.25);
+      transform: scale(0.97);
+      filter: brightness(0.95);
     }
 
     .submit-btn:disabled {
-      opacity: 0.3;
+      opacity: 0.35;
       cursor: not-allowed;
       transform: none;
+      filter: none;
     }
 
     .toast {
@@ -861,15 +814,16 @@
       top: 20px;
       left: 50%;
       transform: translateX(-50%) translateY(-120px);
-      backdrop-filter: blur(var(--blur-heavy));
-      -webkit-backdrop-filter: blur(var(--blur-heavy));
-      background: rgba(245, 244, 240, 0.95);
-      color: #121210;
-      padding: 12px 22px;
-      border-radius: var(--radius-sm);
-      font-size: 0.85rem;
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--apple-label);
+      padding: 14px 24px;
+      border-radius: 14px;
+      font-size: 15px;
       font-weight: 600;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      letter-spacing: -0.24px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.04);
       transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       z-index: 500;
     }
@@ -881,55 +835,59 @@
     .omission-banner {
       margin: 8px 16px;
       padding: 14px 16px;
-      border-radius: 14px;
-      background: rgba(255, 59, 48, 0.15);
-      border: 1px solid rgba(255, 59, 48, 0.3);
-      animation: slideIn 0.3s ease;
+      border-radius: 12px;
+      background: var(--apple-bg-card);
+      border-left: 3px solid var(--apple-red);
+      box-shadow: var(--apple-shadow-sm);
+      animation: slideIn 0.3s cubic-bezier(0, 0, 0.2, 1);
     }
 
     .omission-banner-title {
-      font-size: 0.85rem;
+      font-size: 15px;
       font-weight: 700;
-      color: #FF3B30;
+      color: #D70015;
       margin-bottom: 8px;
       display: flex;
       align-items: center;
       gap: 6px;
+      letter-spacing: -0.24px;
     }
 
     .omission-banner-item {
-      font-size: 0.8rem;
-      color: rgba(255, 255, 255, 0.7);
+      font-size: 13px;
+      color: var(--apple-label);
       padding: 3px 0;
       padding-left: 12px;
-      border-left: 2px solid rgba(255, 59, 48, 0.4);
+      border-left: 2px solid rgba(255, 59, 48, 0.3);
       margin: 4px 0;
+      letter-spacing: -0.08px;
     }
 
     .omission-banner-item span {
-      font-size: 0.65rem;
-      color: rgba(255, 255, 255, 0.4);
+      font-size: 11px;
+      color: var(--apple-secondary-label);
       margin-left: 6px;
     }
 
     .omission-dismiss {
-      font-size: 0.7rem;
-      color: rgba(255, 255, 255, 0.4);
+      font-size: 13px;
+      color: var(--apple-blue);
       background: none;
       border: none;
       cursor: pointer;
       margin-top: 8px;
       padding: 4px 8px;
       font-family: inherit;
+      font-weight: 500;
     }
 
     .loading {
       position: fixed;
       inset: 0;
       z-index: 600;
-      backdrop-filter: blur(var(--blur-heavy));
-      -webkit-backdrop-filter: blur(var(--blur-heavy));
-      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(242, 242, 247, 0.6);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -948,9 +906,9 @@
     }
 
     .spinner-dot {
-      width: 10px;
-      height: 10px;
-      background: rgba(255, 255, 255, 0.8);
+      width: 8px;
+      height: 8px;
+      background: var(--apple-secondary-label);
       border-radius: 50%;
       animation: pulse 1.2s ease-in-out infinite;
     }
@@ -964,14 +922,10 @@
     }
 
     @keyframes pulse {
-
-      0%,
-      80%,
-      100% {
+      0%, 80%, 100% {
         opacity: 0.3;
         transform: scale(0.8);
       }
-
       40% {
         opacity: 1;
         transform: scale(1.1);
@@ -982,9 +936,9 @@
       position: fixed;
       inset: 0;
       z-index: 400;
-      background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       display: none;
       align-items: flex-end;
       justify-content: center;
@@ -999,56 +953,56 @@
       width: 100%;
       max-width: 480px;
       max-height: 85vh;
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(var(--blur-heavy));
-      -webkit-backdrop-filter: blur(var(--blur-heavy));
-      border-radius: var(--radius) var(--radius) 0 0;
+      background: var(--apple-bg-grouped);
+      border-radius: 20px 20px 0 0;
       overflow-y: auto;
       padding: 20px 16px;
       padding-bottom: max(20px, env(safe-area-inset-bottom));
-      animation: slideUp 0.3s ease;
+      animation: slideUp 0.35s cubic-bezier(0, 0, 0.2, 1);
     }
 
     @keyframes slideUp {
-      from {
-        transform: translateY(100%);
-      }
-
-      to {
-        transform: translateY(0);
-      }
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
     }
 
     .modal-handle {
       width: 36px;
-      height: 4px;
-      background: #ccc;
+      height: 5px;
+      background: rgba(60, 60, 67, 0.18);
       border-radius: 999px;
       margin: 0 auto 16px;
     }
 
     .modal-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #1a1a1a;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--apple-label);
       margin-bottom: 16px;
+      letter-spacing: 0.38px;
     }
 
     .modal-close {
       position: absolute;
       top: 16px;
       right: 16px;
-      width: 28px;
-      height: 28px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       border: none;
-      background: rgba(0, 0, 0, 0.06);
-      color: var(--text-muted);
+      background: rgba(120, 120, 128, 0.12);
+      color: var(--apple-secondary-label);
       font-size: 1rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .modal-close:active {
+      transform: scale(0.95);
+      background: rgba(120, 120, 128, 0.2);
     }
 
     .form-group {
@@ -1057,46 +1011,49 @@
 
     .form-label {
       display: block;
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: #1a1a1a;
-      letter-spacing: 0.05em;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--apple-secondary-label);
+      letter-spacing: -0.08px;
       margin-bottom: 6px;
+      text-transform: uppercase;
     }
 
     .form-input {
       width: 100%;
       padding: 12px 14px;
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      border-top-color: rgba(0, 0, 0, 0.15);
-      border-radius: var(--radius-sm);
-      font-size: 0.95rem;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
       font-family: inherit;
-      background: rgba(255, 255, 255, 0.5);
-      color: #1a1a1a;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      transition: all var(--transition);
-      box-shadow: var(--inner-glow);
+      background: var(--apple-bg-card);
+      color: var(--apple-label);
+      transition: all 0.2s ease;
+      box-shadow: var(--apple-shadow-sm);
+      letter-spacing: -0.41px;
     }
 
     .form-input:focus {
       outline: none;
-      border-color: var(--accent);
-      background: rgba(255, 255, 255, 0.12);
-      box-shadow: 0 0 0 3px var(--accent-glow), var(--inner-glow);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25), var(--apple-shadow-sm);
     }
 
     .form-btn {
-      padding: 10px 20px;
+      padding: 12px 24px;
       border: none;
-      border-radius: var(--radius-sm);
-      background: var(--accent);
+      border-radius: 12px;
+      background: var(--red);
       color: #fff;
-      font-size: 0.85rem;
+      font-size: 15px;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: -0.24px;
+    }
+
+    .form-btn:active {
+      transform: scale(0.97);
     }
 
     .contact-form-group {
@@ -1109,125 +1066,144 @@
 
     .contact-form-group .required::after {
       content: ' *';
-      color: var(--red);
+      color: var(--apple-red);
       font-weight: 700;
     }
 
     .contact-select {
       width: 100%;
       padding: 12px 14px;
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      border-radius: var(--radius-sm);
-      font-size: 0.95rem;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
       font-family: inherit;
-      background: rgba(255, 255, 255, 0.5);
-      color: #1a1a1a;
+      background: var(--apple-bg-card);
+      color: var(--apple-label);
       appearance: none;
       -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 12px center;
+      box-shadow: var(--apple-shadow-sm);
+      letter-spacing: -0.41px;
     }
 
     .contact-select:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25), var(--apple-shadow-sm);
     }
 
     .contact-textarea {
       width: 100%;
       padding: 12px 14px;
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      border-radius: var(--radius-sm);
-      font-size: 0.95rem;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
       font-family: inherit;
-      background: rgba(255, 255, 255, 0.5);
-      color: #1a1a1a;
+      background: var(--apple-bg-card);
+      color: var(--apple-label);
       resize: vertical;
       min-height: 100px;
+      box-shadow: var(--apple-shadow-sm);
+      letter-spacing: -0.41px;
     }
 
     .contact-textarea:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25), var(--apple-shadow-sm);
     }
 
     .contact-submit-btn {
       width: 100%;
-      padding: 14px;
+      padding: 16px;
       border: none;
-      border-radius: var(--radius-sm);
-      background: #007AFF;
+      border-radius: 14px;
+      background: var(--apple-blue);
       color: #ffffff;
-      font-size: 0.95rem;
+      font-size: 17px;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
-      transition: all var(--transition);
+      transition: all 0.2s ease;
       margin-top: 8px;
+      letter-spacing: -0.41px;
     }
 
     .contact-submit-btn:active {
       transform: scale(0.97);
-      background: #0066DD;
+      filter: brightness(0.95);
     }
 
     .contact-submit-btn:disabled {
-      opacity: 0.4;
+      opacity: 0.35;
       cursor: not-allowed;
       transform: none;
+      filter: none;
     }
 
     .staff-list-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #eee;
+      padding: 12px 16px;
+      background: var(--apple-bg-card);
+      margin-bottom: 1px;
+      border-radius: 0;
+    }
+
+    .staff-list-item:first-child {
+      border-radius: 12px 12px 0 0;
+    }
+
+    .staff-list-item:last-child {
+      border-radius: 0 0 12px 12px;
+      margin-bottom: 0;
     }
 
     .staff-list-name {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: #1a1a1a;
+      font-size: 17px;
+      font-weight: 400;
+      color: var(--apple-label);
+      letter-spacing: -0.41px;
     }
 
     .staff-list-id {
-      font-size: 0.7rem;
-      color: #555555;
+      font-size: 13px;
+      color: var(--apple-secondary-label);
     }
 
     .status-toggle {
-      padding: 4px 12px;
-      border: 1px solid #ddd;
-      border-radius: 999px;
-      background: none;
-      font-size: 0.7rem;
+      padding: 5px 14px;
+      border: none;
+      border-radius: 9999px;
+      background: var(--apple-fill);
+      font-size: 13px;
       font-weight: 500;
       font-family: inherit;
       cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: -0.08px;
+    }
+
+    .status-toggle:active {
+      transform: scale(0.97);
     }
 
     .status-toggle.active {
-      background: var(--green);
-      border-color: var(--green);
+      background: var(--apple-green);
       color: #fff;
     }
 
     .status-toggle.inactive {
-      background: #eee;
-      color: var(--text-muted);
+      background: var(--apple-fill);
+      color: var(--apple-secondary-label);
     }
 
     .manual-viewer {
       position: fixed;
       inset: 0;
       z-index: 450;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: var(--apple-bg-grouped);
       display: none;
       flex-direction: column;
     }
@@ -1243,29 +1219,36 @@
       align-items: center;
       padding: 12px 16px;
       padding-top: max(12px, env(safe-area-inset-top));
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 0.5px solid var(--apple-separator);
     }
 
     .manual-viewer-title {
-      font-size: 0.9rem;
+      font-size: 17px;
       font-weight: 600;
-      color: #fff;
+      color: var(--apple-label);
+      letter-spacing: -0.41px;
     }
 
     .manual-viewer-close {
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       border: none;
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
+      background: rgba(120, 120, 128, 0.12);
+      color: var(--apple-secondary-label);
       font-size: 1.1rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .manual-viewer-close:active {
+      transform: scale(0.95);
     }
 
     .manual-viewer iframe {
@@ -1274,35 +1257,56 @@
       background: #fff;
     }
 
-    /* ===== History Modal ===== */
+    /* ===== History Modal (Apple Design) ===== */
     .history-modal {
       max-height: 85vh;
       display: flex;
       flex-direction: column;
+      background: #F2F2F7;
+      border-radius: 20px 20px 0 0;
     }
     .history-date-tabs {
       display: flex;
-      gap: 8px;
+      gap: 0;
       margin-bottom: 16px;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      background: rgba(120, 120, 128, 0.12);
+      border-radius: 8px;
+      padding: 2px;
     }
     .history-date-tab {
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 1px solid rgba(0,0,0,0.1);
-      background: rgba(0,0,0,0.04);
-      color: rgba(0,0,0,0.5);
-      font-size: 0.8rem;
-      font-weight: 600;
+      padding: 7px 0;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: rgba(60, 60, 67, 0.6);
+      font-size: 0.72rem;
+      font-weight: 500;
       white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+      text-align: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .history-date-tab:active {
+      transform: scale(0.97);
     }
     .history-date-tab.active {
-      background: rgba(0,122,255,0.12);
-      border-color: rgba(0,122,255,0.3);
-      color: #007AFF;
+      background: #FFFFFF;
+      color: #000000;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+    .history-date-tab.active span {
+      opacity: 1 !important;
+      color: inherit !important;
     }
     .history-content {
       flex: 1;
@@ -1311,200 +1315,224 @@
     }
     .history-loading {
       text-align: center;
-      color: rgba(0,0,0,0.4);
+      color: rgba(60, 60, 67, 0.6);
       padding: 40px 0;
-      font-size: 0.9rem;
+      font-size: 15px;
+      font-weight: 400;
     }
     .history-category {
-      margin-bottom: 16px;
-      border-radius: 14px;
+      margin-bottom: 12px;
+      border-radius: 12px;
       overflow: hidden;
-      background: rgba(0,0,0,0.03);
-      border: 1px solid rgba(0,0,0,0.06);
+      background: #FFFFFF;
+      border: none;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0.5px 1px rgba(0, 0, 0, 0.04);
     }
     .history-cat-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 14px;
+      padding: 14px 16px;
     }
     .history-cat-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
     .history-cat-icon {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       font-weight: 700;
-      color: #fff;
     }
-    .history-cat-icon.done { background: rgba(52,199,89,0.3); }
-    .history-cat-icon.partial { background: rgba(255,149,0,0.3); }
-    .history-cat-icon.none { background: rgba(255,59,48,0.2); }
+    .history-cat-icon.done { background: rgba(52,199,89,0.14); color: #248A3D; }
+    .history-cat-icon.partial { background: rgba(255,149,0,0.14); color: #C93400; }
+    .history-cat-icon.none { background: rgba(255,59,48,0.12); color: #D70015; }
     .history-cat-name {
-      font-size: 0.9rem;
+      font-size: 15px;
       font-weight: 600;
-      color: #1a1a1a;
+      color: #000000;
+      letter-spacing: -0.24px;
     }
     .history-cat-meta {
-      font-size: 0.75rem;
-      color: rgba(0,0,0,0.45);
+      font-size: 13px;
+      color: rgba(60, 60, 67, 0.6);
       margin-top: 2px;
+      letter-spacing: -0.08px;
     }
     .history-cat-badge {
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      letter-spacing: 0;
     }
     .history-cat-badge.done {
-      background: rgba(52,199,89,0.2);
-      color: #34C759;
+      background: rgba(52,199,89,0.12);
+      color: #248A3D;
     }
     .history-cat-badge.partial {
-      background: rgba(255,149,0,0.2);
-      color: #FF9500;
+      background: rgba(255,149,0,0.12);
+      color: #C93400;
     }
     .history-cat-badge.none {
-      background: rgba(255,59,48,0.15);
-      color: #FF3B30;
+      background: rgba(255,59,48,0.1);
+      color: #D70015;
     }
     .toilet-hourly-grid {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      padding: 8px 14px 14px 14px;
+      padding: 4px 16px 16px 16px;
+      border-top: 0.5px solid rgba(60, 60, 67, 0.12);
+      margin-top: -2px;
     }
     .toilet-hour-slot {
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 6px 8px;
-      border-radius: 8px;
-      font-size: 0.7rem;
+      padding: 8px 6px 6px;
+      border-radius: 10px;
+      font-size: 12px;
       font-weight: 600;
-      min-width: 44px;
-      border: 1px solid rgba(0,0,0,0.06);
+      min-width: 48px;
+      border: none;
+      transition: transform 0.15s ease;
     }
+    .toilet-hour-slot:active { transform: scale(0.97); }
     .toilet-hour-slot.done {
-      background: rgba(52,199,89,0.12);
-      color: rgba(52,199,89,1);
-      border-color: rgba(52,199,89,0.2);
+      background: rgba(52,199,89,0.1);
+      color: #248A3D;
     }
     .toilet-hour-slot.missed {
-      background: rgba(255,59,48,0.08);
-      color: rgba(255,59,48,0.6);
-      border-color: rgba(255,59,48,0.15);
+      background: rgba(255,59,48,0.07);
+      color: rgba(255,59,48,0.55);
+    }
+    .toilet-hour-slot.partial {
+      background: rgba(255,149,0,0.1);
+      color: #C93400;
     }
     .toilet-hour-slot.future {
-      background: rgba(0,0,0,0.03);
-      color: rgba(0,0,0,0.25);
-      border-color: rgba(0,0,0,0.04);
+      background: rgba(120, 120, 128, 0.06);
+      color: rgba(60, 60, 67, 0.3);
     }
     .toilet-hour-time {
-      font-size: 0.65rem;
+      font-size: 11px;
+      font-weight: 500;
+      opacity: 0.8;
+      margin-top: 3px;
+    }
+    .toilet-hour-staff {
+      font-size: 10px;
+      font-weight: 500;
       opacity: 0.7;
       margin-top: 2px;
+      max-width: 56px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .history-empty {
       text-align: center;
-      color: rgba(0,0,0,0.3);
-      padding: 30px 0;
+      color: rgba(60, 60, 67, 0.3);
+      padding: 40px 0;
       font-size: 0.85rem;
     }
     .history-legend {
-      font-size: 0.68rem;
-      line-height: 1.45;
-      color: rgba(0,0,0,0.45);
-      margin: -4px 0 12px 0;
-      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: rgba(60, 60, 67, 0.6);
+      margin: -4px 0 14px 0;
+      padding: 10px 12px;
       border-radius: 10px;
-      background: rgba(0,0,0,0.04);
-      border: 1px solid rgba(0,0,0,0.06);
+      background: rgba(120, 120, 128, 0.06);
+      border: none;
+      letter-spacing: -0.08px;
     }
-    .history-legend strong { color: #1a1a1a; font-weight: 700; }
+    .history-legend strong { color: #000; font-weight: 600; }
 
     /* ===== Confirmation Mode ===== */
     .confirmation-banner {
       margin: 8px 16px;
       padding: 14px 16px;
-      border-radius: 14px;
-      background: rgba(52, 199, 89, 0.15);
-      border: 1px solid rgba(52, 199, 89, 0.3);
-      animation: slideIn 0.3s ease;
+      border-radius: 12px;
+      background: var(--apple-bg-card);
+      border-left: 3px solid var(--apple-green);
+      box-shadow: var(--apple-shadow-sm);
+      animation: slideIn 0.3s cubic-bezier(0, 0, 0.2, 1);
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
     }
     .confirmation-banner span {
-      font-size: 0.85rem;
+      font-size: 15px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.85);
+      color: #248A3D;
+      letter-spacing: -0.24px;
     }
     .confirmation-banner button {
       flex-shrink: 0;
       padding: 8px 16px;
       border: none;
-      border-radius: 10px;
-      background: #34C759;
+      border-radius: 9999px;
+      background: var(--apple-green);
       color: #fff;
-      font-size: 0.8rem;
+      font-size: 13px;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
-      box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
       transition: all 0.2s ease;
     }
     .confirmation-banner button:active {
-      transform: scale(0.95);
-      background: #2DB84E;
+      transform: scale(0.97);
     }
 
     .confirm-mode-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 16px;
-      margin: 8px 16px 4px;
-      border-radius: 14px;
-      background: rgba(0, 122, 255, 0.12);
-      border: 1px solid rgba(0, 122, 255, 0.25);
+      padding: 14px 16px;
+      margin: 0 0 8px;
+      border-radius: 12px;
+      background: var(--apple-bg-card);
+      border-left: 3px solid var(--apple-blue);
+      box-shadow: var(--apple-shadow-sm);
     }
     .confirm-mode-header .confirm-mode-title {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: #fff;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--apple-label);
+      letter-spacing: -0.41px;
     }
     .confirm-mode-header .confirm-mode-progress {
-      font-size: 0.75rem;
-      color: rgba(255, 255, 255, 0.6);
+      font-size: 13px;
+      color: var(--apple-secondary-label);
       margin-top: 2px;
     }
     .confirm-mode-header .confirm-back-btn {
       padding: 6px 14px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 0.8rem;
+      border: none;
+      border-radius: 9999px;
+      background: var(--apple-fill);
+      color: var(--apple-blue);
+      font-size: 13px;
       font-weight: 500;
       font-family: inherit;
       cursor: pointer;
       transition: all 0.2s ease;
     }
     .confirm-mode-header .confirm-back-btn:active {
-      background: rgba(255, 255, 255, 0.2);
+      transform: scale(0.97);
     }
 
     .check-item.confirm-pending {
-      border-left: 3px solid rgba(0, 122, 255, 0.6);
+      border-left: 3px solid var(--apple-blue);
+      border-bottom: 0.5px solid var(--apple-separator);
       cursor: default;
     }
     .check-item.confirm-pending:active {
@@ -1514,19 +1542,12 @@
     .check-item.confirm-done {
       opacity: 0.45;
       pointer-events: none;
-      border-left: 3px solid rgba(52, 199, 89, 0.5);
+      border-left: 3px solid var(--apple-green);
     }
 
     .check-item.not-checked-warning {
-      border-left: 3px solid rgba(255, 149, 0, 0.7);
-      background: linear-gradient(
-        135deg,
-        rgba(255, 149, 0, 0.12) 0%,
-        rgba(255, 149, 0, 0.04) 50%,
-        rgba(255, 255, 255, 0.02) 100%
-      );
-      border-color: rgba(255, 149, 0, 0.3);
-      border-left: 3px solid rgba(255, 149, 0, 0.7);
+      border-left: 3px solid var(--apple-orange);
+      background: rgba(255, 149, 0, 0.05);
       cursor: default;
     }
     .check-item.not-checked-warning:active {
@@ -1534,58 +1555,55 @@
     }
 
     .confirm-btn {
-      padding: 6px 14px;
+      padding: 7px 16px;
       border: none;
-      border-radius: 8px;
-      background: #007AFF;
+      border-radius: 9999px;
+      background: var(--apple-blue);
       color: #fff;
-      font-size: 0.75rem;
+      font-size: 13px;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0, 122, 255, 0.3);
       transition: all 0.2s ease;
       flex-shrink: 0;
     }
     .confirm-btn:active {
-      transform: scale(0.95);
-      background: #0066DD;
+      transform: scale(0.97);
     }
     .confirm-btn:disabled {
-      opacity: 0.4;
+      opacity: 0.35;
       cursor: not-allowed;
       transform: none;
     }
 
     .report-btn {
-      padding: 6px 14px;
+      padding: 7px 16px;
       border: none;
-      border-radius: 8px;
-      background: rgba(255, 149, 0, 0.85);
+      border-radius: 9999px;
+      background: var(--apple-orange);
       color: #fff;
-      font-size: 0.75rem;
+      font-size: 13px;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(255, 149, 0, 0.3);
       transition: all 0.2s ease;
       flex-shrink: 0;
     }
     .report-btn:active {
-      transform: scale(0.95);
-      background: rgba(230, 130, 0, 0.9);
+      transform: scale(0.97);
     }
     .report-btn:disabled {
-      opacity: 0.4;
+      opacity: 0.35;
       cursor: not-allowed;
       transform: none;
     }
 
     .confirm-status {
-      font-size: 0.72rem;
-      color: rgba(255, 255, 255, 0.5);
+      font-size: 13px;
+      color: var(--apple-secondary-label);
       margin-top: 4px;
       line-height: 1.4;
+      letter-spacing: -0.08px;
     }
   </style>
 </head>
@@ -1614,7 +1632,7 @@
   <div class="app-shell">
     <div class="header">
       <div class="header-toolbar">
-        <div class="date-time" id="dateTime" style="font-size: 0.85rem; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,0.4);"></div>
+        <div class="date-time" id="dateTime" style="font-size: 15px; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,0.4);"></div>
         <div class="header-right">
           <button class="help-btn" id="historyBtn" type="button" aria-label="チェック履歴" style="font-size:14px;line-height:1;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -1689,7 +1707,7 @@
       <div class="modal-handle"></div>
       <button class="modal-close" id="closeSettings">&times;</button>
       <div class="modal-title">設定</div>
-      <div class="modal-title" style="font-size:0.85rem;margin-top:8px;">スタッフ管理</div>
+      <div class="modal-title" style="font-size:13px;margin-top:8px;font-weight:500;color:rgba(60,60,67,0.6);text-transform:uppercase;letter-spacing:-0.08px;">スタッフ管理</div>
       <div id="staffList"></div>
       <div class="form-group" style="margin-top:16px;">
         <label class="form-label">新規スタッフ追加</label>
@@ -1698,8 +1716,8 @@
           <button class="form-btn" id="addStaffBtn">追加</button>
         </div>
       </div>
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.1);">
-        <button class="manual-link" id="appManualBtn" style="width:100%;padding:12px;font-size:0.9rem;color:#1a1a1a;">アプリ操作マニュアルを開く</button>
+      <div style="margin-top:20px;padding-top:16px;border-top:0.5px solid rgba(60,60,67,0.29);">
+        <button class="manual-link" id="appManualBtn" style="width:100%;padding:14px;font-size:15px;border-radius:12px;">アプリ操作マニュアルを開く</button>
       </div>
     </div>
   </div>
@@ -1743,8 +1761,8 @@
     <div class="modal-sheet history-modal">
       <div class="modal-handle"></div>
       <button class="modal-close" id="closeHistory">&times;</button>
-      <div class="modal-title">チェック履歴</div>
-      <p class="history-legend">右のバッジは <strong>完了</strong>（その日の基準どおり）・<strong>一部</strong>（不足あり）・<strong>未実施</strong>（記録なし）。トイレ清掃の <strong>項目○/○</strong> は、マスタのチェック項目のうち当日ログが付いた件数です（下の回数は実施記録の合計）。</p>
+      <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between;">チェック履歴<button id="historyRefreshBtn" style="background:rgba(0,122,255,0.1);border:none;border-radius:9999px;padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;color:#007AFF;display:none;line-height:1;transition:all 0.2s ease;-webkit-tap-highlight-color:transparent;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform=''" ontouchstart="this.style.transform='scale(0.95)'" ontouchend="this.style.transform=''"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px;"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>更新</button></div>
+      <p class="history-legend">右のバッジは <strong>完了</strong>（その日の基準どおり）・<strong>一部</strong>（不足あり）・<strong>未実施</strong>（記録なし）。</p>
       <div class="history-date-tabs" id="historyDateTabs"></div>
       <div class="history-content" id="historyContent">
         <div class="history-loading">読み込み中...</div>
@@ -1878,22 +1896,10 @@
           { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI001', name:'店内清掃（清掃マニュアル参照）', sortOrder:1, memo:'清掃マニュアル参照' },
           { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI002', name:'仕込み（仕込みマニュアル参照）', sortOrder:2, memo:'仕込みマニュアル参照' },
           { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI003', name:'神棚の水を替える', sortOrder:3, memo:'' },
-          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI004', name:'厨房入場時の挨拶', sortOrder:4, memo:'' },
-          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI005', name:'本日のおすすめを社長に確認', sortOrder:5, memo:'' },
-          { storeId:'STORE001', category:'開店', timing:'17:30〜', itemId:'KAI006', name:'おすすめの印刷', sortOrder:6, memo:'しっかり印刷されているか、不備はないか確認する' },
-          { storeId:'STORE001', category:'開店', timing:'17:30〜', itemId:'KAI007', name:'フライヤーの火入れ', sortOrder:7, memo:'ガスのつまみを押して左に回しチャッカマンで着火させて30秒ほど待って点火' },
-          { storeId:'STORE001', category:'開店', timing:'17:30〜', itemId:'KAI008', name:'ビールサーバーのセット', sortOrder:8, memo:'レバーを樽に取り付け右に回しガスを2〜2.5にセット。最初は泡しか出ないため泡がなくなるまで出し続ける' },
-          { storeId:'STORE001', category:'開店', timing:'17:50〜', itemId:'KAI009', name:'看板・提灯・街灯の点灯', sortOrder:9, memo:'' },
-          { storeId:'STORE001', category:'開店', timing:'17:50〜', itemId:'KAI010', name:'暖簾をかける', sortOrder:10, memo:'' },
-          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI001', name:'シンク掃除', sortOrder:1, memo:'全体に洗剤をかけてスポンジで隅々まで擦り、蛇口もしっかりと擦る。水で流す。' },
-          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI002', name:'包丁・まな板・まきす消毒', sortOrder:2, memo:'ハイターでつけ置きしておき、熱湯をかけて殺菌。まきすはハンガーにかけ干す' },
-          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI003', name:'調理台・器具の清掃', sortOrder:3, memo:'アルコール・ダスターを使ってコンロやオーブン、冷蔵庫、調理台の汚れをしっかり拭く' },
-          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI004', name:'ゴミ捨て', sortOrder:4, memo:'青い袋にまとめてゴミ置き場に出す。ゴミの分別をきちんとする。新しいゴミ袋をセットする。' },
-          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI005', name:'座席・床掃除', sortOrder:5, memo:'座布団をまとめて置く。テーブルは全て壁に立てかける。床のゴミをしっかりと掃く。' },
+          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI001', name:'シンク掃除', sortOrder:1, memo:'' },
+          { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI002', name:'包丁・まな板消毒', sortOrder:2, memo:'' },
           { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI001', name:'便器の清掃', sortOrder:1, memo:'' },
           { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI002', name:'床の拭き掃除', sortOrder:2, memo:'' },
-          { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI003', name:'手洗い場の清掃', sortOrder:3, memo:'' },
-          { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI004', name:'ペーパー補充確認', sortOrder:4, memo:'' },
           { storeId:'STORE001', category:'氷プール', timing:'出勤時', itemId:'ICE001', name:'氷補充', sortOrder:1, memo:'' },
           { storeId:'STORE001', category:'氷プール', timing:'出勤時', itemId:'ICE002', name:'塩補充', sortOrder:2, memo:'' },
           { storeId:'STORE001', category:'氷プール', timing:'出勤時', itemId:'ICE003', name:'温度計測', sortOrder:3, memo:'' },
@@ -1905,6 +1911,96 @@
           { storeId:'STORE001', category:'氷プール', timing:'退勤時', itemId:'ICE009', name:'温度計測', sortOrder:9, memo:'' }
         ]
       };
+    }
+
+    function getLocalDummyHistory() {
+      var dates = getRecentDates();
+      var map = {};
+      map[dates[0]] = {
+        date: dates[0],
+        categories: [
+          { name: '開店', type: 'standard', total: 36, checked: 36, staffName: '田中太郎', confirmerName: '佐藤花子' },
+          { name: '閉店', type: 'standard', total: 30, checked: 22, staffName: '佐藤花子' },
+          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 8, logCount: 42,
+            hourlySlots: [
+              { hour: 18, label: '18:00', done: true, count: 1, times: ['18:15'], staff: '田中太郎' },
+              { hour: 19, label: '19:00', done: true, count: 1, times: ['19:20'], staff: '田中太郎' },
+              { hour: 20, label: '20:00', done: true, count: 1, times: ['20:05'], staff: '佐藤花子' },
+              { hour: 21, label: '21:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 22, label: '22:00', done: true, count: 1, times: ['22:10'], staff: '佐藤花子' },
+              { hour: 23, label: '23:00', done: true, count: 1, times: ['23:30'], staff: '田中太郎' },
+              { hour: 0, label: '00:00', done: true, count: 1, times: ['00:15'], staff: '田中太郎' },
+              { hour: 1, label: '01:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 2, label: '02:00', done: true, count: 1, times: ['02:45'], staff: '佐藤花子' },
+              { hour: 3, label: '03:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 4, label: '04:00', done: false, count: 0, times: [], staff: '' }
+            ] },
+          { name: '氷プール', type: 'timing', total: 9, checked: 9,
+            timings: [
+              { name: '出勤時', total: 3, checked: 3, staff: '田中太郎', temperature: '4.5°C' },
+              { name: '22時', total: 3, checked: 3, staff: '佐藤花子', temperature: '5.2°C' },
+              { name: '退勤時', total: 3, checked: 3, staff: '田中太郎', temperature: '6.0°C' }
+            ]
+          }
+        ]
+      };
+      map[dates[1]] = {
+        date: dates[1],
+        categories: [
+          { name: '開店', type: 'standard', total: 36, checked: 36, staffName: '鈴木一郎', confirmerName: '田中太郎' },
+          { name: '閉店', type: 'standard', total: 30, checked: 30, staffName: '鈴木一郎', confirmerName: '佐藤花子' },
+          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 6, logCount: 30,
+            hourlySlots: [
+              { hour: 18, label: '18:00', done: true, count: 1, times: ['18:30'], staff: '佐藤花子' },
+              { hour: 19, label: '19:00', done: true, count: 1, times: ['19:45'], staff: '佐藤花子' },
+              { hour: 20, label: '20:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 21, label: '21:00', done: true, count: 1, times: ['21:10'], staff: '佐藤花子' },
+              { hour: 22, label: '22:00', done: true, count: 1, times: ['22:55'], staff: '佐藤花子' },
+              { hour: 23, label: '23:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 0, label: '00:00', done: true, count: 1, times: ['00:20'], staff: '佐藤花子' },
+              { hour: 1, label: '01:00', done: true, count: 1, times: ['01:35'], staff: '佐藤花子' },
+              { hour: 2, label: '02:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 3, label: '03:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 4, label: '04:00', done: false, count: 0, times: [], staff: '' }
+            ] },
+          { name: '氷プール', type: 'timing', total: 9, checked: 6,
+            timings: [
+              { name: '出勤時', total: 3, checked: 3, staff: '鈴木一郎', temperature: '4.8°C' },
+              { name: '22時', total: 3, checked: 3, staff: '鈴木一郎', temperature: '5.5°C' },
+              { name: '退勤時', total: 3, checked: 0, staff: '' }
+            ]
+          }
+        ]
+      };
+      map[dates[2]] = {
+        date: dates[2],
+        categories: [
+          { name: '開店', type: 'standard', total: 36, checked: 0, staffName: null },
+          { name: '閉店', type: 'standard', total: 30, checked: 0, staffName: null },
+          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 0, logCount: 0,
+            hourlySlots: [
+              { hour: 18, label: '18:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 19, label: '19:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 20, label: '20:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 21, label: '21:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 22, label: '22:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 23, label: '23:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 0, label: '00:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 1, label: '01:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 2, label: '02:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 3, label: '03:00', done: false, count: 0, times: [], staff: '' },
+              { hour: 4, label: '04:00', done: false, count: 0, times: [], staff: '' }
+            ] },
+          { name: '氷プール', type: 'timing', total: 9, checked: 0,
+            timings: [
+              { name: '出勤時', total: 3, checked: 0, staff: '' },
+              { name: '22時', total: 3, checked: 0, staff: '' },
+              { name: '退勤時', total: 3, checked: 0, staff: '' }
+            ]
+          }
+        ]
+      };
+      return map;
     }
 
     // ===== Init =====
@@ -2036,8 +2132,6 @@
       if (currentCategory === 'マニュアル') {
         els.submitBar.style.display = 'none';
         if (els.progressContainer) els.progressContainer.style.display = 'none';
-        var bg = document.getElementById('bgProgress');
-        if (bg) bg.style.height = '0%';
         renderManualTab();
       } else {
         els.submitBar.style.display = '';
@@ -2059,7 +2153,7 @@
       if (existingBanner) existingBanner.remove();
       var f = allItems.filter(function (i) { return i.category === currentCategory; });
       if (!f.length) {
-        a.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.5);">該当する項目がありません</div>';
+        a.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(60,60,67,0.3);font-size:15px;">該当する項目がありません</div>';
         updateProgress(); updateSubmitBtn();
         return;
       }
@@ -2190,18 +2284,18 @@
       });
       updateProgress(); updateSubmitBtn();
 
-      // Show confirmation banner if all 開店 items are already checked
-      if (currentCategory === '開店' && !confirmationMode) {
-        var kaitenItems = allItems.filter(function (i) { return i.category === '開店'; });
-        if (kaitenItems.length > 0) {
-          var allDone = kaitenItems.every(function (i) { return todayChecked.indexOf(i.itemId) !== -1; });
+      // Show confirmation banner if all items are already checked (開店 or 閉店)
+      if ((currentCategory === '開店' || currentCategory === '閉店') && !confirmationMode) {
+        var catItems = allItems.filter(function (i) { return i.category === currentCategory; });
+        if (catItems.length > 0) {
+          var allDone = catItems.every(function (i) { return todayChecked.indexOf(i.itemId) !== -1; });
           if (allDone) {
             var existing = document.getElementById('confirmationBanner');
             if (existing) existing.remove();
             var banner = document.createElement('div');
             banner.className = 'confirmation-banner';
             banner.id = 'confirmationBanner';
-            banner.innerHTML = '<span>\u2705 開店チェックは完了済みです</span><button onclick="enterConfirmationMode()">確認する</button>';
+            banner.innerHTML = '<span>\u2705 ' + currentCategory + 'チェックは完了済みです</span><button onclick="enterConfirmationMode()">確認する</button>';
             a.parentElement.insertBefore(banner, a);
           }
         }
@@ -2217,12 +2311,13 @@
         { key: 'prep', title: '仕込みマニュアル', desc: '食材の下準備手順' },
         { key: 'operation', title: '営業中オペレーション', desc: '営業中の業務手順' }
       ];
-      var c = document.createElement('div'); c.style.padding = '16px';
-      var h = '<div style="font-size:1.06rem;font-weight:600;color:#fff;margin-bottom:14px;text-shadow:0 1px 2px rgba(0,0,0,0.3);">業務マニュアル</div>';
+      var c = document.createElement('div'); c.style.padding = '0';
+      var h = '<div style="font-size:13px;font-weight:500;color:rgba(60,60,67,0.6);margin-bottom:8px;padding:0 4px;letter-spacing:-0.08px;text-transform:uppercase;">業務マニュアル</div><div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);">';
       manuals.forEach(function (m, i) {
-        var border = i < manuals.length - 1 ? 'border-bottom:1px solid rgba(255,255,255,0.15);' : '';
-        h += '<div style="padding:12px 0;' + border + 'display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:1.06rem;font-weight:500;color:#fff;">' + m.title + '</div><div style="font-size:0.81rem;color:rgba(255,255,255,0.5);margin-top:2px;">' + m.desc + '</div></div><button class="manual-link" data-key="' + m.key + '" data-title="' + m.title + '">開く</button></div>';
+        var border = i < manuals.length - 1 ? 'border-bottom:0.5px solid rgba(60,60,67,0.29);' : '';
+        h += '<div style="padding:14px 16px;' + border + 'display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:17px;font-weight:400;color:#000;letter-spacing:-0.41px;">' + m.title + '</div><div style="font-size:13px;color:rgba(60,60,67,0.6);margin-top:2px;letter-spacing:-0.08px;">' + m.desc + '</div></div><button class="manual-link" data-key="' + m.key + '" data-title="' + m.title + '">開く</button></div>';
       });
+      h += '</div>';
       c.innerHTML = h;
       c.querySelectorAll('button[data-key]').forEach(function (btn) {
         btn.addEventListener('click', function () { openManual(this.dataset.key, this.dataset.title); });
@@ -2251,15 +2346,12 @@
       if (pe) pe.textContent = d + '/' + t + ' (' + p + '%)';
       if (fe) fe.style.width = p + '%';
 
-      var bg = document.getElementById('bgProgress');
-      if (bg) {
-        bg.style.height = p + '%';
+      // Update progress bar color based on completion
+      if (fe) {
         if (p === 100) {
-          bg.style.background = 'linear-gradient(to top, rgba(52,199,89,0.35) 0%, rgba(52,199,89,0.18) 40%, rgba(52,199,89,0.06) 75%, transparent 100%)';
-        } else if (p > 0) {
-          bg.style.background = '';
+          fe.style.background = 'linear-gradient(90deg, #248A3D, #34C759)';
         } else {
-          bg.style.background = '';
+          fe.style.background = '';
         }
       }
     }
@@ -2294,7 +2386,17 @@
       submitChecksRequest(payload).then(function (r) {
         submitting = false;
         if (r.error) throw new Error(r.error);
-        showToast(r.count + '件を記録しました');
+        // 全項目完了チェック
+        var catItems = allItems.filter(function (i) { return i.category === currentCategory; });
+        var newCheckedIds = payload.items.map(function (i) { return i.itemId; });
+        var allCompleted = catItems.every(function (i) {
+          return todayChecked.indexOf(i.itemId) !== -1 || newCheckedIds.indexOf(i.itemId) !== -1;
+        });
+        if (allCompleted) {
+          showToast('本日の' + currentCategory + 'チェックは全項目完了です！', 'rgba(52,199,89,0.95)');
+        } else {
+          showToast(r.count + '件を記録しました');
+        }
         checkedState = {}; showLoading(); loadCheckedAndRender();
       }).catch(function (e) {
         submitting = false;
@@ -2422,6 +2524,10 @@
     });
     els.closeHistory.addEventListener('click', function () { els.historyModal.classList.remove('open'); });
     els.historyModal.addEventListener('click', function (e) { if (e.target === els.historyModal) els.historyModal.classList.remove('open'); });
+    document.getElementById('historyRefreshBtn').addEventListener('click', function () {
+      loadHistory();
+      showToast('履歴を更新しました');
+    });
 
     var historySelectedDate = '';
 
@@ -2430,7 +2536,7 @@
       var now = new Date();
       var hour = now.getHours();
       if (hour < 9) now.setDate(now.getDate() - 1);
-      for (var i = 0; i < 3; i++) {
+      for (var i = 0; i < 7; i++) {
         var d = new Date(now);
         d.setDate(d.getDate() - i);
         var y = d.getFullYear();
@@ -2444,13 +2550,27 @@
     function renderHistoryDateTabs() {
       var dates = getRecentDates();
       if (!historySelectedDate) historySelectedDate = dates[0];
-      var labels = ['今日', '昨日', '一昨日'];
+      var dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+      var labels = [];
+      for (var li = 0; li < dates.length; li++) {
+        if (li === 0) { labels.push('今日'); }
+        else if (li === 1) { labels.push('昨日'); }
+        else {
+          var dd = new Date(dates[li] + 'T12:00:00');
+          labels.push(dayNames[dd.getDay()] + '曜');
+        }
+      }
       var html = '';
       for (var i = 0; i < dates.length; i++) {
         var cls = dates[i] === historySelectedDate ? ' active' : '';
-        html += '<button class="history-date-tab' + cls + '" data-date="' + dates[i] + '">' + labels[i] + '<br><span style="font-size:0.65rem;opacity:0.6">' + dates[i].substring(5) + '</span></button>';
+        html += '<button class="history-date-tab' + cls + '" data-date="' + dates[i] + '"><span>' + labels[i] + '</span><span style="font-size:0.6rem;opacity:0.6;line-height:1;">' + dates[i].substring(5) + '</span></button>';
       }
       els.historyDateTabs.innerHTML = html;
+      // 今日タブの場合のみ更新ボタン表示
+      var refreshBtn = document.getElementById('historyRefreshBtn');
+      if (refreshBtn) {
+        refreshBtn.style.display = (historySelectedDate === dates[0]) ? '' : 'none';
+      }
       els.historyDateTabs.querySelectorAll('.history-date-tab').forEach(function (btn) {
         btn.addEventListener('click', function () {
           historySelectedDate = this.dataset.date;
@@ -2458,96 +2578,6 @@
           loadHistory();
         });
       });
-    }
-
-    function getLocalDummyHistory() {
-      var dates = getRecentDates();
-      var map = {};
-      map[dates[0]] = {
-        date: dates[0],
-        categories: [
-          { name: '開店', type: 'standard', total: 36, checked: 36, staffName: '田中太郎' },
-          { name: '閉店', type: 'standard', total: 30, checked: 22, staffName: '佐藤花子' },
-          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 8, logCount: 42, staffName: '田中太郎, 佐藤花子',
-            hourlySlots: [
-              { hour: 18, label: '18:00', done: true, count: 1, times: ['18:15'], staff: '田中太郎' },
-              { hour: 19, label: '19:00', done: true, count: 1, times: ['19:20'], staff: '田中太郎' },
-              { hour: 20, label: '20:00', done: true, count: 1, times: ['20:05'], staff: '佐藤花子' },
-              { hour: 21, label: '21:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 22, label: '22:00', done: true, count: 1, times: ['22:10'], staff: '佐藤花子' },
-              { hour: 23, label: '23:00', done: true, count: 1, times: ['23:30'], staff: '田中太郎' },
-              { hour: 0, label: '00:00', done: true, count: 1, times: ['00:15'], staff: '田中太郎' },
-              { hour: 1, label: '01:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 2, label: '02:00', done: true, count: 1, times: ['02:45'], staff: '佐藤花子' },
-              { hour: 3, label: '03:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 4, label: '04:00', done: false, count: 0, times: [], staff: '' }
-            ] },
-          { name: '氷プール', type: 'timing', total: 9, checked: 9, staffName: '田中太郎',
-            timings: [
-              { name: '出勤時', total: 3, checked: 3 },
-              { name: '22時', total: 3, checked: 3 },
-              { name: '退勤時', total: 3, checked: 3 }
-            ]
-          }
-        ]
-      };
-      map[dates[1]] = {
-        date: dates[1],
-        categories: [
-          { name: '開店', type: 'standard', total: 36, checked: 36, staffName: '鈴木一郎' },
-          { name: '閉店', type: 'standard', total: 30, checked: 30, staffName: '鈴木一郎' },
-          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 6, logCount: 30, staffName: '佐藤花子',
-            hourlySlots: [
-              { hour: 18, label: '18:00', done: true, count: 1, times: ['18:30'], staff: '佐藤花子' },
-              { hour: 19, label: '19:00', done: true, count: 1, times: ['19:45'], staff: '佐藤花子' },
-              { hour: 20, label: '20:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 21, label: '21:00', done: true, count: 1, times: ['21:10'], staff: '佐藤花子' },
-              { hour: 22, label: '22:00', done: true, count: 1, times: ['22:55'], staff: '佐藤花子' },
-              { hour: 23, label: '23:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 0, label: '00:00', done: true, count: 1, times: ['00:20'], staff: '佐藤花子' },
-              { hour: 1, label: '01:00', done: true, count: 1, times: ['01:35'], staff: '佐藤花子' },
-              { hour: 2, label: '02:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 3, label: '03:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 4, label: '04:00', done: false, count: 0, times: [], staff: '' }
-            ] },
-          { name: '氷プール', type: 'timing', total: 9, checked: 6, staffName: '鈴木一郎',
-            timings: [
-              { name: '出勤時', total: 3, checked: 3 },
-              { name: '22時', total: 3, checked: 3 },
-              { name: '退勤時', total: 3, checked: 0 }
-            ]
-          }
-        ]
-      };
-      map[dates[2]] = {
-        date: dates[2],
-        categories: [
-          { name: '開店', type: 'standard', total: 36, checked: 0, staffName: null },
-          { name: '閉店', type: 'standard', total: 30, checked: 0, staffName: null },
-          { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 0, logCount: 0, staffName: null,
-            hourlySlots: [
-              { hour: 18, label: '18:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 19, label: '19:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 20, label: '20:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 21, label: '21:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 22, label: '22:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 23, label: '23:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 0, label: '00:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 1, label: '01:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 2, label: '02:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 3, label: '03:00', done: false, count: 0, times: [], staff: '' },
-              { hour: 4, label: '04:00', done: false, count: 0, times: [], staff: '' }
-            ] },
-          { name: '氷プール', type: 'timing', total: 9, checked: 0, staffName: null,
-            timings: [
-              { name: '出勤時', total: 3, checked: 0 },
-              { name: '22時', total: 3, checked: 0 },
-              { name: '退勤時', total: 3, checked: 0 }
-            ]
-          }
-        ]
-      };
-      return map;
     }
 
     function loadHistory() {
@@ -2592,11 +2622,7 @@
           html += '<div class="history-cat-left">';
           html += '<div class="history-cat-icon ' + st.cls + '">' + st.sym + '</div>';
           html += '<div><div class="history-cat-name">' + esc(cat.name) + '</div>';
-          html += '<div class="history-cat-meta">';
-          html += '項目 ' + cov + '/' + t;
-          if (logs > 0) html += ' ・ 記録' + logs + '回';
-          if (cat.staffName) html += ' ・ 実施者: ' + esc(cat.staffName);
-          html += '</div></div></div>';
+          html += '</div></div>';
           html += '<span class="history-cat-badge ' + st.cls + '">' + st.label + '</span>';
           html += '</div>';
 
@@ -2628,6 +2654,9 @@
                 html += '<span class="toilet-hour-time">\u2713';
                 if (slot.times && slot.times.length > 0) html += ' ' + slot.times[0];
                 html += '</span>';
+                if (slot.staff) {
+                  html += '<span class="toilet-hour-staff">' + esc(slot.staff) + '</span>';
+                }
               } else if (cls === 'missed') {
                 html += '<span class="toilet-hour-time">\u2212</span>';
               } else {
@@ -2649,19 +2678,30 @@
           html += '<div class="history-cat-left">';
           html += '<div class="history-cat-icon ' + st2.cls + '">' + st2.sym + '</div>';
           html += '<div><div class="history-cat-name">' + esc(cat.name) + '</div>';
-          html += '<div class="history-cat-meta">';
-          if (cat.staffName) html += '実施者: ' + esc(cat.staffName);
-          html += '</div></div></div>';
+          html += '</div></div>';
           html += '<span class="history-cat-badge ' + st2.cls + '">' + st2.label + '</span>';
           html += '</div>';
           if (cat.timings && cat.timings.length > 0) {
-            html += '<div style="display:flex;gap:6px;padding:0 14px 12px 52px;flex-wrap:wrap;">';
+            html += '<div class="toilet-hourly-grid">';
             cat.timings.forEach(function (t) {
               var td = t.checked >= t.total;
-              var cls = td ? 'done' : t.checked > 0 ? 'partial' : 'none';
-              html += '<span class="history-cat-badge ' + cls + '" style="font-size:0.7rem;">';
-              html += esc(t.name) + ' ' + (td ? '✓' : t.checked + '/' + t.total);
-              html += '</span>';
+              var cls = td ? 'done' : t.checked > 0 ? 'partial' : 'missed';
+              html += '<div class="toilet-hour-slot ' + cls + '">';
+              html += '<span>' + esc(t.name) + '</span>';
+              if (td) {
+                html += '<span class="toilet-hour-time">\u2713</span>';
+                if (t.temperature) {
+                  html += '<span class="toilet-hour-staff" style="font-weight:700;">' + esc(t.temperature) + '</span>';
+                }
+              } else if (t.checked > 0) {
+                html += '<span class="toilet-hour-time">' + t.checked + '/' + t.total + '</span>';
+              } else {
+                html += '<span class="toilet-hour-time">未実施</span>';
+              }
+              if (t.staff) {
+                html += '<span class="toilet-hour-staff">' + esc(t.staff) + '</span>';
+              }
+              html += '</div>';
             });
             html += '</div>';
           }
@@ -2681,6 +2721,7 @@
           html += '<div class="history-cat-meta">';
           if (cat.staffName) html += '実施者: ' + esc(cat.staffName);
           html += (cat.staffName ? ' ・ ' : '') + chk + '/' + tot + '項目';
+          if (cat.confirmerName) html += '<br>確認者: ' + esc(cat.confirmerName);
           html += '</div></div></div>';
           html += '<span class="history-cat-badge ' + st3.cls + '">' + st3.label + '</span>';
           html += '</div></div>';
@@ -2724,6 +2765,8 @@
     });
 
     // ===== Confirmation Mode =====
+    var confirmationCategory = '開店';
+
     function enterConfirmationMode() {
       var opt = els.staffSelect.options[els.staffSelect.selectedIndex];
       if (!els.staffSelect.value) {
@@ -2731,33 +2774,14 @@
         return;
       }
       confirmationMode = true;
+      confirmationCategory = currentCategory;
       showLoading();
 
       // Remove confirmation banner if present
       var banner = document.getElementById('confirmationBanner');
       if (banner) banner.remove();
 
-      if (IS_LOCAL) {
-        // Dummy data for local dev
-        var kaitenItems = allItems.filter(function (i) { return i.category === '開店'; });
-        confirmationItems = kaitenItems.map(function (i, idx) {
-          return {
-            itemId: i.itemId,
-            name: i.name,
-            memo: i.memo || '',
-            checked: idx < kaitenItems.length - 1,
-            checkerName: idx < kaitenItems.length - 1 ? '田中太郎' : '',
-            confirmed: idx < 2,
-            confirmerName: idx < 2 ? '社員A' : '',
-            confirmedAt: idx < 2 ? '18:30' : ''
-          };
-        });
-        hideLoading();
-        renderConfirmationItems();
-        return;
-      }
-
-      api('getKaitenConfirmationStatus', { storeId: 'STORE001' })
+      api('getConfirmationStatus', { storeId: 'STORE001', category: confirmationCategory })
         .then(function (data) {
           confirmationItems = data.items || [];
           hideLoading();
@@ -2786,7 +2810,7 @@
       // Header
       var header = document.createElement('div');
       header.className = 'confirm-mode-header';
-      header.innerHTML = '<div><div class="confirm-mode-title">開店チェック確認中</div><div class="confirm-mode-progress">確認済み: ' + confirmedCount + ' / ' + totalCount + '</div></div><button class="confirm-back-btn" onclick="exitConfirmationMode()">戻る</button>';
+      header.innerHTML = '<div><div class="confirm-mode-title">' + esc(confirmationCategory) + 'チェック確認中</div><div class="confirm-mode-progress">確認済み: ' + confirmedCount + ' / ' + totalCount + '</div></div><button class="confirm-back-btn" onclick="exitConfirmationMode()">戻る</button>';
       a.appendChild(header);
 
       // Render each item
@@ -2810,7 +2834,7 @@
           card.classList.add('confirm-pending');
           bodyHtml += '<div class="confirm-status">チェック済み: ' + esc(item.checkerName) + '</div>';
           if (item.memo) {
-            bodyHtml += '<div class="confirm-status" style="margin-top:6px;font-size:0.7rem;color:rgba(255,255,255,0.4);">' + esc(item.memo) + '</div>';
+            bodyHtml += '<div class="confirm-status" style="margin-top:6px;font-size:12px;color:rgba(60,60,67,0.3);">' + esc(item.memo) + '</div>';
           }
           bodyHtml += '</div>';
           bodyHtml += '<button class="confirm-btn" data-item-id="' + esc(item.itemId) + '">確認する</button>';
@@ -2821,7 +2845,7 @@
           });
         } else {
           card.classList.add('not-checked-warning');
-          bodyHtml += '<div class="confirm-status" style="color:rgba(255,149,0,0.9);">\u26A0 未チェック - 社員に報告してください</div>';
+          bodyHtml += '<div class="confirm-status" style="color:#C93400;">\u26A0 未チェック - 社員に報告してください</div>';
           bodyHtml += '</div>';
           bodyHtml += '<button class="report-btn" data-item-id="' + esc(item.itemId) + '">未実施を記録</button>';
           card.innerHTML = bodyHtml;
@@ -2846,22 +2870,6 @@
       var btns = els.contentArea.querySelectorAll('.confirm-btn[data-item-id="' + itemId + '"]');
       btns.forEach(function (b) { b.disabled = true; b.textContent = '送信中...'; });
 
-      if (IS_LOCAL) {
-        // Simulate success locally
-        setTimeout(function () {
-          for (var i = 0; i < confirmationItems.length; i++) {
-            if (confirmationItems[i].itemId === itemId) {
-              confirmationItems[i].confirmed = true;
-              confirmationItems[i].confirmerName = opt.dataset.name;
-              confirmationItems[i].confirmedAt = new Date().getHours() + ':' + ('0' + new Date().getMinutes()).slice(-2);
-              break;
-            }
-          }
-          renderConfirmationItems();
-        }, 300);
-        return;
-      }
-
       var payload = {
         action: 'submitConfirmation',
         apiKey: API_KEY,
@@ -2870,6 +2878,7 @@
           staffId: els.staffSelect.value,
           staffName: opt.dataset.name,
           itemId: itemId,
+          category: confirmationCategory,
           status: 'confirmed'
         }
       };
@@ -2909,22 +2918,6 @@
       var btns = els.contentArea.querySelectorAll('.report-btn[data-item-id="' + itemId + '"]');
       btns.forEach(function (b) { b.disabled = true; b.textContent = '送信中...'; });
 
-      if (IS_LOCAL) {
-        setTimeout(function () {
-          for (var i = 0; i < confirmationItems.length; i++) {
-            if (confirmationItems[i].itemId === itemId) {
-              confirmationItems[i].confirmed = true;
-              confirmationItems[i].confirmerName = opt.dataset.name + ' (未実施報告)';
-              confirmationItems[i].confirmedAt = new Date().getHours() + ':' + ('0' + new Date().getMinutes()).slice(-2);
-              break;
-            }
-          }
-          renderConfirmationItems();
-          showToast('未実施を記録しました。社員に報告してください。', 'rgba(255,149,0,0.85)');
-        }, 300);
-        return;
-      }
-
       var payload = {
         action: 'submitConfirmation',
         apiKey: API_KEY,
@@ -2933,6 +2926,7 @@
           staffId: els.staffSelect.value,
           staffName: opt.dataset.name,
           itemId: itemId,
+          category: confirmationCategory,
           status: 'not_checked'
         }
       };
@@ -2970,7 +2964,7 @@
     }
 
     // ===== Utilities =====
-    function showToast(m, bg) { els.toast.textContent = m; els.toast.style.background = bg || 'rgba(52,199,89,0.85)'; els.toast.classList.add('show'); setTimeout(function () { els.toast.classList.remove('show'); }, 3000); }
+    function showToast(m, bg) { els.toast.textContent = m; els.toast.style.background = bg || 'rgba(255,255,255,0.95)'; els.toast.style.color = bg ? '#fff' : '#000'; els.toast.classList.add('show'); setTimeout(function () { els.toast.classList.remove('show'); }, 3000); }
     function showLoading() { els.loading.classList.remove('hidden'); }
     function hideLoading() { els.loading.classList.add('hidden'); }
     function handleErr(e) { hideLoading(); showToast('エラー: ' + (e.message || e), 'rgba(255,59,48,0.85)'); }
