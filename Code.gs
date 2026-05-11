@@ -391,8 +391,10 @@ function submitChecks(payload) {
   var checked = payload.items.filter(function(i) { return i.checked; });
 
   // 重複チェック: 同じ営業日・店舗・カテゴリの既存itemId（新形式・旧B列=営業日の行の両方）
+  // ※ トイレ清掃は1時間ごとに繰り返し記録する運用のため重複チェック対象外
+  var isHourly = (payload.category === 'トイレ清掃');
   var existing = {};
-  if (sheet.getLastRow() > 1) {
+  if (!isHourly && sheet.getLastRow() > 1) {
     var data = sheet.getDataRange().getValues();
     for (var j = 1; j < data.length; j++) {
       var rowBd = businessDateFromTimestamp_(data[j][0]);
@@ -405,7 +407,7 @@ function submitChecks(payload) {
 
   var rows = [];
   for (var i = 0; i < checked.length; i++) {
-    if (existing[checked[i].itemId]) continue;
+    if (!isHourly && existing[checked[i].itemId]) continue;
     var temp = '';
     if (checked[i].temperature !== undefined && checked[i].temperature !== null) {
       temp = checked[i].temperature + '°C';
