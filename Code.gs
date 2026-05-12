@@ -240,11 +240,14 @@ function getCheckItems(storeId) {
   var sheet = ss.getSheetByName(SHEETS.ITEMS);
   var data = sheet.getDataRange().getValues();
   var items = [];
+  var bd = getBusinessDate_();
   // 列構造: A:storeId, B:category, C:timing, D:itemId, E:itemName, F:memo, G:active, H:photoRequired
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     if (row[0] !== storeId) continue;
     if (row[6] === false || row[6] === 'FALSE') continue;
+    // 隔週(土) / 週1(土) は土曜日のみ表示
+    if (!isItemApplicableForDate_(row[2], bd)) continue;
     var photoReq = row[7] === true || row[7] === 'TRUE';
     items.push({
       storeId: row[0], category: row[1], timing: row[2],
@@ -270,15 +273,37 @@ function getBusinessDate_() {
 
 /** チェック日時(Date or 文字列)から営業日(yyyy-MM-dd)を算出 */
 function businessDateFromTimestamp_(ts) {
+  // ※ 必ず新しい Date を生成する。ts が Date 参照だと d.setDate() が
+  //    呼び出し元の histData を破壊し、同じ行を再評価したときに
+  //    日付が2重に巻き戻る（トイレ清掃の未実施誤判定の原因）
   var d;
   if (ts instanceof Date) {
-    d = ts;
+    d = new Date(ts.getTime());
   } else {
     d = new Date(String(ts));
   }
   var hour = parseInt(Utilities.formatDate(d, 'Asia/Tokyo', 'H'), 10);
   if (hour < RESET_HOUR) d.setDate(d.getDate() - 1);
   return Utilities.formatDate(d, 'Asia/Tokyo', 'yyyy-MM-dd');
+}
+
+/** 営業日(yyyy-MM-dd)が土曜日か判定 */
+function isSaturdayBusinessDate_(bd) {
+  if (!bd) return false;
+  var d = new Date(bd + 'T12:00:00+09:00');
+  return d.getDay() === 6; // 0=日, 6=土
+}
+
+/**
+ * 項目の timing がその営業日にチェック対象となるか判定
+ * "隔週(土)" / "週1(土)" は土曜日のみ。それ以外は常に対象。
+ */
+function isItemApplicableForDate_(timing, bd) {
+  var t = String(timing || '');
+  if (t === '隔週(土)' || t === '週1(土)') {
+    return isSaturdayBusinessDate_(bd);
+  }
+  return true;
 }
 
 /**
@@ -391,8 +416,10 @@ function submitChecks(payload) {
   var checked = payload.items.filter(function(i) { return i.checked; });
 
   // 重複チェック: 同じ営業日・店舗・カテゴリの既存itemId（新形式・旧B列=営業日の行の両方）
+  // ※ トイレ清掃は1時間ごとに繰り返し記録する運用のため重複チェック対象外
+  var isHourly = (payload.category === 'トイレ清掃');
   var existing = {};
-  if (sheet.getLastRow() > 1) {
+  if (!isHourly && sheet.getLastRow() > 1) {
     var data = sheet.getDataRange().getValues();
     for (var j = 1; j < data.length; j++) {
       var rowBd = businessDateFromTimestamp_(data[j][0]);
@@ -405,7 +432,7 @@ function submitChecks(payload) {
 
   var rows = [];
   for (var i = 0; i < checked.length; i++) {
-    if (existing[checked[i].itemId]) continue;
+    if (!isHourly && existing[checked[i].itemId]) continue;
     var temp = '';
     if (checked[i].temperature !== undefined && checked[i].temperature !== null) {
       temp = checked[i].temperature + '°C';
@@ -438,6 +465,8 @@ function getHistory(storeId, dateStr) {
     var row = itemData[i];
     if (row[0] !== storeId) continue;
     if (row[6] === false || row[6] === 'FALSE') continue;
+    // 隔週(土) / 週1(土) は土曜日の営業日のみカウント
+    if (!isItemApplicableForDate_(row[2], targetDate)) continue;
     var cat = row[1];
     var timing = row[2] || '';
     if (!categoryTotals[cat]) categoryTotals[cat] = 0;
@@ -635,6 +664,8 @@ function getConfirmationStatus(storeId, category) {
     if (row[0] !== storeId) continue;
     if (row[1] !== category) continue;
     if (row[6] === false || row[6] === 'FALSE') continue;
+    // 隔週(土) / 週1(土) は土曜日の営業日のみ対象
+    if (!isItemApplicableForDate_(row[2], bd)) continue;
     targetItems.push({ itemId: row[3], name: row[4], memo: row[5] || '' });
   }
 
@@ -821,6 +852,8 @@ function checkOmissions() {
     // 3. マスタにはあるが未実施のものを抽出（その日にチェック履歴があるカテゴリのみ）
     masterItems.forEach(function(m) {
       if (!activeCategories[m[1]]) return; // このカテゴリは今日使われていない
+      // 隔週(土) / 週1(土) は土曜日の営業日のみ未実施判定対象
+      if (!isItemApplicableForDate_(m[2], bd)) return;
       if (!doneIds[m[3]]) {
         omissions.push([storeId, bd, m[1], m[3], m[4]]);
       }
@@ -1195,6 +1228,8 @@ function notifyIncompleteChecks_(timeLabel, checks) {
       if (row[1] !== chk.category) continue;
       if (row[6] === false || row[6] === 'FALSE') continue;
       if (chk.timing && row[2] !== chk.timing) continue;
+      // 隔週(土) / 週1(土) は土曜日の営業日のみ通知対象
+      if (!isItemApplicableForDate_(row[2], bd)) continue;
 
       totalCount++;
       var key2 = chk.category + '|' + row[3];
@@ -1328,18 +1363,53 @@ function verifyPhotoWithAI_(base64Data, itemName, category) {
   var mediaType = 'image/jpeg';
   if (base64Data.indexOf('data:image/png') === 0) mediaType = 'image/png';
 
-  var prompt = '飲食店の業務チェックリストの写真判定を行ってください。\n\n'
+  var prompt = '和食店・居酒屋の業務チェックリストの写真判定を行ってください。\n\n'
     + 'カテゴリ: ' + category + '\n'
     + 'チェック項目: ' + itemName + '\n\n'
-    + 'この写真が「' + itemName + '」の作業が適切に完了していることを示しているか判定してください。\n\n'
+    + '【基本方針】\n'
+    + 'スタッフが業務実施の証として写真を撮影しています。デフォルトは OK で、\n'
+    + 'NG にするのは「明確に未実施」または「明らかに無関係な被写体」の場合のみ。\n'
+    + '迷ったときは OK を選んでください（やり直しはスタッフ負担が大きいため）。\n\n'
+    + '【店舗業態の前提】\n'
+    + '- 当店は和食店・居酒屋業態です。\n'
+    + '- 座席セットは「プレースマット・食器（皿・小鉢）・箸・メニュー」が並んだ\n'
+    + '  和食風セッティングです。懐石風に見えても通常のセット完了状態です。\n'
+    + '- 業務用厨房機器の理解:\n'
+    + '  ・おしぼりウォーマー: 白い箱型で、ビニール包装されたおしぼりが\n'
+    + '    トレイに並んでいる機器。蒸し器や食材保管庫ではありません。\n'
+    + '  ・ガスコンロ五徳: 鋳鉄製で、日常使用により黒く炭化するのが正常です。\n'
+    + '    日常清掃では落ちない経年焦げ・炭化・変色が必ず残ります。\n'
+    + '  ・業務用シンク・ステンレス天板: 傷・水垢の痕跡が残るのが通常です。\n\n'
+    + '【項目タイプ別の判定基準】\n'
+    + '▼ 清掃系（コンロ・シンク・床・調理台・オーブン等）\n'
+    + '  - 経年焦げ・炭化・傷・水垢の痕跡は「機器の状態」として汚れ扱いせず。\n'
+    + '  - 「清掃を実施した形跡」が見えれば OK。「新品のように」は求めない。\n'
+    + '  - NG 例: 食材カスが放置・新しい油汚れがべっとり・液体がこぼれたまま。\n\n'
+    + '▼ 補充系（おしぼり・調味料・ペーパー類・薬味等）\n'
+    + '  - 容器・棚・ホルダー等に該当物が補充されていれば OK。\n'
+    + '  - 満杯でなくても、営業に支障のない量があれば OK。\n'
+    + '  - NG 例: 容器が空・補充物が全く無い。\n\n'
+    + '▼ セット系（座席・テーブル・タイマー）\n'
+    + '  - プレースマット・食器・箸・メニューが配置されていれば座席セット OK。\n'
+    + '  - タイマー類は時刻表示またはセット状態が確認できれば OK。\n'
+    + '  - NG 例: テーブルが完全に空・タイマーが未起動で電源 OFF のまま。\n\n'
+    + '▼ 確認系（外観・身だしなみ・在庫等）\n'
+    + '  - 該当箇所が写っており業務上問題ない状態であれば OK。\n\n'
+    + '【「関係ない写真」の基準（厳格に適用）】\n'
+    + '関係ないと判定するのは以下のみ：\n'
+    + '  - 風景写真・人物アップ・ペット・店外の街並み等、業務と完全に無関係な被写体\n'
+    + '業務関連の機器・場所・物品が写っていれば、項目の意図と多少ずれていても\n'
+    + '「関係あり」と扱い、OK 寄りで判断してください。\n\n'
     + '判定基準:\n'
-    + '- OK: 作業が完了している、または完了を示す状態が確認できる\n'
-    + '- NG: 作業が未完了、不適切、または関係のない写真\n\n'
+    + '- OK: 作業を実施した形跡が確認できる、または業務器具・場所が適切な状態で\n'
+    + '       写っている。経年汚れ・店舗スタイル特有の配置・業務使用痕は問題なし。\n'
+    + '- NG: 明確に未実施（新しい食材カス放置・新しい油汚れ・空の容器等）、\n'
+    + '       または業務と明らかに無関係な被写体（風景・人物・ペット等）。\n\n'
     + '以下のJSON形式のみで回答してください（他のテキストは不要）:\n'
     + '{"result": "OK" or "NG", "reason": "判定理由（日本語30文字以内）", "confidence": 0.0-1.0}';
 
   var payload = {
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5',
     max_tokens: 256,
     messages: [{
       role: 'user',
@@ -1430,7 +1500,7 @@ function readTemperatureWithAI_(base64Data) {
     + '{"temperature": 数値（小数点1桁まで、読み取れない場合はnull）, "unit": "℃" or "°F", "confidence": 0.0-1.0, "reason": "読み取り状況（日本語20文字以内）"}';
 
   var payload = {
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5',
     max_tokens: 256,
     messages: [{
       role: 'user',
