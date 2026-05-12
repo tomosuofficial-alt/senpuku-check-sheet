@@ -240,11 +240,14 @@ function getCheckItems(storeId) {
   var sheet = ss.getSheetByName(SHEETS.ITEMS);
   var data = sheet.getDataRange().getValues();
   var items = [];
+  var bd = getBusinessDate_();
   // 列構造: A:storeId, B:category, C:timing, D:itemId, E:itemName, F:memo, G:active, H:photoRequired
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     if (row[0] !== storeId) continue;
     if (row[6] === false || row[6] === 'FALSE') continue;
+    // 隔週(土) / 週1(土) は土曜日のみ表示
+    if (!isItemApplicableForDate_(row[2], bd)) continue;
     var photoReq = row[7] === true || row[7] === 'TRUE';
     items.push({
       storeId: row[0], category: row[1], timing: row[2],
@@ -282,6 +285,25 @@ function businessDateFromTimestamp_(ts) {
   var hour = parseInt(Utilities.formatDate(d, 'Asia/Tokyo', 'H'), 10);
   if (hour < RESET_HOUR) d.setDate(d.getDate() - 1);
   return Utilities.formatDate(d, 'Asia/Tokyo', 'yyyy-MM-dd');
+}
+
+/** 営業日(yyyy-MM-dd)が土曜日か判定 */
+function isSaturdayBusinessDate_(bd) {
+  if (!bd) return false;
+  var d = new Date(bd + 'T12:00:00+09:00');
+  return d.getDay() === 6; // 0=日, 6=土
+}
+
+/**
+ * 項目の timing がその営業日にチェック対象となるか判定
+ * "隔週(土)" / "週1(土)" は土曜日のみ。それ以外は常に対象。
+ */
+function isItemApplicableForDate_(timing, bd) {
+  var t = String(timing || '');
+  if (t === '隔週(土)' || t === '週1(土)') {
+    return isSaturdayBusinessDate_(bd);
+  }
+  return true;
 }
 
 /**
@@ -443,6 +465,8 @@ function getHistory(storeId, dateStr) {
     var row = itemData[i];
     if (row[0] !== storeId) continue;
     if (row[6] === false || row[6] === 'FALSE') continue;
+    // 隔週(土) / 週1(土) は土曜日の営業日のみカウント
+    if (!isItemApplicableForDate_(row[2], targetDate)) continue;
     var cat = row[1];
     var timing = row[2] || '';
     if (!categoryTotals[cat]) categoryTotals[cat] = 0;
@@ -640,6 +664,8 @@ function getConfirmationStatus(storeId, category) {
     if (row[0] !== storeId) continue;
     if (row[1] !== category) continue;
     if (row[6] === false || row[6] === 'FALSE') continue;
+    // 隔週(土) / 週1(土) は土曜日の営業日のみ対象
+    if (!isItemApplicableForDate_(row[2], bd)) continue;
     targetItems.push({ itemId: row[3], name: row[4], memo: row[5] || '' });
   }
 
@@ -826,6 +852,8 @@ function checkOmissions() {
     // 3. マスタにはあるが未実施のものを抽出（その日にチェック履歴があるカテゴリのみ）
     masterItems.forEach(function(m) {
       if (!activeCategories[m[1]]) return; // このカテゴリは今日使われていない
+      // 隔週(土) / 週1(土) は土曜日の営業日のみ未実施判定対象
+      if (!isItemApplicableForDate_(m[2], bd)) return;
       if (!doneIds[m[3]]) {
         omissions.push([storeId, bd, m[1], m[3], m[4]]);
       }
@@ -1200,6 +1228,8 @@ function notifyIncompleteChecks_(timeLabel, checks) {
       if (row[1] !== chk.category) continue;
       if (row[6] === false || row[6] === 'FALSE') continue;
       if (chk.timing && row[2] !== chk.timing) continue;
+      // 隔週(土) / 週1(土) は土曜日の営業日のみ通知対象
+      if (!isItemApplicableForDate_(row[2], bd)) continue;
 
       totalCount++;
       var key2 = chk.category + '|' + row[3];
