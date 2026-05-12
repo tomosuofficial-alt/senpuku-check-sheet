@@ -270,9 +270,12 @@ function getBusinessDate_() {
 
 /** チェック日時(Date or 文字列)から営業日(yyyy-MM-dd)を算出 */
 function businessDateFromTimestamp_(ts) {
+  // ※ 必ず新しい Date を生成する。ts が Date 参照だと d.setDate() が
+  //    呼び出し元の histData を破壊し、同じ行を再評価したときに
+  //    日付が2重に巻き戻る（トイレ清掃の未実施誤判定の原因）
   var d;
   if (ts instanceof Date) {
-    d = ts;
+    d = new Date(ts.getTime());
   } else {
     d = new Date(String(ts));
   }
