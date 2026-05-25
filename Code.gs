@@ -160,6 +160,17 @@ function doPost(e) {
         }
         result = submitPhotoCheck(ppdata);
         break;
+      case 'submitPhotoCheckSkipAI':
+        var pskdata = body.data;
+        if (typeof pskdata === 'string') {
+          try {
+            pskdata = JSON.parse(pskdata);
+          } catch (e6) {
+            throw new Error('data の JSON が不正です');
+          }
+        }
+        result = submitPhotoCheckSkipAI(pskdata);
+        break;
       case 'submitTemperaturePhoto':
         var ptdata = body.data;
         if (typeof ptdata === 'string') {
@@ -1304,7 +1315,7 @@ function getDateFolder_(parentFolder, dateStr) {
  * Base64画像をDriveに保存
  * @param {string} base64Data - data:image/jpeg;base64,... 形式またはbase64文字列
  * @param {string} fileName - ファイル名
- * @param {string} result - 'OK' or 'NG' (NGフォルダに分類)
+ * @param {string} result - 'OK' / 'NG' / 'PENDING' のいずれか（フォルダ分類）
  * @returns {{ fileId: string, fileUrl: string }}
  */
 function savePhotoToDrive_(base64Data, fileName, result) {
@@ -1315,8 +1326,10 @@ function savePhotoToDrive_(base64Data, fileName, result) {
   var bd = getBusinessDate_();
   var dateFolder = getDateFolder_(parent, bd);
 
-  // OK/NG サブフォルダ
-  var resultLabel = (result === 'NG') ? 'NG' : 'OK';
+  var resultLabel;
+  if (result === 'NG') resultLabel = 'NG';
+  else if (result === 'PENDING') resultLabel = 'PENDING';
+  else resultLabel = 'OK';
   var resultFolders = dateFolder.getFoldersByName(resultLabel);
   var resultFolder = resultFolders.hasNext() ? resultFolders.next() : dateFolder.createFolder(resultLabel);
 
@@ -1397,6 +1410,12 @@ function verifyPhotoWithAI_(base64Data, itemName, category) {
 
   if (code !== 200) {
     Logger.log('Claude API error: HTTP ' + code + ' - ' + body);
+    // 過負荷系（529 overloaded / 503 service unavailable / 429 rate limit）は専用エラーで区別
+    if (code === 529 || code === 503 || code === 429) {
+      var oe = new Error('API_OVERLOADED');
+      oe.httpCode = code;
+      throw oe;
+    }
     throw new Error('AI判定でエラーが発生しました (HTTP ' + code + ')');
   }
 
@@ -1498,6 +1517,11 @@ function readTemperatureWithAI_(base64Data) {
 
   if (code !== 200) {
     Logger.log('Claude API error (temp OCR): HTTP ' + code + ' - ' + body);
+    if (code === 529 || code === 503 || code === 429) {
+      var oe = new Error('API_OVERLOADED');
+      oe.httpCode = code;
+      throw oe;
+    }
     throw new Error('温度読み取りでエラーが発生しました (HTTP ' + code + ')');
   }
 
@@ -1547,8 +1571,22 @@ function submitTemperaturePhoto(data) {
 
   if (!photo) throw new Error('写真データがありません');
 
-  // 1. AI OCR読み取り
-  var ocrResult = readTemperatureWithAI_(photo);
+  // 1. AI OCR読み取り（過負荷時は保存せず overloaded 応答だけ返す。手入力に切替を促す）
+  var ocrResult;
+  try {
+    ocrResult = readTemperatureWithAI_(photo);
+  } catch (apiErr) {
+    if (apiErr && apiErr.message === 'API_OVERLOADED') {
+      return {
+        status: 'overloaded',
+        temperature: null,
+        unit: '℃',
+        httpCode: apiErr.httpCode || 529,
+        message: 'AI読み取りサーバーが混雑中です。撮り直しても結果は変わりません。手入力に切り替えてください。'
+      };
+    }
+    throw apiErr;
+  }
 
   // 2. Drive に保存
   var bd = getBusinessDate_();
@@ -1642,8 +1680,21 @@ function submitPhotoCheck(data) {
 
   if (!photo) throw new Error('写真データがありません');
 
-  // 1. AI判定
-  var judgment = verifyPhotoWithAI_(photo, itemName, category);
+  // 1. AI判定（過負荷時は保存せず overloaded 応答だけ返す。再試行/スキップは別アクション）
+  var judgment;
+  try {
+    judgment = verifyPhotoWithAI_(photo, itemName, category);
+  } catch (apiErr) {
+    if (apiErr && apiErr.message === 'API_OVERLOADED') {
+      return {
+        status: 'overloaded',
+        result: 'PENDING',
+        httpCode: apiErr.httpCode || 529,
+        message: 'AI判定サーバーが混雑中です。撮り直しても結果は変わりません。'
+      };
+    }
+    throw apiErr;
+  }
 
   // 2. Drive に保存
   var bd = getBusinessDate_();
@@ -1718,6 +1769,88 @@ function submitPhotoCheck(data) {
     result: judgment.result,
     reason: judgment.reason,
     confidence: judgment.confidence,
+    fileUrl: saved.fileUrl
+  };
+}
+
+/**
+ * AI判定をスキップして写真付きチェックを送信
+ * AI過負荷時など、スタッフが判断して送信するための代替フロー
+ * POST body: { action: 'submitPhotoCheckSkipAI', apiKey, data: { storeId, staffId, staffName, category, itemId, itemName, photo (base64) } }
+ */
+function submitPhotoCheckSkipAI(data) {
+  var storeId = data.storeId || 'STORE001';
+  var staffId = data.staffId || '';
+  var staffName = data.staffName || '';
+  var category = data.category || '';
+  var itemId = data.itemId || '';
+  var itemName = data.itemName || '';
+  var photo = data.photo || '';
+
+  if (!photo) throw new Error('写真データがありません');
+
+  var bd = getBusinessDate_();
+  var now = new Date();
+  var ts = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyyMMdd_HHmmss');
+  var fileName = itemId + '_skipAI_' + ts + '.jpg';
+  var saved = savePhotoToDrive_(photo, fileName, 'PENDING');
+
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var pjSheet = ss.getSheetByName(SHEETS.PHOTO_JUDGMENTS);
+  if (!pjSheet) {
+    pjSheet = ss.insertSheet(SHEETS.PHOTO_JUDGMENTS);
+    pjSheet.appendRow(['判定日時', '店舗ID', 'スタッフID', 'スタッフ名', 'カテゴリ', '項目ID', '項目名', '判定結果', '判定理由', '確信度', 'ファイルID', 'ファイルURL']);
+  }
+  pjSheet.appendRow([
+    now, storeId, staffId, staffName, category, itemId, itemName,
+    'PENDING', 'AI判定スキップ（要手動確認）', 0,
+    saved.fileId, saved.fileUrl
+  ]);
+
+  var histSheet = ss.getSheetByName(SHEETS.HISTORY);
+  var dt = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
+  var isDup = false;
+  var itemSh = ss.getSheetByName(SHEETS.ITEMS);
+  var iData = itemSh.getDataRange().getValues();
+  var allowMulti = false;
+  for (var m = 1; m < iData.length; m++) {
+    if (iData[m][0] === storeId && iData[m][3] === itemId) {
+      allowMulti = (iData[m][8] === true || iData[m][8] === 'TRUE');
+      break;
+    }
+  }
+  if (!allowMulti && histSheet.getLastRow() > 1) {
+    var histData = histSheet.getDataRange().getValues();
+    for (var j = 1; j < histData.length; j++) {
+      var hBd = businessDateFromTimestamp_(histData[j][0]);
+      var nr = normalizeHistoryRow_(histData[j]);
+      if (hBd === bd && nr.storeId === storeId && nr.category === category && nr.itemId === itemId) {
+        isDup = true;
+        break;
+      }
+    }
+  }
+  if (!isDup) {
+    histSheet.appendRow([dt, storeId, staffId, staffName, category, itemId, '📷保留']);
+  }
+
+  var dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+  var dateLabel = Utilities.formatDate(now, 'Asia/Tokyo', 'M月d日') + '(' + dayNames[now.getDay()] + ')';
+  var timeLabel = Utilities.formatDate(now, 'Asia/Tokyo', 'HH:mm');
+  var msg = '⚠️ AI判定スキップ（要手動確認）\n\n'
+    + '日時: ' + dateLabel + ' ' + timeLabel + '\n'
+    + 'スタッフ: ' + staffName + '\n'
+    + 'カテゴリ: ' + category + '\n'
+    + '項目: ' + itemName + '\n'
+    + '理由: AI判定サーバー混雑によりスキップ送信\n\n'
+    + '写真を確認してください:\n' + saved.fileUrl;
+  sendLineToAll_(msg);
+
+  return {
+    status: 'success',
+    result: 'PENDING',
+    reason: 'AI判定スキップ（要手動確認）',
+    confidence: 0,
     fileUrl: saved.fileUrl
   };
 }

@@ -2828,6 +2828,88 @@
       photoModalContent.insertAdjacentHTML('beforeend', html);
     }
 
+    /** AI判定サーバー過負荷時UI: 同じ写真で再試行 or AI判定スキップ送信 */
+    function showOverloadedResult(r) {
+      var jEl = photoModalContent.querySelector('.photo-judging');
+      if (jEl) jEl.remove();
+
+      var msg = esc(r.message || 'AI判定サーバーが混雑中です。');
+      var html = '<div class="photo-result ng">'
+        + '<div class="photo-result-icon">⏳</div>'
+        + '<div class="photo-result-label">サーバー混雑中</div>'
+        + '<div class="photo-result-reason">' + msg + '</div>'
+        + '<div style="font-size:13px;color:var(--apple-tertiary-label);margin:8px 0 16px;line-height:1.5;">💡 <strong>撮り直しは不要です</strong>（同じ結果になります）</div>'
+        + '<button class="photo-submit-btn" onclick="retryPhotoSubmit()">🔄 同じ写真で再試行</button>'
+        + '<button class="photo-cancel-btn" style="margin-top:8px;" onclick="skipAIAndSubmit()">⏭ AI判定なしで送信（要手動確認）</button>'
+        + '<button class="photo-cancel-btn" style="margin-top:8px;" onclick="closePhotoModal()">キャンセル</button>'
+        + '</div>';
+      photoModalContent.insertAdjacentHTML('beforeend', html);
+    }
+
+    /** 同じ写真で再試行（撮り直し不要、トークン消費は1回分のみ） */
+    window.retryPhotoSubmit = function () {
+      var resultEl = photoModalContent.querySelector('.photo-result');
+      if (resultEl) resultEl.remove();
+      photoSubmitBtn.click();
+    };
+
+    /** AI判定をスキップして送信（写真は PENDING 保存、店長にLINE通知） */
+    window.skipAIAndSubmit = function () {
+      if (!currentPhotoBase64 || !currentPhotoItem) return;
+      var staffOpt = els.staffSelect.options[els.staffSelect.selectedIndex];
+      var resultEl = photoModalContent.querySelector('.photo-result');
+      if (resultEl) resultEl.remove();
+      var judgingHtml = '<div class="photo-judging"><div class="spinner"></div><div style="font-size:15px;color:var(--apple-secondary-label);">送信中...</div></div>';
+      photoModalContent.insertAdjacentHTML('beforeend', judgingHtml);
+
+      var payload = {
+        storeId: 'STORE001',
+        staffId: els.staffSelect.value,
+        staffName: staffOpt.dataset.name,
+        category: currentPhotoItem.category,
+        itemId: currentPhotoItem.itemId,
+        itemName: currentPhotoItem.name,
+        photo: currentPhotoBase64
+      };
+
+      var ctrl = new AbortController();
+      var timer = setTimeout(function () { ctrl.abort(); }, 60000);
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        signal: ctrl.signal,
+        body: JSON.stringify({ action: 'submitPhotoCheckSkipAI', apiKey: API_KEY, data: payload })
+      })
+      .then(function (r) { clearTimeout(timer); return r.json(); })
+      .then(function (r) {
+        if (r.error) throw new Error(r.error);
+        var jEl2 = photoModalContent.querySelector('.photo-judging'); if (jEl2) jEl2.remove();
+        showToast('AI判定スキップで送信しました（要手動確認）');
+        // チェック完了扱い
+        if (currentPhotoItem) {
+          checkedState[currentPhotoItem.itemId] = true;
+          var card = document.querySelector('.check-item[data-id="' + currentPhotoItem.itemId + '"]');
+          if (card) {
+            card.classList.add('checked');
+            card.setAttribute('aria-checked', 'true');
+            card.classList.remove('check-flash');
+            void card.offsetWidth;
+            card.classList.add('check-flash');
+          }
+          updateProgress();
+          updateSubmitBtn();
+        }
+        closePhotoModal();
+      })
+      .catch(function (e) {
+        clearTimeout(timer);
+        var jEl2 = photoModalContent.querySelector('.photo-judging'); if (jEl2) jEl2.remove();
+        showToast('送信エラー: ' + (e.message || e), 'rgba(255,59,48,0.85)');
+        // ボタンを再表示
+        showOverloadedResult({ message: '送信に失敗しました。もう一度お試しください。' });
+      });
+    };
+
     window.closePhotoAndUpdate = function (isOk) {
       if (isOk && currentPhotoItem) {
         // チェック状態を更新
@@ -2927,7 +3009,11 @@
           body: JSON.stringify({ action: 'submitTemperaturePhoto', apiKey: API_KEY, data: payload })
         })
         .then(function (r) { clearTimeout(timer); return r.json(); })
-        .then(function (r) { if (r.error) throw new Error(r.error); showTempResult(r); })
+        .then(function (r) {
+          if (r.error) throw new Error(r.error);
+          if (r.status === 'overloaded') { showTempOverloadedResult(r); return; }
+          showTempResult(r);
+        })
         .catch(function (e) {
           clearTimeout(timer);
           var jEl = photoModalContent.querySelector('.photo-judging'); if (jEl) jEl.remove();
@@ -2966,7 +3052,11 @@
           body: JSON.stringify({ action: 'submitPhotoCheck', apiKey: API_KEY, data: payload2 })
         })
         .then(function (r) { clearTimeout(timer2); return r.json(); })
-        .then(function (r) { if (r.error) throw new Error(r.error); showPhotoResult(r); })
+        .then(function (r) {
+          if (r.error) throw new Error(r.error);
+          if (r.status === 'overloaded') { showOverloadedResult(r); return; }
+          showPhotoResult(r);
+        })
         .catch(function (e) {
           clearTimeout(timer2);
           var jEl = photoModalContent.querySelector('.photo-judging'); if (jEl) jEl.remove();
@@ -2995,6 +3085,40 @@
         + '</div>';
       photoModalContent.insertAdjacentHTML('beforeend', html);
     }
+
+    /** 温度OCR過負荷時UI: 再試行 or 手入力に切替 */
+    function showTempOverloadedResult(r) {
+      var jEl = photoModalContent.querySelector('.photo-judging');
+      if (jEl) jEl.remove();
+
+      var msg = esc(r.message || 'AI読み取りサーバーが混雑中です。');
+      var html = '<div class="photo-result ng">'
+        + '<div class="photo-result-icon">⏳</div>'
+        + '<div class="photo-result-label">サーバー混雑中</div>'
+        + '<div class="photo-result-reason">' + msg + '</div>'
+        + '<div style="font-size:13px;color:var(--apple-tertiary-label);margin:8px 0 16px;line-height:1.5;">💡 <strong>撮り直しは不要です</strong>（同じ結果になります）</div>'
+        + '<button class="photo-submit-btn" onclick="retryPhotoSubmit()">🔄 同じ写真で再試行</button>'
+        + '<button class="photo-cancel-btn" style="margin-top:8px;" onclick="closeTempForManual()">⌨ 手入力に切り替え</button>'
+        + '<button class="photo-cancel-btn" style="margin-top:8px;" onclick="closePhotoModal(); tempPhotoMode=false;">キャンセル</button>'
+        + '</div>';
+      photoModalContent.insertAdjacentHTML('beforeend', html);
+    }
+
+    /** OCRをやめて手入力に切替（モーダルを閉じてカードの数値入力欄にフォーカス） */
+    window.closeTempForManual = function () {
+      var itemId = currentTempItem && currentTempItem.itemId;
+      tempPhotoMode = false;
+      currentTempItem = null;
+      closePhotoModal();
+      if (itemId) {
+        var card = document.querySelector('.check-item[data-id="' + itemId + '"]');
+        if (card) {
+          var inp = card.querySelector('.temp-input');
+          if (inp) { try { inp.focus(); } catch (e) {} }
+        }
+      }
+      showToast('手入力に切り替えました');
+    };
 
     window.closeTempAndUpdate = function (temp) {
       if (temp !== null && currentTempItem) {
