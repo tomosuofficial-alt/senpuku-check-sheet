@@ -5,3 +5,6 @@ node_modules/
 
 # Local Netlify folder
 .netlify
+
+# Claude Code worktrees (local only)
+.claude/worktrees/
