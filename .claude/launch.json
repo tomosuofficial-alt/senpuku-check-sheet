@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "check-sheet",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "/Volumes/Home_Mac_SSD/02_Development/02_Web_Apps/Yoidokoro_Senpuku/Check_Sheet/deploy", "-l", "3458", "--no-clipboard"],
+      "port": 3458
+    }
+  ]
+}

@@ -240,17 +240,19 @@ function getCheckItems(storeId) {
   var sheet = ss.getSheetByName(SHEETS.ITEMS);
   var data = sheet.getDataRange().getValues();
   var items = [];
-  // 列構造: A:storeId, B:category, C:timing, D:itemId, E:itemName, F:memo, G:active, H:photoRequired
+  // 列構造: A:storeId, B:category, C:timing, D:itemId, E:itemName, F:memo, G:active, H:photoRequired, I:multipleAllowed
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     if (row[0] !== storeId) continue;
     if (row[6] === false || row[6] === 'FALSE') continue;
     var photoReq = row[7] === true || row[7] === 'TRUE';
+    var multi = row[8] === true || row[8] === 'TRUE';
     items.push({
       storeId: row[0], category: row[1], timing: row[2],
       itemId: row[3], name: row[4], sortOrder: i,
       memo: row[5] || '', minutes: '', priority: '', frequency: '',
-      photoRequired: photoReq
+      photoRequired: photoReq,
+      multipleAllowed: multi
     });
   }
   return items;
@@ -403,9 +405,20 @@ function submitChecks(payload) {
     }
   }
 
+  // 複数回可の項目を取得（I列 TRUE のもの）
+  var multiAllowed = {};
+  var itemSheet = ss.getSheetByName(SHEETS.ITEMS);
+  var itemData = itemSheet.getDataRange().getValues();
+  for (var k = 1; k < itemData.length; k++) {
+    if (itemData[k][0] !== storeId) continue;
+    if (itemData[k][8] === true || itemData[k][8] === 'TRUE') {
+      multiAllowed[itemData[k][3]] = true;
+    }
+  }
+
   var rows = [];
   for (var i = 0; i < checked.length; i++) {
-    if (existing[checked[i].itemId]) continue;
+    if (existing[checked[i].itemId] && !multiAllowed[checked[i].itemId]) continue;
     var temp = '';
     if (checked[i].temperature !== undefined && checked[i].temperature !== null) {
       temp = checked[i].temperature + '°C';
@@ -1331,15 +1344,22 @@ function verifyPhotoWithAI_(base64Data, itemName, category) {
   var prompt = '飲食店の業務チェックリストの写真判定を行ってください。\n\n'
     + 'カテゴリ: ' + category + '\n'
     + 'チェック項目: ' + itemName + '\n\n'
-    + 'この写真が「' + itemName + '」の作業が適切に完了していることを示しているか判定してください。\n\n'
-    + '判定基準:\n'
-    + '- OK: 作業が完了している、または完了を示す状態が確認できる\n'
-    + '- NG: 作業が未完了、不適切、または関係のない写真\n\n'
+    + 'この写真が「' + itemName + '」に関連する作業が行われたことを示しているか判定してください。\n\n'
+    + '【重要な判定方針】\n'
+    + '- 完璧さは求めない。実務上の「最低限の作業完了」を確認する\n'
+    + '- 多少の汚れ、雑然さ、不完全さは許容する（プロの清掃水準を求めない）\n'
+    + '- 写真に対象物が写っており、明らかに作業を怠った形跡がなければOK\n'
+    + '- 屋外の苔・経年汚れ、業務用機器の使用痕などは正常な状態として扱う\n'
+    + '- 判定に迷う・状態が不明確な場合はOKとする（スタッフの自己申告を信頼）\n\n'
+    + '【NG判定の条件（以下のいずれかに該当する場合のみ）】\n'
+    + '- 項目と全く関係のない写真（例: 食材確認なのに天井の写真）\n'
+    + '- 対象物が一切写っていない\n'
+    + '- 明らかに作業されていない（例: ゴミが大量に散乱、機器が壊れている）\n\n'
     + '以下のJSON形式のみで回答してください（他のテキストは不要）:\n'
     + '{"result": "OK" or "NG", "reason": "判定理由（日本語30文字以内）", "confidence": 0.0-1.0}';
 
   var payload = {
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 256,
     messages: [{
       role: 'user',
@@ -1395,10 +1415,20 @@ function verifyPhotoWithAI_(base64Data, itemName, category) {
 
   try {
     var judgment = JSON.parse(jsonMatch[0]);
+    var conf = parseFloat(judgment.confidence) || 0;
+    var result = (judgment.result === 'OK') ? 'OK' : 'NG';
+    // 確信度が0.8未満のNGは判定保留としてOK扱い（誤判定防止）
+    if (result === 'NG' && conf < 0.8) {
+      return {
+        result: 'OK',
+        reason: '確信度低のためOK扱い (元: ' + (judgment.reason || '') + ')',
+        confidence: conf
+      };
+    }
     return {
-      result: (judgment.result === 'OK') ? 'OK' : 'NG',
+      result: result,
       reason: judgment.reason || '',
-      confidence: parseFloat(judgment.confidence) || 0
+      confidence: conf
     };
   } catch (e2) {
     Logger.log('JSON parse error: ' + e2.message + ' / text: ' + text);
@@ -1430,7 +1460,7 @@ function readTemperatureWithAI_(base64Data) {
     + '{"temperature": 数値（小数点1桁まで、読み取れない場合はnull）, "unit": "℃" or "°F", "confidence": 0.0-1.0, "reason": "読み取り状況（日本語20文字以内）"}';
 
   var payload = {
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 256,
     messages: [{
       role: 'user',
@@ -1547,7 +1577,17 @@ function submitTemperaturePhoto(data) {
     var histSheet = ss.getSheetByName(SHEETS.HISTORY);
     var dt = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
     var isDup = false;
-    if (histSheet.getLastRow() > 1) {
+    // 複数回可フラグをチェック
+    var itemSh = ss.getSheetByName(SHEETS.ITEMS);
+    var iData = itemSh.getDataRange().getValues();
+    var allowMulti = false;
+    for (var m = 1; m < iData.length; m++) {
+      if (iData[m][0] === storeId && iData[m][3] === itemId) {
+        allowMulti = (iData[m][8] === true || iData[m][8] === 'TRUE');
+        break;
+      }
+    }
+    if (!allowMulti && histSheet.getLastRow() > 1) {
       var histData = histSheet.getDataRange().getValues();
       for (var j = 1; j < histData.length; j++) {
         var hBd = businessDateFromTimestamp_(histData[j][0]);
@@ -1631,7 +1671,17 @@ function submitPhotoCheck(data) {
     var dt = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
     // 重複チェック
     var isDup = false;
-    if (histSheet.getLastRow() > 1) {
+    // 複数回可フラグをチェック
+    var itemSh = ss.getSheetByName(SHEETS.ITEMS);
+    var iData = itemSh.getDataRange().getValues();
+    var allowMulti = false;
+    for (var m = 1; m < iData.length; m++) {
+      if (iData[m][0] === storeId && iData[m][3] === itemId) {
+        allowMulti = (iData[m][8] === true || iData[m][8] === 'TRUE');
+        break;
+      }
+    }
+    if (!allowMulti && histSheet.getLastRow() > 1) {
       var histData = histSheet.getDataRange().getValues();
       for (var j = 1; j < histData.length; j++) {
         var hBd = businessDateFromTimestamp_(histData[j][0]);
@@ -1734,3 +1784,26 @@ function setupPhotoJudgments() {
   Logger.log('写真判定履歴シート作成完了');
 }
 
+/**
+ * Claude API接続テスト
+ */
+function testClaudeApi() {
+  var key = PropertiesService.getScriptProperties().getProperty('CLAUDE_API_KEY');
+  Logger.log('Key length: ' + (key ? key.length : 'null'));
+  var res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+    method: 'post',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json'
+    },
+    payload: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 50,
+      messages: [{ role: 'user', content: 'Say hello in Japanese' }]
+    }),
+    muteHttpExceptions: true
+  });
+  Logger.log('HTTP ' + res.getResponseCode());
+  Logger.log(res.getContentText());
+}
