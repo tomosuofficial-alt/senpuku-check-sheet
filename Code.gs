@@ -427,9 +427,12 @@ function submitChecks(payload) {
     }
   }
 
+  // トイレ清掃は時間帯ごとに記録する必要があるため、常に複数回可扱い
+  var alwaysMultiCategory = (payload.category === 'トイレ清掃');
+
   var rows = [];
   for (var i = 0; i < checked.length; i++) {
-    if (existing[checked[i].itemId] && !multiAllowed[checked[i].itemId]) continue;
+    if (existing[checked[i].itemId] && !multiAllowed[checked[i].itemId] && !alwaysMultiCategory) continue;
     var temp = '';
     if (checked[i].temperature !== undefined && checked[i].temperature !== null) {
       temp = checked[i].temperature + '°C';
@@ -1155,13 +1158,29 @@ function replyLineMessage_(replyToken, text) {
 // ============================================================
 
 /**
+ * 営業日が定休日（日曜）なら true
+ * - 営業時間は 18:00 〜 翌 4:00 のため、翌 7:00 トリガーは前日の営業日として扱う
+ * - getBusinessDate_() が 9 時前なら前日を返すので、それを基準に判定
+ * 例: 月曜 7:00 トリガー → 営業日=日曜 → 定休 → 通知スキップ
+ *     日曜 7:00 トリガー → 営業日=土曜 → 通知（土曜の閉店確認）
+ */
+function isClosedBusinessDay_() {
+  var bd = getBusinessDate_(); // yyyy-MM-dd (JST営業日)
+  // 正午JSTで生成して曜日のみ取得（タイムゾーン揺れ防止）
+  var d = new Date(bd + 'T12:00:00+09:00');
+  return d.getDay() === 0; // 0 = 日曜
+}
+
+/**
  * 未完了チェック通知
  * GASの時間ベーストリガーで以下を設定:
  *   - checkAndNotify_1800: 毎日 18:00 に実行
  *   - checkAndNotify_2230: 毎日 22:30 に実行
  *   - checkAndNotify_0700: 毎日 7:00 に実行
+ * 日曜定休のため、営業日が日曜の通知はスキップする。
  */
 function checkAndNotify_1800() {
+  if (isClosedBusinessDay_()) { Logger.log('18:00 定休日のためスキップ'); return; }
   notifyIncompleteChecks_('18:00', [
     { category: '開店', label: '開店チェック' },
     { category: '氷プール', timing: '出勤時', label: '氷プールチェック（出勤時）' }
@@ -1169,12 +1188,14 @@ function checkAndNotify_1800() {
 }
 
 function checkAndNotify_2230() {
+  if (isClosedBusinessDay_()) { Logger.log('22:30 定休日のためスキップ'); return; }
   notifyIncompleteChecks_('22:30', [
     { category: '氷プール', timing: '22時', label: '氷プールチェック（22時）' }
   ]);
 }
 
 function checkAndNotify_0700() {
+  if (isClosedBusinessDay_()) { Logger.log('7:00 定休日のためスキップ'); return; }
   notifyIncompleteChecks_('7:00', [
     { category: '閉店', label: '閉店チェック' },
     { category: '氷プール', timing: '退勤時', label: '氷プールチェック（退勤時）' }
