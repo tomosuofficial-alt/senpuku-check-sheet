@@ -1229,6 +1229,9 @@ function notifyIncompleteChecks_(timeLabel, checks) {
 
   var incomplete = [];
 
+  // 営業日の曜日（0=日 … 6=土）。正午JSTで生成して揺れ防止。
+  var bdDow = new Date(bd + 'T12:00:00+09:00').getDay();
+
   for (var c = 0; c < checks.length; c++) {
     var chk = checks[c];
     var totalCount = 0;
@@ -1240,6 +1243,10 @@ function notifyIncompleteChecks_(timeLabel, checks) {
       if (row[1] !== chk.category) continue;
       if (row[6] === false || row[6] === 'FALSE') continue;
       if (chk.timing && row[2] !== chk.timing) continue;
+      // 「週1(土)」「隔週(土)」など特定曜日のみの項目は、その曜日以外は集計対象外
+      // （毎日やる作業ではないため、対象日でない日に未完了として数えない）
+      var itTiming = String(row[2] || '');
+      if (itTiming.indexOf('土') !== -1 && bdDow !== 6) continue;
 
       totalCount++;
       var key2 = chk.category + '|' + row[3];
