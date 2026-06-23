@@ -3321,11 +3321,31 @@
         var type = cat.type || 'standard';
 
         if (type === 'count') {
-          var cov = cat.itemsCovered != null ? cat.itemsCovered : 0;
           var logs = cat.logCount != null ? cat.logCount : 0;
-          var t = cat.total || 0;
-          var isDone = t > 0 && cov >= t;
-          var isPartial = cov > 0 && cov < t;
+          var isDone, isPartial;
+          var countSlots = cat.hourlySlots || [];
+          if (countSlots.length > 0) {
+            // 毎時スロット基準で完了判定（LINE通知 getToiletMissedSlots_ と一致させる）
+            // 過去の営業日は全スロットが対象。当日は現在時刻までのスロットのみ対象。
+            var nowCount = new Date();
+            var curHourCount = nowCount.getHours();
+            var curLogicalCount = curHourCount < 9 ? curHourCount + 24 : curHourCount;
+            var isTodayCount = (data.date === getRecentDates()[0]);
+            var dueCount = 0, doneCount = 0;
+            countSlots.forEach(function (s) {
+              var sLogical = s.hour < 9 ? s.hour + 24 : s.hour;
+              var isDue = isTodayCount ? (sLogical < curLogicalCount) : true;
+              if (isDue) { dueCount++; if (s.done) doneCount++; }
+            });
+            isDone = dueCount > 0 && doneCount >= dueCount;
+            isPartial = doneCount > 0 && doneCount < dueCount;
+          } else {
+            // フォールバック: スロット情報がない場合は従来の項目カバー率で判定
+            var cov = cat.itemsCovered != null ? cat.itemsCovered : 0;
+            var t = cat.total || 0;
+            isDone = t > 0 && cov >= t;
+            isPartial = cov > 0 && cov < t;
+          }
           var st = historyStatusBadge(isDone, isPartial);
           html += '<div class="history-category">';
           html += '<div class="history-cat-header">';
