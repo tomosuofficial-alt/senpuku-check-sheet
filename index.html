@@ -601,6 +601,12 @@
       text-decoration-color: rgba(195, 13, 35, 0.3);
     }
 
+    /* 提供可能数の申告品目は「完了で消す」対象ではないため取り消し線を付けない */
+    .check-item.stock-item.checked .item-name {
+      color: var(--apple-label);
+      text-decoration: none;
+    }
+
     @keyframes checkGlow {
       0% { background: rgba(195, 13, 35, 0.04); }
       50% { background: rgba(195, 13, 35, 0.12); }
@@ -737,6 +743,74 @@
       font-size: 13px;
       color: var(--apple-secondary-label);
       font-weight: 500;
+    }
+
+    /* 提供可能数の申告入力（温度入力と同一パターン・手入力可） */
+    .stock-input {
+      width: 64px;
+      background: #fff;
+    }
+
+    /* 履歴モーダル: 提供可能数の申告一覧 */
+    .stock-history-list {
+      padding: 4px 16px 12px;
+    }
+
+    .stock-history-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--apple-secondary-label);
+      margin: 4px 0 2px;
+    }
+
+    .stock-history-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 0;
+      border-top: 0.5px solid rgba(60, 60, 67, 0.15);
+      font-size: 14px;
+    }
+
+    .stock-history-row:first-of-type {
+      border-top: none;
+    }
+
+    .stock-history-name {
+      color: var(--apple-label);
+    }
+
+    .stock-history-detail {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stock-history-meta {
+      font-size: 11px;
+      color: var(--apple-tertiary-label);
+    }
+
+    .stock-val-ok {
+      font-weight: 700;
+      color: #248A3D;
+    }
+
+    .stock-val-low {
+      font-weight: 700;
+      color: #FF9500;
+    }
+
+    .stock-val-out {
+      font-weight: 700;
+      color: #FF3B30;
+    }
+
+    .stock-val-none {
+      font-weight: 600;
+      color: #FF3B30;
+      font-size: 13px;
     }
 
     .item-memo {
@@ -2109,6 +2183,8 @@
 
     // ===== State =====
     var allItems = [], staffList = [], todayChecked = [], currentCategory = '開店', checkedState = {};
+    var stockState = {};   // 提供可能数の入力中の値（itemId -> 数量。0 も有効値）
+    var todayStocks = {};  // 本日申告済みの提供可能数（itemId -> 数量）
     var timerInterval = null, timerEndTime = null, timerRunning = false;
     var confirmationMode = false;
     var confirmationItems = [];
@@ -2160,6 +2236,11 @@
           { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI001', name:'店内清掃（清掃マニュアル参照）', sortOrder:1, memo:'清掃マニュアル参照', photoRequired: true },
           { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI002', name:'仕込み（仕込みマニュアル参照）', sortOrder:2, memo:'仕込みマニュアル参照' },
           { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI003', name:'神棚の水を替える', sortOrder:3, memo:'', photoRequired: true },
+          { storeId:'STORE001', category:'開店', timing:'提供可能数', itemId:'STOCK001', name:'ポテサラ', sortOrder:4, memo:'', par:null, unit:'食' },
+          { storeId:'STORE001', category:'開店', timing:'提供可能数', itemId:'STOCK002', name:'サラダベース', sortOrder:5, memo:'', par:null, unit:'食' },
+          { storeId:'STORE001', category:'開店', timing:'提供可能数', itemId:'STOCK003', name:'タルタルソース', sortOrder:6, memo:'', par:null, unit:'食' },
+          { storeId:'STORE001', category:'開店', timing:'提供可能数', itemId:'STOCK004', name:'ポテサラソース', sortOrder:7, memo:'', par:null, unit:'食' },
+          { storeId:'STORE001', category:'開店', timing:'提供可能数', itemId:'STOCK005', name:'ポーチドエッグ', sortOrder:8, memo:'', par:null, unit:'個' },
           { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI001', name:'シンク掃除', sortOrder:1, memo:'', photoRequired: true },
           { storeId:'STORE001', category:'閉店', timing:'閉店後', itemId:'HEI002', name:'包丁・まな板消毒', sortOrder:2, memo:'' },
           { storeId:'STORE001', category:'トイレ清掃', timing:'随時', itemId:'TOI001', name:'便器の清掃', sortOrder:1, memo:'' },
@@ -2183,7 +2264,14 @@
       map[dates[0]] = {
         date: dates[0],
         categories: [
-          { name: '開店', type: 'standard', total: 36, checked: 36, staffName: '田中太郎', confirmerName: '佐藤花子' },
+          { name: '開店', type: 'standard', total: 36, checked: 36, staffName: '田中太郎', confirmerName: '佐藤花子',
+            stocks: [
+              { itemId: 'STOCK001', name: 'ポテサラ', par: 5, unit: '食', declared: true, value: 12, staff: '田中太郎', time: '17:45' },
+              { itemId: 'STOCK002', name: 'サラダベース', par: 5, unit: '食', declared: true, value: 3, staff: '田中太郎', time: '17:45' },
+              { itemId: 'STOCK003', name: 'タルタルソース', par: null, unit: '食', declared: true, value: 0, staff: '田中太郎', time: '19:20' },
+              { itemId: 'STOCK004', name: 'ポテサラソース', par: null, unit: '食', declared: true, value: 6, staff: '田中太郎', time: '17:45' },
+              { itemId: 'STOCK005', name: 'ポーチドエッグ', par: null, unit: '個', declared: false, value: null, staff: '', time: '' }
+            ] },
           { name: '閉店', type: 'standard', total: 30, checked: 22, staffName: '佐藤花子' },
           { name: 'トイレ清掃', type: 'count', total: 8, itemsCovered: 8, logCount: 42,
             hourlySlots: [
@@ -2286,11 +2374,13 @@
       Promise.all([
         api('getStaffList'),
         api('getCheckItems'),
-        api('getTodayChecked', { category: currentCategory })
+        api('getTodayChecked', { category: currentCategory }),
+        api('getTodayStocks').catch(function () { return {}; })
       ]).then(function (results) {
         staffList = results[0];
         allItems = results[1];
         todayChecked = results[2] || [];
+        todayStocks = (results[3] && !results[3].error) ? results[3] : {};
         renderStaffSelect();
         hideLoading();
         renderChecklist();
@@ -2364,10 +2454,15 @@
       if (currentCategory === 'マニュアル') { hideLoading(); renderManualTab(); return; }
       if (IS_LOCAL) { todayChecked = []; hideLoading(); renderChecklist(); return; }
       var requestedCategory = currentCategory;
+      var hasStockItems = allItems.some(function (i) { return i.category === requestedCategory && i.itemId.indexOf('STOCK') === 0; });
       if (!isBackground) showLoading();
-      api('getTodayChecked', { category: requestedCategory }).then(function (ids) {
+      Promise.all([
+        api('getTodayChecked', { category: requestedCategory }),
+        hasStockItems ? api('getTodayStocks').catch(function () { return null; }) : Promise.resolve(null)
+      ]).then(function (results) {
         if (currentCategory !== requestedCategory) return;
-        todayChecked = ids || [];
+        todayChecked = results[0] || [];
+        if (results[1] && !results[1].error) todayStocks = results[1];
         hideLoading();
         renderChecklist();
       }).catch(function () {
@@ -2386,6 +2481,7 @@
       btn.classList.add('active');
       currentCategory = btn.dataset.cat;
       checkedState = {};
+      stockState = {};
       confirmationMode = false;
       confirmationItems = [];
 
@@ -2441,7 +2537,7 @@
 
       var g = {}, ord = [];
       f.forEach(function (i) { var t = i.timing || '(その他)'; if (!g[t]) { g[t] = []; ord.push(t); } g[t].push(i); });
-      var dc = { '出勤時': '#007AFF', '17:30〜': '#FF9500', '17:50〜': '#AF52DE', '閉店後': '#007AFF', '最終確認': '#FF3B30', '隔週(土)': '#34C759', '週1(土)': '#34C759', '随時': '#FF9500', '22時': '#FF9500', '退勤時': '#AF52DE' };
+      var dc = { '出勤時': '#007AFF', '17:30〜': '#FF9500', '17:50〜': '#AF52DE', '閉店後': '#007AFF', '最終確認': '#FF3B30', '隔週(土)': '#34C759', '週1(土)': '#34C759', '随時': '#FF9500', '22時': '#FF9500', '退勤時': '#AF52DE', '提供可能数': '#34C759' };
 
       ord.forEach(function (timing) {
         var items = g[timing];
@@ -2451,9 +2547,13 @@
 
         items.forEach(function (item) {
           var card = document.createElement('div'); card.className = 'check-item'; card.dataset.id = item.itemId;
-          var isDone = currentCategory !== 'トイレ清掃' && todayChecked.indexOf(item.itemId) !== -1;
+          var isStock = item.itemId.indexOf('STOCK') === 0;
+          if (isStock) card.classList.add('stock-item');
+          // 提供可能数は営業中の再申告（売り切れ更新等）を許すため already-done で固定しない
+          var isDone = currentCategory !== 'トイレ清掃' && todayChecked.indexOf(item.itemId) !== -1 && !isStock;
           if (isDone) card.classList.add('already-done', 'checked');
           if (checkedState[item.itemId]) card.classList.add('checked');
+          if (isStock && (stockState[item.itemId] !== undefined || todayStocks[item.itemId] !== undefined)) card.classList.add('checked');
 
           var isTemp = item.name === '温度計測';
           var isPhoto = !!item.photoRequired;
@@ -2468,7 +2568,15 @@
 
           var tempEl = isTemp ? '<div class="temp-input-wrap"><input type="number" step="0.1" class="temp-input" data-item-id="' + item.itemId + '" placeholder="--" readonly><span class="temp-unit">°C</span></div><button class="temp-camera-btn" data-item-id="' + item.itemId + '" title="写真で計測">📷</button>' : '';
 
-          card.innerHTML = '<div class="checkbox-circle"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div><div class="item-body"><div class="item-name">' + esc(item.name) + '</div>' + mc + '</div><div style="flex-shrink:0; display:flex; align-items:center; gap:8px;">' + ft + photoBadge + tempEl + manEl + arrow + '</div>';
+          var stockEl = '';
+          if (isStock) {
+            var sUnit = item.unit || '食';
+            var sVal = (stockState[item.itemId] !== undefined) ? stockState[item.itemId]
+                     : (todayStocks[item.itemId] !== undefined ? todayStocks[item.itemId] : '');
+            stockEl = '<div class="temp-input-wrap"><input type="number" step="1" min="0" inputmode="numeric" class="temp-input stock-input" data-stock-id="' + item.itemId + '" placeholder="--" value="' + sVal + '"><span class="temp-unit">' + esc(sUnit) + '</span></div>';
+          }
+
+          card.innerHTML = '<div class="checkbox-circle"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div><div class="item-body"><div class="item-name">' + esc(item.name) + '</div>' + mc + '</div><div style="flex-shrink:0; display:flex; align-items:center; gap:8px;">' + ft + photoBadge + tempEl + stockEl + manEl + arrow + '</div>';
 
           card.setAttribute('role', 'checkbox');
           card.setAttribute('aria-checked', (isDone || checkedState[item.itemId]) ? 'true' : 'false');
@@ -2497,9 +2605,30 @@
             }
           }
 
+          if (isStock) {
+            var stockInput = card.querySelector('.stock-input');
+            if (stockInput) {
+              stockInput.addEventListener('click', function (e) { e.stopPropagation(); });
+              stockInput.addEventListener('input', function (e) {
+                var v = e.target.value;
+                if (v === '') {
+                  delete stockState[item.itemId];
+                  if (todayStocks[item.itemId] === undefined) card.classList.remove('checked');
+                } else {
+                  var n = Number(v);
+                  if (isNaN(n) || n < 0) { e.target.value = ''; return; }
+                  stockState[item.itemId] = Math.floor(n); // 0食（売り切れ）も有効な申告
+                  card.classList.add('checked');
+                }
+                updateProgress(); updateSubmitBtn();
+              });
+            }
+          }
+
           card.addEventListener('click', function (e) {
             if (isDone) return;
             if (isTemp) return;
+            if (isStock) return;
             var isManual = e.target.classList.contains('manual-link');
             var isChevron = e.target.closest('.chevron');
 
@@ -2607,7 +2736,7 @@
     // ===== Progress =====
     function updateProgress() {
       var f = allItems.filter(function (i) { return i.category === currentCategory; }), t = f.length, d = 0;
-      f.forEach(function (i) { if (todayChecked.indexOf(i.itemId) !== -1 || checkedState[i.itemId]) d++; });
+      f.forEach(function (i) { if (todayChecked.indexOf(i.itemId) !== -1 || checkedState[i.itemId] || stockState[i.itemId] !== undefined) d++; });
       var p = t > 0 ? Math.round((d / t) * 100) : 0;
       var pe = document.getElementById('progressPct'), fe = document.getElementById('progressFill');
       if (pe) pe.textContent = d + '/' + t + ' (' + p + '%)';
@@ -2634,6 +2763,10 @@
         if (matchItem && matchItem.photoRequired) continue; // photo items are auto-submitted
         n++;
       }
+      // 提供可能数の入力分（0食も1件として数える）
+      for (var sk in stockState) {
+        if (stockState.hasOwnProperty(sk)) n++;
+      }
       var staffOk = !!els.staffSelect.value;
       els.submitBtn.disabled = n === 0 || !staffOk;
       if (n === 0) els.submitBtn.textContent = 'チェック完了を送信';
@@ -2655,6 +2788,10 @@
             return obj;
           })
       };
+      // 提供可能数の申告分を追加（checkedState とは別管理のため重複しない）
+      var stockItems = allItems.filter(function (i) { return i.category === currentCategory && stockState[i.itemId] !== undefined; })
+        .map(function (i) { return { itemId: i.itemId, name: i.name, timing: i.timing, checked: true, stock: stockState[i.itemId] }; });
+      payload.items = payload.items.concat(stockItems);
       if (!payload.items.length) { showToast('チェック項目を選択してください', 'rgba(255,59,48,0.85)'); return; }
       submitting = true;
       els.submitBtn.disabled = true; els.submitBtn.textContent = '送信中...';
@@ -2672,7 +2809,11 @@
         } else {
           showToast(r.count + '件を記録しました');
         }
-        checkedState = {}; showLoading(); loadCheckedAndRender();
+        // 申告済みの提供可能数を即時反映（再取得前のちらつき防止）
+        for (var stKey in stockState) {
+          if (stockState.hasOwnProperty(stKey)) todayStocks[stKey] = stockState[stKey];
+        }
+        checkedState = {}; stockState = {}; showLoading(); loadCheckedAndRender();
       }).catch(function (e) {
         submitting = false;
         showToast('エラー: ' + (e.message || e), 'rgba(255,59,48,0.85)');
@@ -3454,7 +3595,34 @@
           if (cat.confirmerName) html += '<br>確認者: ' + esc(cat.confirmerName);
           html += '</div></div></div>';
           html += '<span class="history-cat-badge ' + st3.cls + '">' + st3.label + '</span>';
-          html += '</div></div>';
+          html += '</div>';
+
+          // 提供可能数の申告状況（未申告も明示する）
+          if (cat.stocks && cat.stocks.length > 0) {
+            html += '<div class="stock-history-list">';
+            html += '<div class="stock-history-title">本日の提供可能数</div>';
+            cat.stocks.forEach(function (s) {
+              var sUnit = s.unit || '食';
+              html += '<div class="stock-history-row">';
+              html += '<span class="stock-history-name">' + esc(s.name) + '</span>';
+              if (s.declared) {
+                var low = (s.par !== null && s.par !== undefined && s.value <= s.par);
+                var soldOut = s.value === 0;
+                var valCls = soldOut ? 'stock-val-out' : (low ? 'stock-val-low' : 'stock-val-ok');
+                var label = soldOut ? '売切' : (s.value + sUnit);
+                html += '<span class="stock-history-detail">';
+                if (s.time) html += '<span class="stock-history-meta">' + esc(s.time) + (s.staff ? ' ' + esc(s.staff) : '') + '</span>';
+                html += '<span class="' + valCls + '">' + label + (low && !soldOut ? ' ⚠' : '') + '</span>';
+                html += '</span>';
+              } else {
+                html += '<span class="stock-val-none">未申告</span>';
+              }
+              html += '</div>';
+            });
+            html += '</div>';
+          }
+
+          html += '</div>';
         }
       });
 
