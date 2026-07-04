@@ -2371,21 +2371,22 @@
         return;
       }
 
+      // 初期化は必須3本のみ（GASはユーザー単位で直列実行のため、並列本数を増やすと
+      // 後続がタイムアウトabortして初期表示ごと失敗する。提供可能数は下でバックグラウンド取得）
       Promise.all([
         api('getStaffList'),
         api('getCheckItems'),
-        api('getTodayChecked', { category: currentCategory }),
-        api('getTodayStocks').catch(function () { return {}; })
+        api('getTodayChecked', { category: currentCategory })
       ]).then(function (results) {
         staffList = results[0];
         allItems = results[1];
         todayChecked = results[2] || [];
-        todayStocks = (results[3] && !results[3].error) ? results[3] : {};
         renderStaffSelect();
         hideLoading();
         renderChecklist();
-        // 未実施チェック取得（バックグラウンド）
+        // 未実施チェック・提供可能数取得（バックグラウンド、初期表示をブロックしない）
         loadOmissions();
+        loadStocks();
       }).catch(handleErr);
     })();
 
@@ -2393,6 +2394,18 @@
       api('getOmissions').then(function (items) {
         if (!items || !items.length) return;
         renderOmissionBanner(items);
+      }).catch(function () { /* 無視 */ });
+    }
+
+    // 提供可能数の申告状況をバックグラウンドで取得して再描画（失敗しても無視）
+    function loadStocks() {
+      var hasStockItems = allItems.some(function (i) { return i.itemId && i.itemId.indexOf('STOCK') === 0; });
+      if (!hasStockItems) return;
+      api('getTodayStocks').then(function (res) {
+        if (res && !res.error) {
+          todayStocks = res;
+          if (currentCategory !== 'マニュアル') renderChecklist();
+        }
       }).catch(function () { /* 無視 */ });
     }
 
@@ -2456,15 +2469,13 @@
       var requestedCategory = currentCategory;
       var hasStockItems = allItems.some(function (i) { return i.category === requestedCategory && i.itemId.indexOf('STOCK') === 0; });
       if (!isBackground) showLoading();
-      Promise.all([
-        api('getTodayChecked', { category: requestedCategory }),
-        hasStockItems ? api('getTodayStocks').catch(function () { return null; }) : Promise.resolve(null)
-      ]).then(function (results) {
+      api('getTodayChecked', { category: requestedCategory }).then(function (ids) {
         if (currentCategory !== requestedCategory) return;
-        todayChecked = results[0] || [];
-        if (results[1] && !results[1].error) todayStocks = results[1];
+        todayChecked = ids || [];
         hideLoading();
         renderChecklist();
+        // 提供可能数はバックグラウンドで別途取得（メイン描画をブロックしない）
+        if (hasStockItems) loadStocks();
       }).catch(function () {
         if (currentCategory !== requestedCategory) return;
         todayChecked = [];
