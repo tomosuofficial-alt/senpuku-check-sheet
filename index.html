@@ -2131,7 +2131,7 @@
     };
 
     // ===== API Helper =====
-    function api(action, params) {
+    function api(action, params, timeoutMs) {
       var url = GAS_URL + '?action=' + encodeURIComponent(action) + '&apiKey=' + encodeURIComponent(API_KEY);
       if (params) {
         for (var key in params) {
@@ -2139,7 +2139,8 @@
         }
       }
       var ctrl = new AbortController();
-      var timer = setTimeout(function() { ctrl.abort(); }, 15000);
+      // GAS Web Appはコールドスタートで応答に十数秒かかることがあるため、読み取りは45秒待つ
+      var timer = setTimeout(function() { ctrl.abort(); }, timeoutMs || 45000);
       return fetch(url, { signal: ctrl.signal })
         .then(function(r) { clearTimeout(timer); return r.json(); })
         .catch(function(e) { clearTimeout(timer); throw e; });
@@ -2373,21 +2374,32 @@
 
       // 初期化は必須3本のみ（GASはユーザー単位で直列実行のため、並列本数を増やすと
       // 後続がタイムアウトabortして初期表示ごと失敗する。提供可能数は下でバックグラウンド取得）
-      Promise.all([
-        api('getStaffList'),
-        api('getCheckItems'),
-        api('getTodayChecked', { category: currentCategory })
-      ]).then(function (results) {
-        staffList = results[0];
-        allItems = results[1];
-        todayChecked = results[2] || [];
-        renderStaffSelect();
-        hideLoading();
-        renderChecklist();
-        // 未実施チェック・提供可能数取得（バックグラウンド、初期表示をブロックしない）
-        loadOmissions();
-        loadStocks();
-      }).catch(handleErr);
+      // コールドスタートで初回が失敗しても、GASが温まる想定で1回だけ自動リトライする
+      function loadInit(attempt) {
+        Promise.all([
+          api('getStaffList'),
+          api('getCheckItems'),
+          api('getTodayChecked', { category: currentCategory })
+        ]).then(function (results) {
+          staffList = results[0];
+          allItems = results[1];
+          todayChecked = results[2] || [];
+          renderStaffSelect();
+          hideLoading();
+          renderChecklist();
+          // 未実施チェック・提供可能数取得（バックグラウンド、初期表示をブロックしない）
+          loadOmissions();
+          loadStocks();
+        }).catch(function (e) {
+          if (attempt < 1) {
+            showToast('接続中… もう一度試します', 'rgba(60,60,67,0.85)');
+            setTimeout(function () { loadInit(attempt + 1); }, 1500);
+          } else {
+            handleErr(e);
+          }
+        });
+      }
+      loadInit(0);
     })();
 
     function loadOmissions() {
