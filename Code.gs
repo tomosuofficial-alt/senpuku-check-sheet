@@ -59,6 +59,9 @@ function doGet(e) {
       case 'getTodayChecked':
         result = getTodayChecked(storeId, e.parameter.category || '');
         break;
+      case 'getTodayStocks':
+        result = getTodayStocks(storeId);
+        break;
       case 'getOmissions':
         result = getOmissions(storeId);
         break;
@@ -251,27 +254,42 @@ function getCheckItems(storeId) {
   var sheet = ss.getSheetByName(SHEETS.ITEMS);
   var data = sheet.getDataRange().getValues();
   var items = [];
-  // 列構造: A:storeId, B:category, C:timing, D:itemId, E:itemName, F:memo, G:active, H:photoRequired, I:multipleAllowed
+  // 列構造: A:storeId, B:category, C:timing, D:itemId, E:itemName, F:memo, G:active, H:photoRequired, I:multipleAllowed, J:par(提供可能数の閾値), K:unit(単位)
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     if (row[0] !== storeId) continue;
     if (row[6] === false || row[6] === 'FALSE') continue;
     var photoReq = row[7] === true || row[7] === 'TRUE';
     var multi = row[8] === true || row[8] === 'TRUE';
+    var par = parseParValue_(row[9]);
     items.push({
       storeId: row[0], category: row[1], timing: row[2],
       itemId: row[3], name: row[4], sortOrder: i,
       memo: row[5] || '', minutes: '', priority: '', frequency: '',
       photoRequired: photoReq,
-      multipleAllowed: multi
+      multipleAllowed: multi,
+      par: par,
+      unit: row[10] ? String(row[10]) : ''
     });
   }
   return items;
 }
 
+/** マスタ J列の PAR 値を数値化（空欄・非数値は null = 閾値なし） */
+function parseParValue_(raw) {
+  if (raw === undefined || raw === null || raw === '') return null;
+  var n = Number(raw);
+  return isNaN(n) ? null : n;
+}
+
+/** 提供可能数の申告対象品目かどうか（itemId が STOCK 接頭辞） */
+function isStockItemId_(itemId) {
+  return String(itemId || '').indexOf('STOCK') === 0;
+}
+
 // ============================================================
-// チェック履歴 (7カラム構成)
-// A: チェック日時  B: 店舗ID  C: スタッフID  D: スタッフ名  E: カテゴリ  F: 項目ID  G: 温度
+// チェック履歴 (8カラム構成)
+// A: チェック日時  B: 店舗ID  C: スタッフID  D: スタッフ名  E: カテゴリ  F: 項目ID  G: 温度  H: 提供可能数
 // ============================================================
 
 function getBusinessDate_() {
@@ -318,7 +336,8 @@ function normalizeHistoryRow_(row) {
       staffDisplay: row[3] ? String(row[3]) : '',
       category: row[4],
       itemId: row[5],
-      temp: (row[6] === true || row[6] === 'TRUE') ? '' : String(row[6] || '')
+      temp: (row[6] === true || row[6] === 'TRUE') ? '' : String(row[6] || ''),
+      stock: null
     };
   }
   return {
@@ -329,8 +348,16 @@ function normalizeHistoryRow_(row) {
     staffDisplay: row[3] ? String(row[3]) : '',
     category: row[4],
     itemId: row[5],
-    temp: (row[6] === true || row[6] === 'TRUE') ? '' : String(row[6] || '')
+    temp: (row[6] === true || row[6] === 'TRUE') ? '' : String(row[6] || ''),
+    stock: parseStockCell_(row[7])
   };
+}
+
+/** 履歴 H列（提供可能数）を数値化。未記録は null（0 は有効値として保持） */
+function parseStockCell_(raw) {
+  if (raw === undefined || raw === null || raw === '') return null;
+  var n = Number(raw);
+  return isNaN(n) ? null : n;
 }
 
 function getTodayChecked(storeId, category) {
@@ -431,20 +458,82 @@ function submitChecks(payload) {
   var alwaysMultiCategory = (payload.category === 'トイレ清掃');
 
   var rows = [];
+  var written = []; // 実際に書き込んだ項目（提供可能数アラート判定用）
   for (var i = 0; i < checked.length; i++) {
     if (existing[checked[i].itemId] && !multiAllowed[checked[i].itemId] && !alwaysMultiCategory) continue;
     var temp = '';
     if (checked[i].temperature !== undefined && checked[i].temperature !== null) {
       temp = checked[i].temperature + '°C';
     }
-    // 必ず7列・営業日列は入れない（B=店舗ID）
-    rows.push([dt, storeId, payload.staffId, staffName, payload.category, checked[i].itemId, temp]);
+    var stockVal = parseStockCell_(checked[i].stock);
+    // 必ず8列・営業日列は入れない（B=店舗ID, H=提供可能数）
+    rows.push([dt, storeId, payload.staffId, staffName, payload.category, checked[i].itemId, temp, stockVal === null ? '' : stockVal]);
+    written.push(checked[i]);
   }
-  
+
   if (rows.length > 0) {
-    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 8).setValues(rows);
   }
+
+  // 提供可能数の閾値チェック → LINEアラート（送信失敗しても記録自体は成功扱い）
+  try {
+    notifyLowStock_(written, itemData, staffName);
+  } catch (errStock) {
+    Logger.log('提供可能数アラート送信エラー: ' + errStock.message);
+  }
+
   return { status: 'success', count: rows.length };
+}
+
+/**
+ * 提供可能数アラート: 申告値がマスタ J列の PAR 以下なら LINE で即時通知
+ * PAR 未設定（空欄）の品目は記録のみでアラートしない
+ */
+function notifyLowStock_(written, itemData, staffName) {
+  var alerts = [];
+  for (var i = 0; i < written.length; i++) {
+    var val = parseStockCell_(written[i].stock);
+    if (val === null) continue;
+    for (var j = 1; j < itemData.length; j++) {
+      var row = itemData[j];
+      if (row[3] !== written[i].itemId) continue;
+      var par = parseParValue_(row[9]);
+      if (par !== null && val <= par) {
+        var unit = row[10] ? String(row[10]) : '食';
+        alerts.push('・' + row[4] + '： 残り ' + val + unit + '（基準 ' + par + unit + ' 以下）');
+      }
+      break;
+    }
+  }
+  if (alerts.length === 0) return;
+  var now = new Date();
+  var dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+  var dateLabel = Utilities.formatDate(now, 'Asia/Tokyo', 'M月d日') + '(' + dayNames[now.getDay()] + ') ' + Utilities.formatDate(now, 'Asia/Tokyo', 'HH:mm');
+  var msg = '📦 提供可能数アラート ' + dateLabel + '\n\n' + alerts.join('\n') + '\n\n申告者: ' + (staffName || '不明');
+  sendLineToAll_(msg);
+  Logger.log('提供可能数アラート: ' + msg);
+}
+
+/**
+ * 本日（営業日）の提供可能数申告を取得: { itemId: 数量 }
+ * 同一品目に複数申告がある場合は最新（後の行）を採用
+ */
+function getTodayStocks(storeId) {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName(SHEETS.HISTORY);
+  if (!sheet || sheet.getLastRow() <= 1) return {};
+  var data = sheet.getDataRange().getValues();
+  var bd = getBusinessDate_();
+  var stocks = {};
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    if (businessDateFromTimestamp_(row[0]) !== bd) continue;
+    var nr = normalizeHistoryRow_(row);
+    if (nr.storeId !== storeId) continue;
+    if (nr.stock === null || nr.stock === undefined) continue;
+    stocks[nr.itemId] = nr.stock;
+  }
+  return stocks;
 }
 
 // ============================================================
@@ -461,6 +550,7 @@ function getHistory(storeId, dateStr) {
   var categoryTotals = {};
   var itemTimingMap = {};
   var timingTotals = {};
+  var stockDefs = []; // 提供可能数の申告対象品目（STOCK 接頭辞）
   for (var i = 1; i < itemData.length; i++) {
     var row = itemData[i];
     if (row[0] !== storeId) continue;
@@ -473,6 +563,13 @@ function getHistory(storeId, dateStr) {
     if (cat === '氷プール') {
       if (!timingTotals[timing]) timingTotals[timing] = 0;
       timingTotals[timing]++;
+    }
+    if (isStockItemId_(row[3])) {
+      stockDefs.push({
+        itemId: row[3], name: row[4], category: cat,
+        par: parseParValue_(row[9]),
+        unit: row[10] ? String(row[10]) : '食'
+      });
     }
   }
 
@@ -492,6 +589,8 @@ function getHistory(storeId, dateStr) {
         entry.logCount = 0;
       }
       if (cn0 === '氷プール') { entry.type = 'timing'; entry.timings = []; }
+      var emptyStocks = buildStockSummary_(stockDefs, {}, cn0);
+      if (entry.type === 'standard' && emptyStocks.length > 0) entry.stocks = emptyStocks;
       emptyCats.push(entry);
     }
     return { date: targetDate, categories: emptyCats };
@@ -499,6 +598,7 @@ function getHistory(storeId, dateStr) {
 
   var histData = histSheet.getDataRange().getValues();
   var catMap = {};
+  var stockLog = {}; // itemId -> { value, staff, time } 最新の申告
 
   for (var j = 1; j < histData.length; j++) {
     var h = histData[j];
@@ -515,6 +615,15 @@ function getHistory(storeId, dateStr) {
 
     var itemId = nr.itemId;
     catMap[category].itemIds[itemId] = true;
+
+    if (nr.stock !== null && nr.stock !== undefined) {
+      var sd = (h[0] instanceof Date) ? h[0] : new Date(String(h[0]));
+      stockLog[itemId] = {
+        value: nr.stock,
+        staff: sName,
+        time: Utilities.formatDate(sd, 'Asia/Tokyo', 'HH:mm')
+      };
+    }
 
     if (category === 'トイレ清掃') {
       var ts = h[0];
@@ -609,13 +718,16 @@ function getHistory(storeId, dateStr) {
         timings: timings
       });
     } else {
-      categories.push({
+      var stdEntry = {
         name: cn,
         type: 'standard',
         total: categoryTotals[cn],
         checked: Object.keys(info.itemIds).length,
         staffName: staffArr.length > 0 ? staffArr.join(', ') : null
-      });
+      };
+      var stocksForCat = buildStockSummary_(stockDefs, stockLog, cn);
+      if (stocksForCat.length > 0) stdEntry.stocks = stocksForCat;
+      categories.push(stdEntry);
     }
   }
 
@@ -642,6 +754,30 @@ function getHistory(storeId, dateStr) {
   }
 
   return { date: targetDate, categories: categories };
+}
+
+/**
+ * 履歴ビュー用: 提供可能数の申告サマリを組み立てる
+ * 未申告の品目も declared:false で必ず含める（「やった風」を可視化するため）
+ */
+function buildStockSummary_(stockDefs, stockLog, categoryName) {
+  var out = [];
+  for (var i = 0; i < stockDefs.length; i++) {
+    var d = stockDefs[i];
+    if (d.category !== categoryName) continue;
+    var log = stockLog[d.itemId];
+    out.push({
+      itemId: d.itemId,
+      name: d.name,
+      par: d.par,
+      unit: d.unit,
+      declared: !!log,
+      value: log ? log.value : null,
+      staff: log ? log.staff : '',
+      time: log ? log.time : ''
+    });
+  }
+  return out;
 }
 
 // ============================================================
@@ -964,6 +1100,8 @@ function deleteRowsByCategory_(sheet, storeId, category) {
   var data = sheet.getDataRange().getValues();
   for (var i = data.length - 1; i >= 1; i--) {
     if (data[i][0] === storeId && data[i][1] === category) {
+      // 提供可能数の品目（STOCK行）はドキュメント同期の対象外なので消さない
+      if (isStockItemId_(data[i][3])) continue;
       sheet.deleteRow(i + 1);
     }
   }
@@ -1048,6 +1186,50 @@ function addIcePoolItems() {
   }
 
   Logger.log('氷プール項目追加完了: ' + rows.length + '件');
+  return { status: 'success', count: rows.length };
+}
+
+// ============================================================
+// 提供可能数の申告品目をチェック項目マスタに投入（GASエディタから手動実行）
+// 再実行すると STOCK 行を作り直す（品目の変更・追加はこの配列を編集して再実行、
+// または直接シートの STOCK 行を編集する。PAR=J列 は運用で調整するためここでは空欄）
+// ============================================================
+
+function addStockItems() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName(SHEETS.ITEMS);
+  var storeId = 'STORE001';
+
+  // 品目リスト（2026-07-04 確定: 仕込み型の完成ストック5品）
+  var stockItems = [
+    { name: 'ポテサラ', unit: '食' },
+    { name: 'サラダベース', unit: '食' },
+    { name: 'タルタルソース', unit: '食' },
+    { name: 'ポテサラソース', unit: '食' },
+    { name: 'ポーチドエッグ', unit: '個' }
+  ];
+
+  // 既存の STOCK 行を削除して再作成（deleteRowsByCategory_ は STOCK を残す仕様のため個別に消す）
+  var data = sheet.getDataRange().getValues();
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] === storeId && isStockItemId_(data[i][3])) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+
+  // A:storeId B:category C:timing D:itemId E:itemName F:memo G:active H:photoRequired I:multipleAllowed J:par K:unit
+  // I列 TRUE = 営業中の再申告（売り切れ更新）を許可。J列は空欄 = 記録のみ（ABC分析確定後に記入するとアラート有効化）
+  var rows = [];
+  stockItems.forEach(function (item, idx) {
+    var itemId = 'STOCK' + ('000' + (idx + 1)).slice(-3);
+    rows.push([storeId, '開店', '提供可能数', itemId, item.name, '', true, false, true, '', item.unit]);
+  });
+
+  if (rows.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 11).setValues(rows);
+  }
+
+  Logger.log('提供可能数品目の投入完了: ' + rows.length + '件');
   return { status: 'success', count: rows.length };
 }
 
@@ -1261,13 +1443,19 @@ function notifyIncompleteChecks_(timeLabel, checks) {
   // トイレ清掃の未実施時間帯を取得
   var toiletMissed = getToiletMissedSlots_(storeId, bd, histData);
 
-  if (incomplete.length > 0 || toiletMissed.length > 0) {
+  // 提供可能数の未申告品目（通知対象カテゴリに含まれる STOCK 品目のみ）
+  var stockUnreported = getUnreportedStockItems_(storeId, checks, itemData, histData, bd);
+
+  if (incomplete.length > 0 || toiletMissed.length > 0 || stockUnreported.length > 0) {
     var now = new Date();
     var dayNames = ['日', '月', '火', '水', '木', '金', '土'];
     var dateLabel = Utilities.formatDate(now, 'Asia/Tokyo', 'M月d日') + '(' + dayNames[now.getDay()] + ')';
     var msg = '⚠ ' + dateLabel + ' チェック未完了通知（' + timeLabel + '）\n\n';
     if (incomplete.length > 0) {
       msg += incomplete.join('\n');
+    }
+    if (stockUnreported.length > 0) {
+      msg += (incomplete.length > 0 ? '\n\n' : '') + '📦 提供可能数が未申告:\n' + stockUnreported.join('、');
     }
     if (toiletMissed.length > 0) {
       msg += '\n\nトイレ清掃 未実施時間帯:\n' + toiletMissed.join(', ');
@@ -1277,6 +1465,39 @@ function notifyIncompleteChecks_(timeLabel, checks) {
   } else {
     Logger.log(timeLabel + ' 時点で全チェック完了');
   }
+}
+
+/**
+ * 提供可能数が未申告の品目名リストを返す
+ * 「チェックだけ付けて数を入れない」を防ぐため、H列（数量）の記録有無で判定する
+ */
+function getUnreportedStockItems_(storeId, checks, itemData, histData, bd) {
+  // 通知対象カテゴリの収集
+  var targetCats = {};
+  for (var c = 0; c < checks.length; c++) {
+    targetCats[checks[c].category] = true;
+  }
+
+  // 当日の数量申告済み itemId
+  var declared = {};
+  for (var i = 1; i < histData.length; i++) {
+    var h = histData[i];
+    if (businessDateFromTimestamp_(h[0]) !== bd) continue;
+    var nr = normalizeHistoryRow_(h);
+    if (nr.storeId !== storeId) continue;
+    if (nr.stock !== null && nr.stock !== undefined) declared[nr.itemId] = true;
+  }
+
+  var unreported = [];
+  for (var j = 1; j < itemData.length; j++) {
+    var row = itemData[j];
+    if (row[0] !== storeId) continue;
+    if (!targetCats[row[1]]) continue;
+    if (row[6] === false || row[6] === 'FALSE') continue;
+    if (!isStockItemId_(row[3])) continue;
+    if (!declared[row[3]]) unreported.push(row[4]);
+  }
+  return unreported;
 }
 
 /**
