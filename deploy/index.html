@@ -813,6 +813,55 @@
       font-size: 13px;
     }
 
+    /* 仕込みプルダウン（アコーディオン） */
+    .prep-group {
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--apple-bg-card);
+    }
+
+    .prep-parent {
+      border-radius: 12px 12px 0 0;
+    }
+
+    .prep-parent .prep-progress {
+      font-size: 12px;
+      color: var(--apple-secondary-label);
+      margin-top: 2px;
+      letter-spacing: -0.08px;
+    }
+
+    .prep-parent.checked .prep-progress { color: #248A3D; }
+    .prep-parent.checked .item-name { color: var(--apple-label); text-decoration: none; }
+
+    .prep-chevron {
+      width: 20px;
+      height: 20px;
+      color: var(--apple-tertiary-label);
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .prep-group.open .prep-chevron { transform: rotate(180deg); }
+    .prep-group.open .prep-parent { border-bottom: 0.5px solid var(--apple-separator); }
+
+    .prep-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+      background: var(--apple-bg-grouped);
+    }
+
+    .prep-group.open .prep-body { max-height: 1400px; }
+
+    .prep-sub {
+      padding-left: 40px;
+      background: transparent;
+    }
+
+    .prep-sub .item-name { font-size: 15px; }
+    .prep-sub:last-child { border-bottom: none; }
+
     .item-memo {
       font-size: 15px;
       color: var(--apple-secondary-label);
@@ -2236,6 +2285,16 @@
         items: [
           { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI001', name:'店内清掃（清掃マニュアル参照）', sortOrder:1, memo:'清掃マニュアル参照', photoRequired: true },
           { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI002', name:'仕込み（仕込みマニュアル参照）', sortOrder:2, memo:'仕込みマニュアル参照' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'PREP001', name:'ばんネギ', sortOrder:21, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'PREP002', name:'白髪ネギ', sortOrder:22, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'PREP003', name:'ツマ', sortOrder:23, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'PREP004', name:'にんにくおろし', sortOrder:24, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'PREP005', name:'生姜おろし', sortOrder:25, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'PREP006', name:'ポテサラ', sortOrder:26, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'PREP007', name:'ポーチドエッグ', sortOrder:27, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'PREP008', name:'ポテサラソース', sortOrder:28, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'PREP009', name:'タルタルソース', sortOrder:29, memo:'' },
+          { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'PREP010', name:'サラダベース', sortOrder:30, memo:'' },
           { storeId:'STORE001', category:'開店', timing:'出勤時', itemId:'KAI003', name:'神棚の水を替える', sortOrder:3, memo:'', photoRequired: true },
           { storeId:'STORE001', category:'開店', timing:'提供可能数', itemId:'STOCK001', name:'ポテサラ', sortOrder:4, memo:'', par:null, unit:'食' },
           { storeId:'STORE001', category:'開店', timing:'提供可能数', itemId:'STOCK002', name:'サラダベース', sortOrder:5, memo:'', par:null, unit:'食' },
@@ -2528,6 +2587,102 @@
 
     els.staffSelect.addEventListener('change', function () { updateSubmitBtn(); });
 
+    // ===== 仕込みプルダウン（詳細品目のアコーディオン） =====
+    function isPrepChild_(item) { return !!(item && item.itemId && item.itemId.indexOf('PREP') === 0); }
+    function isPrepParentItem_(item) { return !!(item && (item.itemId === 'KAI002' || (item.name && item.name.indexOf('仕込み') === 0))); }
+
+    // 全子項目が完了なら親（仕込み）を完了扱いにして記録対象に含める
+    function syncPrepParent_(parentItem, children) {
+      if (!parentItem) return;
+      var allDone = children.length > 0 && children.every(function (c) {
+        return todayChecked.indexOf(c.itemId) !== -1 || checkedState[c.itemId];
+      });
+      if (allDone && todayChecked.indexOf(parentItem.itemId) === -1) {
+        checkedState[parentItem.itemId] = true;
+      } else {
+        delete checkedState[parentItem.itemId];
+      }
+    }
+
+    function renderPrepAccordion(sec, parentItem, children) {
+      var wrap = document.createElement('div');
+      wrap.className = 'prep-group';
+      var total = children.length;
+
+      function doneCount() {
+        var n = 0;
+        children.forEach(function (c) {
+          if (todayChecked.indexOf(c.itemId) !== -1 || checkedState[c.itemId]) n++;
+        });
+        return n;
+      }
+
+      var pName = (parentItem && parentItem.name) ? parentItem.name.replace(/[（(].*?[）)]/g, '').trim() : '仕込み';
+      if (!pName) pName = '仕込み';
+
+      var header = document.createElement('div');
+      header.className = 'check-item prep-parent';
+      header.innerHTML =
+        '<div class="checkbox-circle"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div>' +
+        '<div class="item-body"><div class="item-name">' + esc(pName) + '</div>' +
+        '<div class="prep-progress"><span class="prep-count">' + doneCount() + '</span>/' + total + ' 完了</div></div>' +
+        '<div style="flex-shrink:0; display:flex; align-items:center; gap:10px;">' +
+        '<span class="manual-link" data-manual="仕込み">参照</span>' +
+        '<svg class="prep-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>';
+
+      var body = document.createElement('div');
+      body.className = 'prep-body';
+
+      function refreshHeader() {
+        var dn = doneCount();
+        var cntEl = header.querySelector('.prep-count');
+        if (cntEl) cntEl.textContent = dn;
+        if (total > 0 && dn >= total) header.classList.add('checked');
+        else header.classList.remove('checked');
+      }
+
+      children.forEach(function (c) {
+        var row = document.createElement('div');
+        row.className = 'check-item prep-sub'; row.dataset.id = c.itemId;
+        var subDone = todayChecked.indexOf(c.itemId) !== -1;
+        if (subDone) row.classList.add('already-done', 'checked');
+        if (checkedState[c.itemId]) row.classList.add('checked');
+        row.innerHTML = '<div class="checkbox-circle"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div><div class="item-body"><div class="item-name">' + esc(c.name) + '</div></div>';
+        row.setAttribute('role', 'checkbox');
+        row.setAttribute('aria-checked', (subDone || checkedState[c.itemId]) ? 'true' : 'false');
+        if (subDone) {
+          row.setAttribute('aria-disabled', 'true');
+        } else {
+          row.setAttribute('tabindex', '0');
+          row.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); row.click(); } });
+          row.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var on = !row.classList.contains('checked');
+            row.classList.toggle('checked', on);
+            if (on) checkedState[c.itemId] = true; else delete checkedState[c.itemId];
+            row.setAttribute('aria-checked', on ? 'true' : 'false');
+            if (on) { row.classList.remove('check-flash'); void row.offsetWidth; row.classList.add('check-flash'); }
+            syncPrepParent_(parentItem, children);
+            refreshHeader();
+            updateProgress(); updateSubmitBtn();
+          });
+        }
+        body.appendChild(row);
+      });
+
+      // プルダウンは既定で閉じる（一覧を短く保つ）。ヘッダーに「n/10 完了」を表示
+      header.addEventListener('click', function (e) {
+        if (e.target.closest('.manual-link')) { openManual('prep', '仕込みマニュアル'); return; }
+        wrap.classList.toggle('open');
+      });
+
+      syncPrepParent_(parentItem, children);
+      refreshHeader();
+      wrap.appendChild(header);
+      wrap.appendChild(body);
+      sec.appendChild(wrap);
+    }
+
     // ===== Checklist =====
     function renderChecklist() {
       var a = els.contentArea; a.innerHTML = '';
@@ -2568,7 +2723,17 @@
         var tColor = dc[timing] || 'rgba(255,255,255,0.4)';
         sec.innerHTML = '<div class="timing-header" style="--timing-color:' + tColor + '"><span class="timing-name">' + timing + '</span></div>';
 
+        // 仕込みプルダウン: PREP子項目がある場合は、親(仕込み)＋子をアコーディオンでまとめる
+        var prepChildren = items.filter(isPrepChild_);
+        var prepParentItem = items.filter(isPrepParentItem_)[0] || null;
+        var prepAnchorId = prepParentItem ? prepParentItem.itemId : (prepChildren[0] ? prepChildren[0].itemId : null);
+
         items.forEach(function (item) {
+          // 子項目・親項目はアコーディオンでまとめて描画（アンカー位置で1回だけ）
+          if (prepChildren.length > 0 && (isPrepChild_(item) || isPrepParentItem_(item))) {
+            if (item.itemId === prepAnchorId) renderPrepAccordion(sec, prepParentItem, prepChildren);
+            return;
+          }
           var card = document.createElement('div'); card.className = 'check-item'; card.dataset.id = item.itemId;
           var isStock = item.itemId.indexOf('STOCK') === 0;
           if (isStock) card.classList.add('stock-item');

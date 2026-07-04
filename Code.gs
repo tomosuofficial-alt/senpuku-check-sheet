@@ -1100,8 +1100,9 @@ function deleteRowsByCategory_(sheet, storeId, category) {
   var data = sheet.getDataRange().getValues();
   for (var i = data.length - 1; i >= 1; i--) {
     if (data[i][0] === storeId && data[i][1] === category) {
-      // 提供可能数の品目（STOCK行）はドキュメント同期の対象外なので消さない
+      // 提供可能数(STOCK)・仕込み詳細(PREP)はドキュメント同期の対象外なので消さない
       if (isStockItemId_(data[i][3])) continue;
+      if (String(data[i][3] || '').indexOf('PREP') === 0) continue;
       sheet.deleteRow(i + 1);
     }
   }
@@ -1230,6 +1231,48 @@ function addStockItems() {
   }
 
   Logger.log('提供可能数品目の投入完了: ' + rows.length + '件');
+  return { status: 'success', count: rows.length };
+}
+
+// ============================================================
+// 仕込みの詳細品目をチェック項目マスタに投入（GASエディタから手動実行）
+// itemId=PREP接頭辞。フロントは「仕込み」の下にアコーディオンでまとめて表示する。
+// 記録・履歴・LINE通知は通常のチェック項目と同じ経路で動く（GASロジックの追加は不要）。
+// 品目・順番の変更はこの配列を編集して再実行、または直接シートのPREP行を編集する。
+// ============================================================
+
+function addPrepItems() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName(SHEETS.ITEMS);
+  var storeId = 'STORE001';
+
+  // 仕込みの詳細品目（2026-07-04 確定）
+  var prepNames = [
+    'ばんネギ', '白髪ネギ', 'ツマ', 'にんにくおろし', '生姜おろし',
+    'ポテサラ', 'ポーチドエッグ', 'ポテサラソース', 'タルタルソース', 'サラダベース'
+  ];
+
+  // 既存の PREP 行を削除して作り直す
+  var data = sheet.getDataRange().getValues();
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] === storeId && String(data[i][3] || '').indexOf('PREP') === 0) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+
+  // A:storeId B:category C:timing D:itemId E:itemName F:memo G:active H:photoRequired I:multipleAllowed
+  // 親「仕込み」(KAI002)と同じ 開店/出勤時 に置く。写真不要・複数回不可。
+  var rows = [];
+  prepNames.forEach(function (name, idx) {
+    var itemId = 'PREP' + ('000' + (idx + 1)).slice(-3);
+    rows.push([storeId, '開店', '出勤時', itemId, name, '', true, false, false]);
+  });
+
+  if (rows.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 9).setValues(rows);
+  }
+
+  Logger.log('仕込み詳細品目の投入完了: ' + rows.length + '件');
   return { status: 'success', count: rows.length };
 }
 
