@@ -1092,8 +1092,50 @@ function syncCheckItemsFromDocs() {
     sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
   }
 
-  Logger.log('同期完了: 開店 ' + kaitenItems.length + '件, 閉店 ' + heitenItems.length + '件');
-  return { kaiten: kaitenItems.length, heiten: heitenItems.length };
+  // Doc に載らない手動追加項目を再付与（同期で消えないようにする）
+  var extra = appendExtraItems_(sheet, storeId);
+
+  Logger.log('同期完了: 開店 ' + kaitenItems.length + '件, 閉店 ' + heitenItems.length + '件, 追加項目 ' + extra + '件');
+  return { kaiten: kaitenItems.length, heiten: heitenItems.length, extra: extra };
+}
+
+// ============================================================
+// 手動追加項目（Googleドキュメントに載らない項目）
+// syncCheckItemsFromDocs で 開店/閉店 が作り直されても消えないよう、
+// ここで定義し、同期処理からも再付与する。itemId は固定（履歴が安定）。
+// ============================================================
+
+var EXTRA_ITEMS = [
+  { itemId: 'HEIX01', category: '閉店', timing: '閉店後', name: '期限切れの食材がないか確認', memo: '冷蔵庫・仕込み等の賞味/消費期限を点検し、期限切れがあれば破棄', photoRequired: false }
+];
+
+/** 手動追加項目をシートに付与（冪等）。sync からも呼ぶ。列: A-H（H=写真必須） */
+function appendExtraItems_(sheet, storeId) {
+  var ids = {};
+  EXTRA_ITEMS.forEach(function (it) { ids[it.itemId] = true; });
+
+  // 既存の追加項目行を削除（重複防止・冪等化）
+  var data = sheet.getDataRange().getValues();
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] === storeId && ids[data[i][3]]) sheet.deleteRow(i + 1);
+  }
+
+  var rows = EXTRA_ITEMS.map(function (it) {
+    return [storeId, it.category, it.timing, it.itemId, it.name, it.memo || '', true, !!it.photoRequired];
+  });
+  if (rows.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 8).setValues(rows);
+  }
+  return rows.length;
+}
+
+/** 手動追加項目を今すぐシートに反映（GASエディタから単独実行） */
+function addExtraItems() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName(SHEETS.ITEMS);
+  var n = appendExtraItems_(sheet, 'STORE001');
+  Logger.log('追加項目 反映完了: ' + n + '件');
+  return { added: n };
 }
 
 function deleteRowsByCategory_(sheet, storeId, category) {
