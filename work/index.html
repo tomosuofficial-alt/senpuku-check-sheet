@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="theme-color" content="#0a1628" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="千福ワーク" />
+<link rel="apple-touch-icon" href="favicon.png" />
+<link rel="icon" href="favicon.png" />
+<title>よいどころ千福 ワークアプリ</title>
+<style>
+/* =========================================================
+   よいどころ千福 統合ワークアプリ — 単一ファイルPWA（モック層）
+   デザイン: エディトリアル・ミニマル / 余白で語る / 色は点で使う /
+            タイポは極端な対比 / ヒーローだけ強調 / 絵文字禁止・自作モノクロ線画アイコン
+   ========================================================= */
+:root{
+  --navy-900:#0a1628; --navy-800:#0d2847; --navy-700:#16385f;
+  --gold:#c3a569; --gold-soft:#d9c290; --red-dot:#c30d23;
+  --red:#c0392b; --orange:#b96b00; --green:#1f7a43; --blue:#0a5cd8;
+  --bg:#faf8f4; --card:#ffffff; --card-2:#f3efe6;
+  --ink:#14161c; --ink-2:#5b5d66; --ink-3:#9a9ba3; --line:#ece5d8;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  --tab-h:62px; --header-h:52px;
+  --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0a1628; --card:#0f1e33; --card-2:#122540;
+    --ink:#f2efe6; --ink-2:#b9c2cf; --ink-3:#6e7c92; --line:rgba(255,255,255,.08);
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;overscroll-behavior-y:none;font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:inherit;font-size:16px}
+.hidden{display:none!important}
+.muted{color:var(--ink-3)}
+
+/* アイコン共通(モノクロ・currentColor追従) */
+.ic{display:inline-block;vertical-align:-2px;flex-shrink:0}
+svg{display:block}
+
+/* ---------- Splash ---------- */
+#splash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:22px;
+  background:radial-gradient(120% 90% at 50% 20%,var(--navy-700),var(--navy-900));
+  transition:opacity .5s var(--ease)}
+#splash.out{opacity:0;pointer-events:none}
+.splash-logo{width:210px;max-width:62vw;filter:drop-shadow(0 6px 18px rgba(0,0,0,.4))}
+.splash-sub{color:var(--gold-soft);letter-spacing:.28em;font-size:13px;font-weight:600}
+.spinner{width:26px;height:26px;border-radius:50%;border:2.5px solid rgba(195,165,105,.25);
+  border-top-color:var(--gold);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- Staff gate ---------- */
+#gate{position:fixed;inset:0;z-index:90;background:radial-gradient(120% 80% at 50% 0%,var(--navy-800),var(--navy-900));
+  display:flex;flex-direction:column;padding:calc(var(--safe-t) + 9vh) 24px 24px;color:#fff;overflow:auto}
+#gate .g-logo{width:150px;margin:0 auto 6px;display:block}
+#gate h1{font-size:19px;font-weight:700;text-align:center;margin:10px 0 3px;color:#fff}
+#gate p{text-align:center;color:var(--gold-soft);font-size:13px;margin:0 0 34px}
+.g-label{font-size:11px;letter-spacing:.14em;color:var(--gold-soft);font-weight:700;margin:0 0 14px 2px}
+.staff-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.staff-btn{background:rgba(255,255,255,.05);border:1px solid rgba(195,165,105,.25);
+  border-radius:18px;padding:24px 14px;color:#fff;display:flex;flex-direction:column;
+  align-items:center;gap:11px;transition:.2s var(--ease);font-weight:600}
+.staff-btn:active{transform:scale(.96);background:rgba(195,165,105,.14)}
+.staff-av{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:800;background:var(--gold);color:var(--navy-900)}
+.staff-role{font-size:11px;color:var(--gold-soft);font-weight:500}
+.gate-select{width:100%;padding:17px 16px;border-radius:14px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(195,165,105,.3);color:#fff;font-size:16px;font-weight:600;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23c3a569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right 15px center}
+.gate-select option{color:#111;background:#fff}
+
+/* ---------- App shell ---------- */
+#app{display:none;flex-direction:column;min-height:100%}
+#app.on{display:flex}
+header#top{position:sticky;top:0;z-index:40;height:calc(var(--header-h) + var(--safe-t));
+  padding-top:var(--safe-t);background:var(--navy-900);
+  display:flex;align-items:center;gap:10px;padding-left:18px;padding-right:14px;color:#fff}
+#top .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14.5px;letter-spacing:.02em}
+#top .dot{width:8px;height:8px;border-radius:50%;background:var(--red-dot)}
+#top .spacer{flex:1}
+#top .me{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--gold-soft)}
+#top .me .av{width:25px;height:25px;border-radius:50%;background:var(--gold);
+  color:var(--navy-900);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+
+/* notification banner (線のみ・控えめ) */
+#notice{margin:18px 20px 0;padding:13px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  display:flex;gap:11px;align-items:center;font-size:13px;color:var(--ink-2)}
+#notice .n-tx{flex:1;line-height:1.35}
+#notice .n-tx b{color:var(--ink)}
+#notice .n-x{margin-left:auto;color:var(--ink-3);display:flex;padding:6px;border-radius:50%;transition:.15s var(--ease)}
+#notice .n-x:active{background:rgba(128,128,128,.14)}
+
+main{flex:1;max-width:560px;width:100%;margin:0 auto;padding:0 20px calc(var(--tab-h) + var(--safe-b) + 24px)}
+.screen{display:none;animation:fade .3s var(--ease)}
+.screen.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---- 余白の骨格: セクション間は要素内の約3倍 ---- */
+.sec{margin-top:42px}
+.sec.first{margin-top:26px}
+.sec-label{font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:.08em;margin:0 0 14px;
+  display:flex;align-items:center;gap:7px}
+
+/* ---- ヒーロー(唯一の強調要素) ---- */
+.hero{background:linear-gradient(155deg,var(--navy-700),var(--navy-900));border-radius:20px;
+  padding:28px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:18px;
+  position:relative;overflow:hidden}
+.hero:before{content:"";position:absolute;right:-60px;top:-60px;width:210px;height:210px;border-radius:50%;
+  background:radial-gradient(circle,rgba(195,165,105,.18),transparent 70%)}
+.hero .h-hi{font-size:12.5px;color:var(--gold-soft);font-weight:600}
+.hero .h-name{font-size:17px;font-weight:700;margin-top:3px}
+.hero .h-slot{font-size:12px;color:#a9b7c9;margin-top:11px;display:flex;align-items:center;gap:6px}
+.hero .h-num{font-size:54px;font-weight:800;line-height:1;text-align:right;z-index:1;white-space:nowrap}
+.hero .h-num small{font-size:20px;font-weight:700;color:var(--gold-soft);margin-left:2px}
+.hero .h-num .h-cap{display:block;font-size:11px;font-weight:600;color:var(--gold-soft);letter-spacing:.06em;margin-top:5px}
+
+/* ---- 時間帯チップ ---- */
+.slot-row{display:flex;gap:8px;overflow-x:auto;margin-top:2px;-webkit-overflow-scrolling:touch}
+.slot-row::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;padding:8px 15px;border-radius:20px;font-size:13px;font-weight:600;color:var(--ink-2);
+  border:1px solid var(--line);background:transparent;transition:.2s var(--ease);display:flex;align-items:center;gap:5px}
+.chip.on{background:var(--navy-900);color:#fff;border-color:var(--navy-900)}
+.chip .cnt{opacity:.6;font-size:11px}
+
+/* ---- 状態: 数字は色/面積を持たず"点"として使う ---- */
+.stat-row{display:flex}
+.stat-row + .stat-row{margin-top:18px}
+.stat{flex:1;text-align:center;padding:6px 4px;transition:.15s var(--ease)}
+.stat:active{opacity:.5}
+.stat .s-num{font-size:36px;font-weight:800;line-height:1}
+.stat .s-num.zero{color:var(--ink-3);font-weight:700}
+.stat .s-lbl{font-size:11.5px;color:var(--ink-3);margin-top:8px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:5px}
+.stat + .stat{border-left:1px solid var(--line)}
+.dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto;display:inline-block}
+.allclear{padding:22px;text-align:center;color:var(--green);font-weight:700;font-size:16px;
+  border:1px solid var(--line);border-radius:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+
+/* ---- リスト共通(シャドウ廃止・余白区切り) ---- */
+.list > *{border-bottom:1px solid var(--line)}
+.list > *:last-child{border-bottom:none}
+
+/* task rows */
+.task{display:flex;align-items:flex-start;gap:14px;padding:18px 0}
+.task .tk-ring{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--ink-3);flex:0 0 auto;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;color:#fff;transition:.2s var(--ease)}
+.task.done .tk-ring{background:var(--navy-900);border-color:var(--navy-900)}
+.task .tk-main{flex:1;min-width:0}
+.task .tk-t{font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px}
+.task.done .tk-t{color:var(--ink-3);text-decoration:line-through;font-weight:500}
+.task .tk-sub{font-size:12px;color:var(--ink-3);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tk-sub .who{color:var(--gold);font-weight:700}
+.tk-sub .done-by{color:var(--green);font-weight:700;display:flex;align-items:center;gap:3px}
+.tk-sub .photo{display:flex;align-items:center;gap:3px}
+@media (prefers-color-scheme: dark){
+  .task.done .tk-ring{background:var(--gold);border-color:var(--gold);color:var(--navy-900)}
+  .tk-sub .who{color:var(--gold-soft)}
+}
+
+/* accordion (仕込み) */
+.acc{padding-left:38px}
+.acc .task{padding:11px 0}
+.acc .tk-ring{width:20px;height:20px}
+.acc .tk-t{font-size:14px;font-weight:500}
+
+/* stock */
+.loc-head{display:flex;align-items:center;gap:8px;padding:26px 0 8px;font-weight:700;font-size:13px;color:var(--ink-2)}
+.loc-head:first-child{padding-top:6px}
+.item{display:flex;align-items:center;gap:12px;padding:15px 0}
+.item .it-main{flex:1;min-width:0}
+.item .it-n{font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.item .it-sub{font-size:11.5px;color:var(--ink-3);margin-top:3px}
+.item.changed .it-n:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--gold);flex:0 0 auto}
+
+/* stepper (円形・最小) */
+.stepper{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.stepper button{width:32px;height:32px;border-radius:50%;background:transparent;border:1px solid var(--ink-3);
+  font-size:18px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;justify-content:center;transition:.15s var(--ease)}
+.stepper button:active{background:var(--navy-900);color:#fff;border-color:var(--navy-900)}
+.stepper input{width:40px;text-align:center;border:none;background:transparent;font-size:17px;font-weight:700;
+  color:var(--ink);-moz-appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+/* pills (テキストのみ・面で塗らない) */
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700}
+.pill .dot{width:6px;height:6px}
+.pill.red{color:var(--red)} .pill.org{color:var(--orange)} .pill.grn{color:var(--green)}
+.pill.gld{color:var(--gold)} .pill.gray{color:var(--ink-3)} .pill.blue{color:var(--blue)}
+@media (prefers-color-scheme: dark){ .pill.gld{color:var(--gold-soft)} }
+
+/* order */
+.sup-head{display:flex;align-items:center;gap:9px;padding:26px 0 4px}
+.sup-head:first-child{padding-top:4px}
+.sup-head .sh-n{font-weight:700;font-size:14.5px;flex:1;display:flex;align-items:center;gap:7px}
+.order{padding:14px 0;border-bottom:1px solid var(--line)}
+.order .o-top{display:flex;align-items:center;gap:10px}
+.order .o-n{font-weight:600;font-size:14.5px;flex:1;display:flex;align-items:center;gap:8px}
+.order .o-qty{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-3)}
+.incoming{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}
+.incoming .in-n{flex:1;font-weight:600;font-size:14.5px}
+
+/* buttons */
+.btn{border-radius:13px;padding:14px 16px;font-weight:700;font-size:14px;display:inline-flex;
+  align-items:center;justify-content:center;gap:7px;transition:.15s var(--ease)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--navy-900);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line)}
+.btn.sm{padding:9px 14px;font-size:13px;border-radius:11px}
+.btn.full{width:100%}
+.btn.mt{margin-top:20px}
+.btn[disabled]{opacity:.4;pointer-events:none}
+@media (prefers-color-scheme: dark){ .btn.primary{background:var(--gold);color:var(--navy-900)} }
+
+/* people (定着エンジン) */
+.kpi-hero{background:linear-gradient(155deg,#122a49,var(--navy-900));border-radius:20px;
+  padding:26px;color:#fff;text-align:center;position:relative;overflow:hidden}
+.kpi-hero .kh-l{font-size:12px;color:var(--gold-soft);font-weight:600;letter-spacing:.08em}
+.kpi-hero .kh-n{font-size:56px;font-weight:800;line-height:1;margin:8px 0 4px}
+.kpi-hero .kh-n small{font-size:22px;font-weight:700;color:var(--gold-soft)}
+.kpi-hero .kh-trend{font-size:12.5px;color:#a9b7c9}
+.kpi-hero .kh-bar{height:7px;background:rgba(255,255,255,.14);border-radius:5px;margin-top:16px;overflow:hidden}
+.kpi-hero .kh-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-soft),var(--gold));border-radius:5px;transition:width .9s var(--ease)}
+.person{display:flex;align-items:center;gap:13px;padding:15px 0}
+.person .p-av{width:40px;height:40px;border-radius:50%;background:var(--card-2);color:var(--ink-2);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex:0 0 auto}
+.person .p-main{flex:1;min-width:0}
+.person .p-n{font-weight:600;font-size:14.5px}
+.person .p-sub{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.person .p-rate{text-align:right}
+.person .p-rate b{font-size:18px;font-weight:800}
+.person .p-rate .pr-l{font-size:10px;color:var(--ink-3)}
+.mini-bar{height:5px;background:var(--line);border-radius:4px;margin-top:7px;overflow:hidden;width:100%}
+.mini-bar i{display:block;height:100%;border-radius:4px}
+.esc{display:flex;gap:11px;align-items:flex-start;padding:16px 0 2px;margin-top:6px;border-top:1px solid var(--line);
+  font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.esc .ic{color:var(--orange);margin-top:1px}
+.esc b{color:var(--orange)}
+
+/* submit bar */
+#submitBar{position:fixed;left:0;right:0;bottom:calc(var(--tab-h) + var(--safe-b));z-index:35;
+  padding:12px 16px;background:linear-gradient(180deg,transparent,var(--bg) 34%);transition:.3s var(--ease);transform:translateY(130%)}
+#submitBar.on{transform:none}
+#submitBar .sb-inner{background:var(--navy-900);color:#fff;border-radius:15px;padding:13px 16px;
+  display:flex;align-items:center;gap:12px;max-width:560px;margin:0 auto}
+#submitBar .sb-tx{flex:1;font-size:13px}
+#submitBar .sb-tx b{color:var(--gold-soft)}
+#submitBar button{background:var(--gold);color:var(--navy-900);border-radius:11px;padding:10px 16px;font-weight:800;font-size:14px}
+
+/* tab bar */
+nav#tabs{position:fixed;left:0;right:0;bottom:0;z-index:38;height:calc(var(--tab-h) + var(--safe-b));
+  padding-bottom:var(--safe-b);background:var(--bg);border-top:1px solid var(--line);display:flex}
+nav#tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  color:var(--ink-3);font-size:10px;font-weight:600;position:relative;transition:.15s var(--ease)}
+nav#tabs button.on{color:var(--ink)}
+nav#tabs button .badge{position:absolute;top:6px;left:calc(50% + 7px);min-width:16px;height:16px;padding:0 4px;
+  background:var(--red);color:#fff;border-radius:9px;font-size:9.5px;font-weight:800;display:flex;
+  align-items:center;justify-content:center}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:70;background:rgba(6,12,22,.5);backdrop-filter:blur(3px);
+  display:none;align-items:flex-end;justify-content:center}
+.modal.on{display:flex;animation:fade .2s var(--ease)}
+.sheet{background:var(--card);width:100%;max-width:560px;border-radius:24px 24px 0 0;
+  padding:24px 22px calc(26px + var(--safe-b));animation:up .32s var(--ease)}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.sheet h3{margin:0 0 5px;font-size:19px;font-weight:800;display:flex;align-items:center;gap:9px}
+.sheet .s-sub{color:var(--ink-3);font-size:13px;margin:0 0 20px}
+.sheet-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.sheet-item .si-main{flex:1;min-width:0}
+.sheet-item .si-n{font-weight:600;font-size:14.5px}
+.sheet-item .si-sub{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.opt-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.opt{padding:14px;border:1.5px solid var(--line);border-radius:13px;text-align:center;font-weight:600;font-size:14px;transition:.15s var(--ease)}
+.opt.on{border-color:var(--gold);background:rgba(195,165,105,.1)}
+.field{margin-bottom:18px}
+.field label{font-size:12px;font-weight:700;color:var(--ink-3);display:block;margin-bottom:8px}
+.field input,.field select{width:100%;padding:14px;border:1.5px solid var(--line);border-radius:13px;
+  background:var(--card-2);color:var(--ink)}
+.big-num{display:flex;align-items:center;justify-content:center;gap:22px}
+.big-num button{width:54px;height:54px;border-radius:50%;background:transparent;border:1.5px solid var(--ink-3);
+  font-size:26px;font-weight:600;color:var(--ink-2)}
+.big-num button:active{background:var(--navy-900);color:#fff;border-color:var(--navy-900)}
+.big-num .bn-v{font-size:42px;font-weight:800;min-width:80px;text-align:center}
+.calc-line{background:var(--card-2);border-radius:13px;padding:13px 14px;font-size:13.5px;text-align:center;
+  color:var(--ink-2);margin-bottom:18px}
+.calc-line b{color:var(--ink);font-size:17px}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + var(--safe-b) + 18px);transform:translateX(-50%) translateY(30px);
+  z-index:80;background:var(--navy-900);color:#fff;padding:13px 18px;border-radius:14px;font-size:14px;font-weight:600;
+  opacity:0;transition:.3s var(--ease);display:flex;align-items:center;gap:12px;max-width:90vw;
+  box-shadow:0 10px 40px rgba(0,0,0,.35)}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast .t-undo{color:var(--gold-soft);font-weight:800;padding:2px 4px}
+
+.foot{text-align:center;color:var(--ink-3);font-size:11px;margin-top:40px}
+</style>
+</head>
+<body>
+
+<!-- ===== Splash ===== -->
+<div id="splash">
+  <img class="splash-logo" src="logo_splash.png" alt="よいどころ千福" onerror="this.style.display='none'">
+  <div class="splash-sub">YOIDOKORO SENPUKU</div>
+  <div class="spinner"></div>
+</div>
+
+<!-- ===== Staff gate ===== -->
+<div id="gate" class="hidden">
+  <img class="g-logo" src="logo_splash.png" alt="" onerror="this.style.display='none'">
+  <h1>おつかれさまです</h1>
+  <p>名前をえらんでください</p>
+  <div class="g-label">スタッフ</div>
+  <select id="staffSelect" class="gate-select"></select>
+  <button id="gateStart" class="btn full" style="background:var(--gold);color:var(--navy-900);margin-top:16px" onclick="startFromGate()">はじめる</button>
+</div>
+
+<!-- ===== App ===== -->
+<div id="app">
+  <header id="top">
+    <div class="brand"><span class="dot"></span>千福ワーク</div>
+    <div class="spacer"></div>
+    <button class="me" id="meBtn"><span class="av" id="meAv">井</span><span id="meName">井上</span>
+      <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+  </header>
+
+  <div id="notice" class="hidden"></div>
+
+  <main>
+    <!-- ---------- きょう ---------- -->
+    <section class="screen on" id="sc-today">
+      <div class="sec first">
+        <div class="hero">
+          <div class="h-tx">
+            <div class="h-hi" id="heroHi">おはようございます</div>
+            <div class="h-name"><span id="heroName">井上</span>さん</div>
+            <div class="h-slot" id="heroSlot"></div>
+          </div>
+          <div class="h-num"><span id="heroPct">0</span><small>%</small><span class="h-cap">きょうの進捗</span></div>
+        </div>
+      </div>
+
+      <div class="sec"><div class="slot-row" id="slotRow"></div></div>
+
+      <div class="sec">
+        <div class="sec-label">今日の状態</div>
+        <div id="alertZone"></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-label" id="todoTitle">いま やること</div>
+        <div class="list" id="todoCard"></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-label" id="serveLabel">本日の提供可能数</div>
+        <div id="serveZone"></div>
+      </div>
+    </section>
+
+    <!-- ---------- 棚卸 ---------- -->
+    <section class="screen" id="sc-stock">
+      <div class="sec first">
+        <div class="sec-label">棚卸しモード</div>
+        <div class="slot-row">
+          <button class="chip on" data-mode="daily" onclick="Stock.setMode('daily')">日次（重点品）</button>
+          <button class="chip" data-mode="monthly" onclick="Stock.setMode('monthly')">月初（全品）</button>
+        </div>
+      </div>
+      <div class="sec" id="stockList"></div>
+      <p class="foot">保管場所の巡回順（冷蔵1→冷蔵2→冷凍→常温）に並んでいます</p>
+    </section>
+
+    <!-- ---------- 発注 ---------- -->
+    <section class="screen" id="sc-order">
+      <div class="sec first">
+        <div class="sec-label">要発注（欠品・発注点割れ）</div>
+        <div id="orderList"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-label">入荷待ち</div>
+        <div id="incomingList"></div>
+      </div>
+    </section>
+
+    <!-- ---------- みんな ---------- -->
+    <section class="screen" id="sc-people">
+      <div class="sec first">
+        <div class="kpi-hero">
+          <div class="kh-l">今週のチェック達成率</div>
+          <div class="kh-n" id="weekPct">–<small>%</small></div>
+          <div class="kh-trend" id="weekTrend"></div>
+          <div class="kh-bar"><i id="weekBar" style="width:0"></i></div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-label">きょうの担当状況</div>
+        <div class="list" id="peopleToday"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-label">今週の入力率（人別）</div>
+        <div class="list" id="peopleWeek"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-label">やってない項目</div>
+        <div id="undoneList"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- submit bar (棚卸) -->
+  <div id="submitBar"><div class="sb-inner">
+    <div class="sb-tx"><b id="sbCount">0</b> 品の変更が未保存です</div>
+    <button onclick="Stock.save()">棚卸しを保存</button>
+  </div></div>
+
+  <!-- tabs -->
+  <nav id="tabs">
+    <button class="on" data-sc="today" onclick="Nav.go('today')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5L12 4.5l8 7"/><path d="M6 10v9.2a.8.8 0 0 0 .8.8H10v-6h4v6h3.2a.8.8 0 0 0 .8-.8V10"/></svg>きょう</button>
+    <button data-sc="stock" onclick="Nav.go('stock')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4.2" width="14" height="17" rx="2"/><rect x="9" y="2.6" width="6" height="3" rx="1"/><line x1="8" y1="10.5" x2="16" y2="10.5"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="17.5" x2="13" y2="17.5"/></svg>棚卸</button>
+    <button data-sc="order" onclick="Nav.go('order')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2.2l2.3 11a2 2 0 0 0 2 1.6h7.3a2 2 0 0 0 2-1.6L20.5 8H6.2"/><circle cx="9.3" cy="20" r="1.2" fill="currentColor" stroke="none"/><circle cx="17" cy="20" r="1.2" fill="currentColor" stroke="none"/></svg>発注<span class="badge hidden" id="badgeOrder">0</span></button>
+    <button data-sc="people" onclick="Nav.go('people')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="none"><rect x="4" y="13" width="3.4" height="7" rx="1" fill="currentColor"/><rect x="10.3" y="7.5" width="3.4" height="12.5" rx="1" fill="currentColor"/><rect x="16.6" y="14.8" width="3.4" height="5.2" rx="1" fill="currentColor"/></svg>みんな</button>
+  </nav>
+</div>
+
+<!-- ===== Modal ===== -->
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+
+<!-- ===== Toast ===== -->
+<div id="toast"></div>
+
+<script>
+/* =====================================================================
+   モノクロ・アイコン（自作 / stroke=currentColor でテーマ追従）
+   ===================================================================== */
+const PATHS = {
+  sunrise:'<line x1="3" y1="17" x2="21" y2="17"/><path d="M6 17a6 6 0 0 1 12 0"/><line x1="12" y1="7" x2="12" y2="9.2"/><line x1="5.8" y1="11.6" x2="7.3" y2="12.7"/><line x1="18.2" y1="11.6" x2="16.7" y2="12.7"/>',
+  knife:'<path d="M4 20l5.5-1.2L18 10.3a2 2 0 0 0-2.8-2.8L6.7 16 5.2 21z"/><line x1="14.3" y1="8.7" x2="17.3" y2="11.7"/>',
+  sake:'<path d="M10.5 3h3"/><path d="M11 3v3.3L8.6 9.5a3 3 0 0 0-.6 1.8V19a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-7.7a3 3 0 0 0-.6-1.8L13 6.3V3"/><line x1="8.2" y1="14" x2="15.8" y2="14"/>',
+  moon:'<path d="M20 15.2A8.2 8.2 0 1 1 9 4.3a6.6 6.6 0 0 0 11 10.9z"/>',
+  bell:'<path d="M6.5 15c0-1 .4-1.8.4-5a5.1 5.1 0 0 1 10.2 0c0 3.2.4 4 .4 5"/><line x1="5.5" y1="15" x2="18.5" y2="15"/><path d="M10.3 17.6a1.9 1.9 0 0 0 3.4 0"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7"/>',
+  camera:'<path d="M8 7.2L9.3 5h5.4L16 7.2"/><rect x="3" y="7.2" width="18" height="12.8" rx="2.2"/><circle cx="12" cy="13.4" r="3.3"/>',
+  beer:'<path d="M6.5 8h9v9.8a2.2 2.2 0 0 1-2.2 2.2H8.7A2.2 2.2 0 0 1 6.5 17.8z"/><path d="M15.5 10h1.3a2 2 0 0 1 2 2v1.4a2 2 0 0 1-2 2h-1.3"/><path d="M6.5 8c0-2.6 9-2.6 9 0"/><line x1="9" y1="5.6" x2="9" y2="7.4"/><line x1="12" y1="5" x2="12" y2="7.4"/>',
+  chevron:'<path d="M9 5l7 7-7 7"/>',
+  arrow:'<path d="M5 12h13"/><path d="M12 6l6 6-6 6"/>',
+  snow:'<path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5L4.2 16.5"/><path d="M12 3l-2 2M12 3l2 2M12 21l-2-2M12 21l2-2"/>',
+  box:'<path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/>',
+  shop:'<path d="M4.5 9.5 5.6 5h12.8l1.1 4.5"/><path d="M5 9.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/><path d="M4.5 9.5a1.9 1.9 0 0 0 3.7 0 1.9 1.9 0 0 0 3.8 0 1.9 1.9 0 0 0 3.8 0 1.9 1.9 0 0 0 3.7 0"/><path d="M9.5 20v-5h5v5"/>',
+  phone:'<path d="M6.8 4h2.7l1.4 3.6-1.9 1.4a10.5 10.5 0 0 0 4.6 4.6l1.4-1.9L18.6 13v2.7a1.4 1.4 0 0 1-1.5 1.4A13.5 13.5 0 0 1 5.4 5.5 1.4 1.4 0 0 1 6.8 4z"/>',
+  chat:'<path d="M4 5.5h16a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V15.5H4A1.5 1.5 0 0 1 2.5 14V7A1.5 1.5 0 0 1 4 5.5z"/>',
+  mail:'<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M4 7.5l8 5.5 8-5.5"/>',
+  package:'<path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8M8 6l8 4"/>',
+  trash:'<path d="M5 7h14"/><path d="M10 7V5.6A1.6 1.6 0 0 1 11.6 4h.8A1.6 1.6 0 0 1 14 5.6V7"/><path d="M6.7 7l.8 12a2 2 0 0 0 2 1.9h5a2 2 0 0 0 2-1.9L17.3 7"/>',
+  warn:'<path d="M12 4.5 21 19H3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="16.6" r=".4" fill="currentColor" stroke="none"/>',
+  x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  clock:'<circle cx="12" cy="12" r="8.2"/><path d="M12 7.5V12l3 1.8"/>',
+};
+function ic(name, size=15, sw=1.7){
+  return `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${PATHS[name]||''}</svg>`;
+}
+const SLOT_ICON = {'開店前':'sunrise','仕込み':'knife','営業中':'sake','閉店':'moon'};
+const LOC_ICON  = {'冷蔵1':'snow','冷蔵2':'snow','冷凍':'snow','常温':'box'};
+const VIA_ICON  = {tel:'phone', line:'chat', mail:'mail'};
+
+/* =====================================================================
+   モックデータ層  ——  本番では下記 API.* を GAS の doGet/doPost(action=…)
+   への fetch に差し替えるだけで、UI は一切変更不要。
+   ===================================================================== */
+const TODAY = new Date(2026,6,11);          // 2026-07-11(金)  ※本番は new Date()
+const fmtD = d => `${d.getMonth()+1}/${d.getDate()}`;
+const WEEK = ['日','月','火','水','木','金','土'];
+
+const store = {
+  read(k,def){ try{return JSON.parse(localStorage.getItem('senpuku_'+k))??def}catch(e){return def} },
+  write(k,v){ localStorage.setItem('senpuku_'+k, JSON.stringify(v)) }
+};
+
+const STAFF = [
+  {id:'inoue', name:'井上', role:'キッチン'},
+  {id:'onogawa', name:'小野川', role:'ホール'},
+  {id:'asami', name:'浅見', role:'代表'},
+];
+
+// ---- 食材マスタ（在庫v3.1 + 棚卸v4 + 発注管理を統合） ----
+const LOC_ORDER = ['冷蔵1','冷蔵2','冷凍','常温'];
+let ITEMS = store.read('items', null) || [
+  {id:'i01',n:'生ビール樽',loc:'冷蔵1',u:'本',stock:2,op:2,exp:null,expf:false,sup:'サントリー',via:'tel',std:2},
+  {id:'i02',n:'レモンサワー原液',loc:'冷蔵1',u:'本',stock:3,op:2,exp:null,expf:false,sup:'酒のカクヤス',via:'line',std:4},
+  {id:'i03',n:'木綿豆腐',loc:'冷蔵1',u:'丁',stock:6,op:4,exp:'2026-07-12',expf:true,sup:'丸八豆腐',via:'tel',std:10},
+  {id:'i04',n:'玉子',loc:'冷蔵1',u:'パック',stock:2,op:3,exp:'2026-07-13',expf:true,sup:'JA直売',via:'line',std:6},
+  {id:'i05',n:'鶏もも肉',loc:'冷蔵2',u:'kg',stock:1,op:3,exp:'2026-07-12',expf:true,sup:'鳥安精肉',via:'line',std:5,menu:'唐揚げ'},
+  {id:'i06',n:'豚バラ肉',loc:'冷蔵2',u:'kg',stock:0,op:2,exp:null,expf:true,sup:'鳥安精肉',via:'line',std:3},
+  {id:'i07',n:'まぐろサク',loc:'冷蔵2',u:'サク',stock:2,op:1,exp:'2026-07-10',expf:true,sup:'中央市場',via:'tel',std:3,menu:'刺身盛り'},
+  {id:'i08',n:'レタス',loc:'冷蔵2',u:'玉',stock:5,op:3,exp:'2026-07-12',expf:true,sup:'八百屋田中',via:'tel',std:6},
+  {id:'i09',n:'明太子',loc:'冷蔵2',u:'kg',stock:1,op:1,exp:'2026-07-15',expf:true,sup:'博多明太',via:'mail',std:2,menu:'明太出汁巻き'},
+  {id:'i10',n:'冷凍枝豆',loc:'冷凍',u:'袋',stock:4,op:2,exp:null,expf:false,sup:'業務スーパー',via:'mail',std:6},
+  {id:'i11',n:'フライドポテト',loc:'冷凍',u:'袋',stock:1,op:2,exp:null,expf:false,sup:'業務スーパー',via:'mail',std:5},
+  {id:'i12',n:'米',loc:'常温',u:'kg',stock:12,op:5,exp:null,expf:false,sup:'JA直売',via:'tel',std:10},
+  {id:'i13',n:'醤油',loc:'常温',u:'L',stock:3,op:2,exp:null,expf:false,sup:'酒のカクヤス',via:'line',std:4},
+  {id:'i14',n:'サラダ油',loc:'常温',u:'L',stock:1,op:2,exp:null,expf:false,sup:'業務スーパー',via:'mail',std:4},
+  {id:'i15',n:'ハイボール缶',loc:'常温',u:'本',stock:24,op:12,exp:null,expf:false,sup:'酒のカクヤス',via:'line',std:24},
+];
+const VIA_LABEL = {tel:'電話',line:'LINE',mail:'メール'};
+
+// ---- チェック項目（業務チェック + 達成度 を統合） ----
+let CHECKS = store.read('checks', null) || [
+  {id:'c01',t:'冷蔵庫の温度を確認',slot:'開店前',who:'inoue',cam:true,done:true,by:'inoue',at:'07:12'},
+  {id:'c02',t:'期限切れ食材のチェック',slot:'開店前',who:'inoue',cam:false,done:false},
+  {id:'c03',t:'ホール・床の清掃',slot:'開店前',who:'onogawa',cam:true,done:true,by:'onogawa',at:'07:40'},
+  {id:'c04',t:'トイレ清掃',slot:'開店前',who:'onogawa',cam:true,done:false},
+  {id:'c05',t:'本日の提供可能数を申告',slot:'開店前',who:'inoue',cam:false,done:false,link:'serve'},
+  {id:'c06',t:'仕込み10品',slot:'仕込み',who:'inoue',cam:false,done:false,accordion:true},
+  {id:'c07',t:'発注チェック（発注点割れ）',slot:'営業中',who:'inoue',cam:false,done:false,link:'order'},
+  {id:'c08',t:'期限切れ食材がないか確認',slot:'閉店',who:'inoue',cam:false,done:false},
+  {id:'c09',t:'レジ締め',slot:'閉店',who:'onogawa',cam:false,done:false},
+  {id:'c10',t:'ガス元栓・火元の確認',slot:'閉店',who:'inoue',cam:true,done:false},
+];
+const PREP10 = ['出汁を引く','唐揚げの下味','ポテトサラダ','だし巻き玉子液','刺身の柵取り','煮込み仕込み','ドレッシング','薬味カット','ご飯を炊く','おしぼり準備'];
+
+// ---- 発注履歴（orderId単位） ----
+let ORDERS = store.read('orders', null) || [
+  {oid:'o-201',itemId:'i16x',name:'割り箸',sup:'業務スーパー',via:'mail',qty:2,status:'発注済',date:'7/10'},
+];
+
+// ---- 週次入力率（達成度チェックの実測イメージ） ----
+const WEEK_RATE = {inoue:92, onogawa:78, asami:45};
+
+/* ---- 派生ステータス（v2.1の自動判定ロジック） ---- */
+function expStatus(it){
+  if(!it.expf) return null;
+  if(!it.exp) return 'none';
+  const d = new Date(it.exp+'T00:00:00');
+  const diff = Math.round((d - TODAY)/86400000);
+  if(diff < 0) return 'over';
+  if(diff <= 2) return 'near';
+  return 'ok';
+}
+function stockStatus(it){
+  if(it.stock <= 0) return 'out';
+  if(it.stock <= it.op) return 'low';
+  return 'ok';
+}
+
+/* =====================================================================
+   API（モック）— 本番は fetch(GAS_URL+'?action=items') 等に差し替え
+   ===================================================================== */
+const wait = (v,ms=180)=>new Promise(r=>setTimeout(()=>r(v),ms));
+const API = {
+  items:      ()=>wait(ITEMS),
+  checks:     ()=>wait(CHECKS),
+  orders:     ()=>wait(ORDERS),
+  team:       ()=>wait({staff:STAFF, checks:CHECKS, rate:WEEK_RATE}),
+  saveStock:  (diffs)=>{ diffs.forEach(d=>{const it=ITEMS.find(x=>x.id===d.id); if(it){it.stock=d.stock; if(d.exp!==undefined)it.exp=d.exp;}}); store.write('items',ITEMS); return wait({ok:true,n:diffs.length}); },
+  saveCheck:  (id,by)=>{ const c=CHECKS.find(x=>x.id===id); if(c){c.done=!c.done; c.by=c.done?by:null; c.at=c.done?nowHM():null;} store.write('checks',CHECKS); return wait({ok:true}); },
+  waste:      (id,qty)=>{ const it=ITEMS.find(x=>x.id===id); if(it){it.stock=Math.max(0,it.stock-qty); if(it.stock===0)it.exp=null;} store.write('items',ITEMS); return wait({ok:true}); },
+  orderStatus:(oid,status)=>{ const o=ORDERS.find(x=>x.oid===oid); if(o)o.status=status; store.write('orders',ORDERS); return wait({ok:true}); },
+  placeOrder: (itemId,qty)=>{ const it=ITEMS.find(x=>x.id===itemId); const oid='o-'+Math.floor(performance.now()); ORDERS.push({oid,itemId,name:it.n,sup:it.sup,via:it.via,qty,status:'発注済',date:fmtD(TODAY)}); store.write('orders',ORDERS); return wait({ok:true,oid}); },
+  receive:    (oid,recv)=>{ const o=ORDERS.find(x=>x.oid===oid); if(o){o.status='入荷済'; const it=ITEMS.find(x=>x.id===o.itemId); if(it)it.stock+=recv;} store.write('orders',ORDERS); store.write('items',ITEMS); return wait({ok:true}); },
+};
+function nowHM(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+
+/* =====================================================================
+   状態
+   ===================================================================== */
+const State = { me:null, slot:null, slots:['開店前','仕込み','営業中','閉店'] };
+function currentSlot(){
+  const h=new Date().getHours();
+  if(h<11)return '開店前'; if(h<16)return '仕込み'; if(h<22)return '営業中'; return '閉店';
+}
+
+/* =====================================================================
+   起動
+   ===================================================================== */
+window.addEventListener('load', ()=>{
+  renderGate();
+  setTimeout(()=>{
+    document.getElementById('splash').classList.add('out');
+    const saved = store.read('me',null);
+    if(saved){ pickStaff(saved,true); }
+    else { document.getElementById('gate').classList.remove('hidden'); }
+  }, 1100);
+});
+
+function renderGate(){
+  document.getElementById('staffSelect').innerHTML =
+    '<option value="" disabled selected>選択してください</option>' +
+    STAFF.map(s=>`<option value="${s.id}">${s.name}（${s.role}）</option>`).join('');
+}
+function startFromGate(){ const id=document.getElementById('staffSelect').value; if(!id)return; pickStaff(id); }
+
+function pickStaff(id, silent){
+  State.me = STAFF.find(s=>s.id===id);
+  store.write('me', id);
+  document.getElementById('gate').classList.add('hidden');
+  document.getElementById('app').classList.add('on');
+  document.getElementById('meName').textContent = State.me.name;
+  document.getElementById('meAv').textContent = State.me.name[0];
+  document.getElementById('heroName').textContent = State.me.name;
+  document.getElementById('serveLabel').innerHTML = ic('beer',15)+' 本日の提供可能数';
+  State.slot = currentSlot();
+  boot();
+  if(!silent) toast(State.me.name+'さん、よろしくお願いします');
+}
+
+async function boot(){
+  const h=new Date().getHours();
+  document.getElementById('heroHi').textContent = h<11?'おはようございます':h<18?'おつかれさまです':'こんばんは';
+  showNotice();
+  renderToday();
+  renderPeople();
+  refreshBadges();
+}
+
+/* 通知バナー（定着エンジン①きっかけ）: 開店前/締め前だけ */
+function showNotice(){
+  const el=document.getElementById('notice');
+  const slot=currentSlot();
+  let msg=null;
+  if(slot==='開店前') msg=`<b>開店前チェック</b>の時間です。期限と重点品を確認しましょう`;
+  else if(slot==='閉店') msg=`<b>締め前チェック</b>の時間です。期限切れ確認とレジ締めを`;
+  if(msg && store.read('notice_'+slot+dayKey(),true)){
+    el.innerHTML=`${ic('bell',16)}<span class="n-tx">${msg}</span><button class="n-x" onclick="dismissNotice('${slot}')">${ic('x',13,1.8)}</button>`;
+    el.classList.remove('hidden');
+  } else el.classList.add('hidden');
+}
+function dayKey(){return fmtD(TODAY)}
+function dismissNotice(slot){ store.write('notice_'+slot+dayKey(),false); document.getElementById('notice').classList.add('hidden'); }
+
+/* =====================================================================
+   Nav
+   ===================================================================== */
+const Nav = {
+  go(sc){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+    document.getElementById('sc-'+sc).classList.add('on');
+    document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on', b.dataset.sc===sc));
+    document.getElementById('submitBar').classList.toggle('on', sc==='stock' && Stock.dirty()>0);
+    window.scrollTo(0,0);
+    if(sc==='stock') Stock.render();
+    if(sc==='order') renderOrders();
+    if(sc==='people') renderPeople();
+    if(sc==='today') renderToday();
+  }
+};
+
+/* =====================================================================
+   きょう
+   ===================================================================== */
+function renderToday(){
+  const slotRow=document.getElementById('slotRow');
+  slotRow.innerHTML = State.slots.map(s=>{
+    const cnt = CHECKS.filter(c=>c.slot===s && !c.done).length;
+    return `<button class="chip ${s===State.slot?'on':''}" onclick="setSlot('${s}')">
+      ${ic(SLOT_ICON[s],14)} ${s}${cnt?`<span class="cnt">${cnt}</span>`:''}</button>`;
+  }).join('');
+  document.getElementById('heroSlot').innerHTML =
+    `${ic(SLOT_ICON[State.slot],13)} ${State.slot} · ${fmtD(TODAY)}(${WEEK[TODAY.getDay()]})`;
+
+  renderAlerts();
+  renderTodo();
+  renderServe();
+  updateHeroNum();
+}
+function setSlot(s){ State.slot=s; renderToday(); }
+
+function renderAlerts(){
+  const over=ITEMS.filter(i=>expStatus(i)==='over').length;
+  const near=ITEMS.filter(i=>expStatus(i)==='near').length;
+  const none=ITEMS.filter(i=>expStatus(i)==='none').length;
+  const out=ITEMS.filter(i=>stockStatus(i)==='out').length;
+  const low=ITEMS.filter(i=>stockStatus(i)==='low').length;
+  const menu=ITEMS.filter(i=>i.menu).length;
+  const zone=document.getElementById('alertZone');
+  if(over+near+none+out+low===0){
+    zone.innerHTML=`<div class="allclear">${ic('check',18,2.2)} 今日は問題なし</div>`; return;
+  }
+  const cell=(n,label,color,act)=>`<div class="stat" onclick="${act}">
+    <div class="s-num ${n?'':'zero'}" ${n&&color?`style="color:${color}"`:''}>${n}</div>
+    <div class="s-lbl">${n&&color?`<span class="dot" style="background:${color}"></span>`:''}${label}</div></div>`;
+  zone.innerHTML=`
+    <div class="stat-row">
+      ${cell(over,'期限切れ','var(--red)',"openExpired()")}
+      ${cell(near,'期限間近','var(--orange)',"Nav.go('stock')")}
+      ${cell(none,'期限未入力','',"Nav.go('stock')")}
+    </div>
+    <div class="stat-row">
+      ${cell(out,'欠品','var(--red)',"Nav.go('order')")}
+      ${cell(low,'要発注','var(--orange)',"Nav.go('order')")}
+      ${cell(menu,'提供品','',"Nav.go('today')")}
+    </div>`;
+}
+
+function renderTodo(){
+  const list = CHECKS.filter(c=>c.slot===State.slot);
+  document.getElementById('todoTitle').innerHTML = `${ic(SLOT_ICON[State.slot],14)} ${State.slot}のやること`;
+  const card=document.getElementById('todoCard');
+  if(!list.length){ card.innerHTML=`<div class="task muted">この時間帯のタスクはありません</div>`; return; }
+  card.innerHTML = list.map(c=>taskRow(c)).join('');
+}
+function taskRow(c){
+  const mine = c.who===State.me.id;
+  const whoName = c.who? (STAFF.find(s=>s.id===c.who)||{}).name : '誰でも';
+  const sub = c.done
+    ? `<span class="done-by">${ic('check',11,2.3)} ${(STAFF.find(s=>s.id===c.by)||{}).name||''} ${c.at||''}</span>`
+    : `<span class="${mine?'who':'muted'}">${mine?'あなたの担当':whoName}</span>${c.cam?`<span class="photo">${ic('camera',13)} 写真</span>`:''}`;
+  const acc = c.accordion? `
+    <div class="acc list" id="acc-${c.id}" style="display:none">
+      ${PREP10.map(p=>`<div class="task"><span class="tk-ring" onclick="togglePrep(this)"></span><span class="tk-t">${p}</span></div>`).join('')}
+    </div>`:'';
+  const tail = c.accordion? ic('chevron',13) : c.link? ic('arrow',14) : '';
+  const onclick = c.accordion? `toggleAcc('${c.id}')` : c.link? `Nav.go('${c.link}')` : `toggleCheck('${c.id}')`;
+  return `<div class="task ${c.done?'done':''}">
+    <span class="tk-ring" onclick="event.stopPropagation();toggleCheck('${c.id}')">${c.done?ic('check',13,2.3):''}</span>
+    <div class="tk-main" onclick="${onclick}">
+      <div class="tk-t">${c.t} ${tail}</div>
+      <div class="tk-sub">${sub}</div>
+    </div>
+  </div>${acc}`;
+}
+function toggleAcc(id){ const el=document.getElementById('acc-'+id); el.style.display = el.style.display==='none'?'block':'none'; }
+function togglePrep(el){ const on=el.classList.toggle('done');
+  el.innerHTML = on?ic('check',12,2.3):''; el.style.background=on?'var(--navy-900)':''; el.style.borderColor=on?'var(--navy-900)':''; }
+
+async function toggleCheck(id){
+  const c=CHECKS.find(x=>x.id===id);
+  if(c.link){ Nav.go(c.link); return; }
+  await API.saveCheck(id, State.me.id);
+  renderToday(); refreshBadges(); renderPeople();
+  if(c.done) toast('記録しました', c.cam?'（写真つき）':'');
+}
+
+function updateHeroNum(){
+  const total=CHECKS.length, done=CHECKS.filter(c=>c.done).length;
+  document.getElementById('heroPct').textContent = total?Math.round(done/total*100):0;
+}
+
+/* 提供可能数 */
+function renderServe(){
+  const menus=ITEMS.filter(i=>i.menu);
+  const saved=store.read('serve',{});
+  document.getElementById('serveZone').innerHTML = `<div class="list">`+menus.map(i=>{
+    const v = saved[i.id]!==undefined? saved[i.id] : Math.max(0,(i.stock-1)*3);
+    return `<div class="item">
+      <div class="it-main"><div class="it-n">${i.menu}</div><div class="it-sub">${i.n}（在庫${i.stock}${i.u}）</div></div>
+      <div class="stepper">
+        <button onclick="serveAdj('${i.id}',-1)">−</button>
+        <input id="sv-${i.id}" value="${v}" inputmode="numeric" onchange="serveSet('${i.id}',this.value)">
+        <button onclick="serveAdj('${i.id}',1)">＋</button>
+      </div></div>`;
+  }).join('')+`</div><button class="btn primary full mt" onclick="serveSubmit()">提供可能数を申告する</button>`;
+}
+function serveAdj(id,d){ const el=document.getElementById('sv-'+id); el.value=Math.max(0,(+el.value||0)+d); serveSet(id,el.value); }
+function serveSet(id,v){ const s=store.read('serve',{}); s[id]=Math.max(0,+v||0); store.write('serve',s); }
+function serveSubmit(){ const c=CHECKS.find(x=>x.id==='c05'); if(c&&!c.done){c.done=true;c.by=State.me.id;c.at=nowHM();store.write('checks',CHECKS);} renderToday();renderPeople();refreshBadges(); toast('提供可能数を申告しました'); }
+
+/* 期限切れ → 廃棄導線 */
+function openExpired(){
+  const over=ITEMS.filter(i=>expStatus(i)==='over');
+  if(!over.length){ toast('期限切れはありません'); return; }
+  openSheet(`
+    <h3>${ic('warn',20)} 期限切れの食材</h3>
+    <p class="s-sub">廃棄したら記録します。在庫から自動で引かれます。</p>
+    ${over.map(i=>`<div class="sheet-item">
+      <div class="si-main"><div class="si-n">${i.n}</div><div class="si-sub">期限 ${i.exp} ・ 在庫 ${i.stock}${i.u}</div></div>
+      <button class="btn primary sm" onclick="wasteFlow('${i.id}')">${ic('trash',15)} 廃棄</button>
+    </div>`).join('')}
+    <button class="btn ghost full mt" onclick="closeSheet()">閉じる</button>
+  `);
+}
+let wasteCtx=null;
+function wasteFlow(id){
+  const it=ITEMS.find(x=>x.id===id); wasteCtx={id,qty:it.stock,reason:'期限切れ'};
+  openSheet(`
+    <h3>廃棄の記録</h3><p class="s-sub">${it.n}</p>
+    <div class="field"><label>数量（${it.u}）</label>
+      <div class="big-num"><button onclick="wq(-1)">−</button><div class="bn-v" id="wqv">${it.stock}</div><button onclick="wq(1)">＋</button></div></div>
+    <div class="field"><label>理由</label>
+      <div class="opt-row" id="wreason">
+        ${['期限切れ','傷み','仕込み過多','オーダーミス'].map((r,i)=>`<div class="opt ${i===0?'on':''}" onclick="wreason(this,'${r}')">${r}</div>`).join('')}
+      </div></div>
+    <button class="btn primary full" onclick="wasteConfirm()">この内容で廃棄</button>
+    <button class="btn ghost full mt" onclick="openExpired()">戻る</button>
+  `);
+}
+function wq(d){ wasteCtx.qty=Math.max(0,wasteCtx.qty+d); document.getElementById('wqv').textContent=wasteCtx.qty; }
+function wreason(el,r){ document.querySelectorAll('#wreason .opt').forEach(o=>o.classList.remove('on')); el.classList.add('on'); wasteCtx.reason=r; }
+async function wasteConfirm(){
+  const ctx={...wasteCtx};
+  await API.waste(ctx.id, ctx.qty);
+  closeSheet(); renderToday();
+  toastUndo(`廃棄を記録（${ctx.reason} ${ctx.qty}）`, async()=>{
+    const it=ITEMS.find(x=>x.id===ctx.id); it.stock+=ctx.qty; store.write('items',ITEMS); renderToday(); toast('取り消しました');
+  });
+}
+
+/* =====================================================================
+   棚卸
+   ===================================================================== */
+const Stock = {
+  mode:'daily',
+  edits:{},
+  daily:['i03','i04','i05','i06','i07','i08','i10','i11','i13','i14'],
+  setMode(m){ this.mode=m; document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===m)); this.render(); },
+  list(){ const ids=this.mode==='daily'?this.daily:ITEMS.map(i=>i.id); return ITEMS.filter(i=>ids.includes(i.id)); },
+  dirty(){ return Object.keys(this.edits).length; },
+  render(){
+    const byLoc={}; this.list().forEach(i=>{(byLoc[i.loc]=byLoc[i.loc]||[]).push(i)});
+    let html='';
+    LOC_ORDER.forEach(loc=>{ if(!byLoc[loc])return;
+      html+=`<div class="loc-head">${ic(LOC_ICON[loc],15)} ${loc}</div><div class="list">`;
+      byLoc[loc].forEach(i=>{ html+=this.row(i); });
+      html+=`</div>`;
+    });
+    document.getElementById('stockList').innerHTML=html;
+    this.syncBar();
+  },
+  row(i){
+    const changed=this.edits[i.id]!==undefined;
+    const val=changed?this.edits[i.id].stock:i.stock;
+    const es=expStatus(i);
+    const badge = es==='over'?`<span class="pill red"><span class="dot" style="background:var(--red)"></span>期限切れ</span>`
+      :es==='near'?`<span class="pill org"><span class="dot" style="background:var(--orange)"></span>間近</span>`
+      :es==='none'?`<span class="pill gray">期限未入力</span>`:'';
+    const ss=stockStatus(i);
+    const sbadge = ss==='out'?`<span class="pill red"><span class="dot" style="background:var(--red)"></span>欠品</span>`
+      :ss==='low'?`<span class="pill org"><span class="dot" style="background:var(--orange)"></span>要発注</span>`:'';
+    return `<div class="item ${changed?'changed':''}" id="row-${i.id}">
+      <div class="it-main"><div class="it-n">${i.n} ${badge}${sbadge}</div>
+        <div class="it-sub">発注点 ${i.op}${i.u}${i.exp?' ・ 期限 '+i.exp:''}</div></div>
+      <div class="stepper">
+        <button onclick="Stock.adj('${i.id}',-1)">−</button>
+        <input value="${val}" inputmode="numeric" onchange="Stock.set('${i.id}',this.value)">
+        <button onclick="Stock.adj('${i.id}',1)">＋</button>
+      </div></div>`;
+  },
+  adj(id,d){ const i=ITEMS.find(x=>x.id===id); const cur=this.edits[id]?this.edits[id].stock:i.stock;
+    this.set(id, Math.max(0,cur+d)); },
+  set(id,v){ const i=ITEMS.find(x=>x.id===id); v=Math.max(0,+v||0);
+    if(v===i.stock){ delete this.edits[id]; } else { this.edits[id]={stock:v, exp:i.exp}; }
+    this.render();
+  },
+  syncBar(){ const n=this.dirty(); document.getElementById('sbCount').textContent=n;
+    document.getElementById('submitBar').classList.toggle('on', n>0 && document.getElementById('sc-stock').classList.contains('on')); },
+  async save(){
+    const diffs=Object.entries(this.edits).map(([id,v])=>({id,stock:v.stock,exp:v.exp}));
+    if(!diffs.length)return;
+    const needExp=diffs.map(d=>ITEMS.find(i=>i.id===d.id)).filter(i=>i.expf && (!i.exp || expStatus(i)==='none'));
+    const doSave=async()=>{ await API.saveStock(diffs); const n=diffs.length; this.edits={}; this.render(); renderToday(); refreshBadges(); toast(`${n}品の棚卸しを保存`); };
+    if(needExp.length){ this.promptExp(needExp,0,doSave); } else doSave();
+  },
+  promptExp(items,idx,done){
+    if(idx>=items.length){ done(); return; }
+    const it=items[idx];
+    openSheet(`
+      <h3>賞味期限の入力</h3><p class="s-sub">${it.n}（残り ${items.length-idx}品）</p>
+      <div class="field"><label>期限</label><input type="date" id="expIn" value="${it.exp||''}"></div>
+      <button class="btn primary full" onclick="Stock._expNext()">次へ</button>
+      <button class="btn ghost full mt" onclick="Stock._expSkip()">未入力のまま</button>
+    `);
+    this._expState={items,idx,done};
+  },
+  _expNext(){ const {items,idx,done}=this._expState; const v=document.getElementById('expIn').value;
+    if(v){ this.edits[items[idx].id].exp=v; } closeSheet(); this.promptExp(items,idx+1,done); },
+  _expSkip(){ const {items,idx,done}=this._expState; closeSheet(); this.promptExp(items,idx+1,done); },
+};
+
+/* =====================================================================
+   発注
+   ===================================================================== */
+function renderOrders(){
+  const need=ITEMS.filter(i=>['out','low'].includes(stockStatus(i)));
+  const bySup={}; need.forEach(i=>{(bySup[i.sup]=bySup[i.sup]||[]).push(i)});
+  const zone=document.getElementById('orderList');
+  if(!need.length){ zone.innerHTML=`<div class="allclear">${ic('check',18,2.2)} 発注が必要な品はありません</div>`; }
+  else{
+    zone.innerHTML=Object.entries(bySup).map(([sup,items])=>{
+      const via=items[0].via;
+      return `<div class="sup-head"><span class="sh-n">${ic('shop',16)} ${sup}</span><span class="pill blue">${VIA_LABEL[via]}</span></div>
+        <div class="list">${items.map(i=>orderRow(i)).join('')}</div>
+        ${orderBtn(sup,via)}`;
+    }).join('');
+  }
+  const inc=ORDERS.filter(o=>o.status==='発注済');
+  document.getElementById('incomingList').innerHTML = inc.length? `<div class="list">`+inc.map(o=>`
+    <div class="incoming">
+      <div class="in-n">${o.name}<div class="it-sub" style="margin-top:3px"><span class="pill gld">発注済 ${o.date}</span></div></div>
+      <button class="btn primary sm" onclick="receiveFlow('${o.oid}')">${ic('package',15)} 入荷</button>
+    </div>`).join('')+`</div>` : `<p class="foot">入荷待ちはありません</p>`;
+}
+function orderRow(i){
+  const ss=stockStatus(i);
+  const q = store.read('oq',{})[i.id] ?? i.std;
+  const dot = ss==='out'?'var(--red)':'var(--orange)';
+  return `<div class="order"><div class="o-top">
+    <div class="o-n"><span class="dot" style="background:${dot}"></span>${i.n}</div>
+    <div class="o-qty"><span>在庫${i.stock}</span>
+      <div class="stepper"><button onclick="oq('${i.id}',-1)">−</button>
+      <input id="oq-${i.id}" value="${q}" inputmode="numeric" style="width:36px" onchange="oqSet('${i.id}',this.value)">
+      <button onclick="oq('${i.id}',1)">＋</button></div></div>
+  </div></div>`;
+}
+function oq(id,d){ const el=document.getElementById('oq-'+id); el.value=Math.max(0,(+el.value||0)+d); oqSet(id,el.value); }
+function oqSet(id,v){ const o=store.read('oq',{}); o[id]=Math.max(0,+v||0); store.write('oq',o); }
+function orderBtn(sup,via){
+  const label=via==='line'?'LINEで発注':via==='mail'?'発注書メールを送信':'電話する';
+  return `<button class="btn primary full mt" style="margin-top:14px" onclick="placeOrders('${sup}')">${ic(VIA_ICON[via],15)} ${label}</button>`;
+}
+async function placeOrders(sup){
+  const items=ITEMS.filter(i=>i.sup===sup && ['out','low'].includes(stockStatus(i)));
+  const oqs=store.read('oq',{});
+  const via=items[0].via;
+  const text = `【よいどころ千福 発注】${fmtD(TODAY)}\n`+items.map(i=>`・${i.n} × ${oqs[i.id]??i.std}${i.u}`).join('\n');
+  if(via==='line' && navigator.share){ try{ await navigator.share({text}); }catch(e){} }
+  else if(via==='mail'){ location.href=`mailto:?subject=発注（よいどころ千福）&body=${encodeURIComponent(text)}`; }
+  for(const i of items){ await API.placeOrder(i.id, oqs[i.id]??i.std); }
+  renderOrders(); renderToday(); refreshBadges();
+  toast(`${sup} に${items.length}品を発注`);
+}
+let recvCtx=null;
+function receiveFlow(oid){
+  const o=ORDERS.find(x=>x.oid===oid); const it=ITEMS.find(x=>x.id===o.itemId)||{stock:0,u:'',n:o.name};
+  recvCtx={oid, recv:o.qty, base:it.stock};
+  openSheet(`
+    <h3>入荷の記録</h3><p class="s-sub">${o.name}</p>
+    <div class="field"><label>入荷数</label>
+      <div class="big-num"><button onclick="rq(-1)">−</button><div class="bn-v" id="rqv">${o.qty}</div><button onclick="rq(1)">＋</button></div></div>
+    <div class="calc-line">入荷後の在庫 = 既存 ${it.stock} ＋ 入荷 <span id="rqEcho">${o.qty}</span> → <b id="rqSum">${it.stock+o.qty}</b> ${it.u}</div>
+    <div class="field"><label>賞味期限（早い方を残す）</label><input type="date" id="recvExp"></div>
+    <button class="btn primary full" onclick="receiveConfirm()">入荷を確定</button>
+    <button class="btn ghost full mt" onclick="closeSheet()">キャンセル</button>
+  `);
+}
+function rq(d){ recvCtx.recv=Math.max(0,recvCtx.recv+d); document.getElementById('rqv').textContent=recvCtx.recv;
+  document.getElementById('rqEcho').textContent=recvCtx.recv; document.getElementById('rqSum').textContent=recvCtx.base+recvCtx.recv; }
+async function receiveConfirm(){
+  await API.receive(recvCtx.oid, recvCtx.recv);
+  const exp=document.getElementById('recvExp').value;
+  const o=ORDERS.find(x=>x.oid===recvCtx.oid); const it=ITEMS.find(x=>x.id===o.itemId);
+  if(it && exp){ if(!it.exp || exp<it.exp) it.exp=exp; store.write('items',ITEMS); }
+  closeSheet(); renderOrders(); renderToday(); refreshBadges(); toast('入荷を記録しました');
+}
+
+/* =====================================================================
+   みんな（定着エンジン②見られている感 ③自動達成率）
+   ===================================================================== */
+function renderPeople(){
+  const rates=Object.values(WEEK_RATE); const wk=Math.round(rates.reduce((a,b)=>a+b,0)/rates.length);
+  document.getElementById('weekPct').innerHTML=`${wk}<small>%</small>`;
+  document.getElementById('weekBar').style.width=wk+'%';
+  document.getElementById('weekTrend').textContent = `先週より +6pt ・ 目標 85%`;
+
+  const pt=document.getElementById('peopleToday');
+  pt.innerHTML=STAFF.filter(s=>CHECKS.some(c=>c.who===s.id)).map(s=>{
+    const mine=CHECKS.filter(c=>c.who===s.id);
+    const done=mine.filter(c=>c.done).length;
+    const allDone=mine.length&&done===mine.length;
+    return `<div class="person">
+      <span class="p-av">${s.name[0]}</span>
+      <div class="p-main"><div class="p-n">${s.name} <span class="muted" style="font-size:11px">${s.role}</span></div>
+        <div class="p-sub">${mine.length?`${done}/${mine.length} 完了`:'担当なし'}</div>
+        ${mine.length?`<div class="mini-bar"><i style="width:${done/mine.length*100}%;background:${allDone?'var(--green)':'var(--gold)'}"></i></div>`:''}
+      </div>
+      <div class="p-rate">${mine.length?(allDone?'<span class="pill grn">済</span>':'<span class="pill org">未</span>'):'<span class="pill gray">–</span>'}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('peopleWeek').innerHTML=STAFF.map(s=>{
+    const r=WEEK_RATE[s.id]||0; const col=r>=85?'var(--green)':r>=60?'var(--gold)':'var(--red)';
+    return `<div class="person"><span class="p-av">${s.name[0]}</span>
+      <div class="p-main"><div class="p-n">${s.name}</div>
+        <div class="mini-bar"><i style="width:${r}%;background:${col}"></i></div></div>
+      <div class="p-rate"><b style="color:${col}">${r}<span style="font-size:11px">%</span></b><div class="pr-l">入力率</div></div>
+    </div>`;
+  }).join('');
+
+  const undone=CHECKS.filter(c=>!c.done);
+  const ud=document.getElementById('undoneList');
+  if(!undone.length){ ud.innerHTML=`<div class="task" style="color:var(--green);font-weight:700">${ic('check',16,2.2)} 全部おわりました</div>`; }
+  else{
+    ud.innerHTML=`<div class="list">`+undone.map(c=>{
+      const who=(STAFF.find(s=>s.id===c.who)||{}).name||'未割当';
+      return `<div class="task"><span class="tk-ring" style="border-color:var(--orange)"></span>
+        <div class="tk-main"><div class="tk-t">${c.t}</div>
+        <div class="tk-sub"><span class="pill org">${c.slot}</span>担当 ${who}</div></div></div>`;
+    }).join('')+`</div>`
+      + `<div class="esc">${ic('warn',17)}<div><b>17:00 までに未完了なら</b>、代表（浅見さん）へ自動でお知らせが届きます。毎日見張らなくても、抜けは自動で拾われます。</div></div>`;
+  }
+}
+
+/* =====================================================================
+   バッジ / 汎用UI
+   ===================================================================== */
+function refreshBadges(){
+  const need=ITEMS.filter(i=>['out','low'].includes(stockStatus(i))).length;
+  const b=document.getElementById('badgeOrder');
+  b.textContent=need; b.classList.toggle('hidden', need===0);
+}
+function openSheet(html){ document.getElementById('sheet').innerHTML=html; document.getElementById('modal').classList.add('on'); }
+function closeSheet(){ document.getElementById('modal').classList.remove('on'); }
+document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id==='modal')closeSheet(); });
+document.getElementById('meBtn').addEventListener('click',()=>{
+  openSheet(`<h3>スタッフ切替</h3><p class="s-sub">今の担当者を選んでください</p>
+    <div class="opt-row">
+    ${STAFF.map(s=>`<div class="opt ${s.id===State.me.id?'on':''}" onclick="switchStaff('${s.id}')">${s.name}<div class="muted" style="font-size:11px">${s.role}</div></div>`).join('')}</div>
+    <button class="btn ghost full" onclick="closeSheet()">閉じる</button>
+    <button class="btn full" style="background:transparent;color:var(--ink-3);margin-top:10px;font-size:12.5px" onclick="resetDemo()">デモを最初から（データを初期化）</button>`);
+});
+function switchStaff(id){ closeSheet(); pickStaff(id); Nav.go('today'); }
+function resetDemo(){ if(confirm('デモのデータを最初の状態に戻します。よろしいですか？')){ Object.keys(localStorage).filter(k=>k.startsWith('senpuku_')).forEach(k=>localStorage.removeItem(k)); location.reload(); } }
+
+let toastT=null;
+function toast(msg,extra=''){ const el=document.getElementById('toast');
+  el.innerHTML=`<span>${msg} ${extra}</span>`; el.classList.add('on');
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('on'),2200); }
+function toastUndo(msg,undo){ const el=document.getElementById('toast');
+  el.innerHTML=`<span>${msg}</span><span class="t-undo" id="undoBtn">取り消す</span>`; el.classList.add('on');
+  document.getElementById('undoBtn').onclick=()=>{ clearTimeout(toastT); el.classList.remove('on'); undo(); };
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('on'),5000); }
+
+// バージョン表示
+window.addEventListener('DOMContentLoaded',()=>{
+  const f=document.createElement('div'); f.className='foot';
+  f.innerHTML='よいどころ千福 ワークアプリ ・ デモ版';
+  document.querySelector('#sc-people').appendChild(f);
+});
+</script>
+</body>
+</html>
