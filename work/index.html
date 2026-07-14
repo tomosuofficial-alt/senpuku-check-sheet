@@ -10,6 +10,7 @@
 <link rel="apple-touch-icon" href="favicon.png" />
 <link rel="icon" href="favicon.png" />
 <title>よいどころ千福 ワークアプリ</title>
+<script>try{var _t=JSON.parse(localStorage.getItem('senpuku_theme'));if(_t==='dark'||_t==='light')document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
 <style>
 /* =========================================================
    よいどころ千福 統合ワークアプリ — 単一ファイルPWA（モック層）
@@ -20,18 +21,34 @@
   --navy-900:#0a1628; --navy-800:#0d2847; --navy-700:#16385f;
   --gold:#c3a569; --gold-soft:#d9c290; --red-dot:#c30d23;
   --red:#c0392b; --orange:#b96b00; --green:#1f7a43; --blue:#0a5cd8;
-  --bg:#faf8f4; --card:#ffffff; --card-2:#f3efe6;
-  --ink:#14161c; --ink-2:#5b5d66; --ink-3:#9a9ba3; --line:#ece5d8;
   --ease:cubic-bezier(.16,1,.3,1);
   --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
   --tab-h:62px; --header-h:52px;
   --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Segoe UI",sans-serif;
 }
+/* ---- テーマ依存の値（ライト/ダークで変わるものだけ） ---- */
+:root, :root[data-theme="light"]{
+  --bg:#faf8f4; --card:#ffffff; --card-2:#f3efe6;
+  --ink:#14161c; --ink-2:#5b5d66; --ink-3:#9a9ba3; --line:#ece5d8;
+  --cta-bg:var(--navy-900); --cta-ink:#fff;
+  --done-bg:var(--navy-900); --done-ink:#fff;
+  --accent-txt:var(--gold);
+}
 @media (prefers-color-scheme: dark){
-  :root{
+  :root:not([data-theme]){
     --bg:#0a1628; --card:#0f1e33; --card-2:#122540;
     --ink:#f2efe6; --ink-2:#b9c2cf; --ink-3:#6e7c92; --line:rgba(255,255,255,.08);
+    --cta-bg:var(--gold); --cta-ink:var(--navy-900);
+    --done-bg:var(--gold); --done-ink:var(--navy-900);
+    --accent-txt:var(--gold-soft);
   }
+}
+:root[data-theme="dark"]{
+  --bg:#0a1628; --card:#0f1e33; --card-2:#122540;
+  --ink:#f2efe6; --ink-2:#b9c2cf; --ink-3:#6e7c92; --line:rgba(255,255,255,.08);
+  --cta-bg:var(--gold); --cta-ink:var(--navy-900);
+  --done-bg:var(--gold); --done-ink:var(--navy-900);
+  --accent-txt:var(--gold-soft);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%}
@@ -91,6 +108,9 @@ header#top{position:sticky;top:0;z-index:40;height:calc(var(--header-h) + var(--
 #top .me{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--gold-soft)}
 #top .me .av{width:25px;height:25px;border-radius:50%;background:var(--gold);
   color:var(--navy-900);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+#top .theme-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;
+  color:var(--gold-soft);transition:.15s var(--ease)}
+#top .theme-btn:active{background:rgba(255,255,255,.1)}
 
 /* notification banner (線のみ・控えめ) */
 #notice{margin:18px 20px 0;padding:13px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
@@ -152,19 +172,15 @@ main{flex:1;max-width:560px;width:100%;margin:0 auto;padding:0 20px calc(var(--t
 /* task rows */
 .task{display:flex;align-items:flex-start;gap:14px;padding:18px 0}
 .task .tk-ring{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--ink-3);flex:0 0 auto;margin-top:1px;
-  display:flex;align-items:center;justify-content:center;color:#fff;transition:.2s var(--ease)}
-.task.done .tk-ring{background:var(--navy-900);border-color:var(--navy-900)}
+  display:flex;align-items:center;justify-content:center;color:var(--done-ink);transition:.2s var(--ease)}
+.task.done .tk-ring{background:var(--done-bg);border-color:var(--done-bg)}
 .task .tk-main{flex:1;min-width:0}
 .task .tk-t{font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px}
 .task.done .tk-t{color:var(--ink-3);text-decoration:line-through;font-weight:500}
 .task .tk-sub{font-size:12px;color:var(--ink-3);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.tk-sub .who{color:var(--gold);font-weight:700}
+.tk-sub .who{color:var(--accent-txt);font-weight:700}
 .tk-sub .done-by{color:var(--green);font-weight:700;display:flex;align-items:center;gap:3px}
 .tk-sub .photo{display:flex;align-items:center;gap:3px}
-@media (prefers-color-scheme: dark){
-  .task.done .tk-ring{background:var(--gold);border-color:var(--gold);color:var(--navy-900)}
-  .tk-sub .who{color:var(--gold-soft)}
-}
 
 /* accordion (仕込み) */
 .acc{padding-left:38px}
@@ -194,8 +210,7 @@ main{flex:1;max-width:560px;width:100%;margin:0 auto;padding:0 20px calc(var(--t
 .pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700}
 .pill .dot{width:6px;height:6px}
 .pill.red{color:var(--red)} .pill.org{color:var(--orange)} .pill.grn{color:var(--green)}
-.pill.gld{color:var(--gold)} .pill.gray{color:var(--ink-3)} .pill.blue{color:var(--blue)}
-@media (prefers-color-scheme: dark){ .pill.gld{color:var(--gold-soft)} }
+.pill.gld{color:var(--accent-txt)} .pill.gray{color:var(--ink-3)} .pill.blue{color:var(--blue)}
 
 /* order */
 .sup-head{display:flex;align-items:center;gap:9px;padding:26px 0 4px}
@@ -212,13 +227,12 @@ main{flex:1;max-width:560px;width:100%;margin:0 auto;padding:0 20px calc(var(--t
 .btn{border-radius:13px;padding:14px 16px;font-weight:700;font-size:14px;display:inline-flex;
   align-items:center;justify-content:center;gap:7px;transition:.15s var(--ease)}
 .btn:active{transform:scale(.98)}
-.btn.primary{background:var(--navy-900);color:#fff}
+.btn.primary{background:var(--cta-bg);color:var(--cta-ink)}
 .btn.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line)}
 .btn.sm{padding:9px 14px;font-size:13px;border-radius:11px}
 .btn.full{width:100%}
 .btn.mt{margin-top:20px}
 .btn[disabled]{opacity:.4;pointer-events:none}
-@media (prefers-color-scheme: dark){ .btn.primary{background:var(--gold);color:var(--navy-900)} }
 
 /* people (定着エンジン) */
 .kpi-hero{background:linear-gradient(155deg,#122a49,var(--navy-900));border-radius:20px;
@@ -329,6 +343,7 @@ nav#tabs button .badge{position:absolute;top:6px;left:calc(50% + 7px);min-width:
   <header id="top">
     <div class="brand"><span class="dot"></span>千福ワーク</div>
     <div class="spacer"></div>
+    <button class="theme-btn" id="themeBtn" aria-label="表示モード切替" onclick="toggleTheme()"></button>
     <button class="me" id="meBtn"><span class="av" id="meAv">井</span><span id="meName">井上</span>
       <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
     </button>
@@ -452,6 +467,7 @@ const PATHS = {
   knife:'<path d="M4 20l5.5-1.2L18 10.3a2 2 0 0 0-2.8-2.8L6.7 16 5.2 21z"/><line x1="14.3" y1="8.7" x2="17.3" y2="11.7"/>',
   sake:'<path d="M10.5 3h3"/><path d="M11 3v3.3L8.6 9.5a3 3 0 0 0-.6 1.8V19a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-7.7a3 3 0 0 0-.6-1.8L13 6.3V3"/><line x1="8.2" y1="14" x2="15.8" y2="14"/>',
   moon:'<path d="M20 15.2A8.2 8.2 0 1 1 9 4.3a6.6 6.6 0 0 0 11 10.9z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><line x1="12" y1="2.5" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21.5"/><line x1="2.5" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21.5" y2="12"/><line x1="5.5" y1="5.5" x2="7.2" y2="7.2"/><line x1="16.8" y1="16.8" x2="18.5" y2="18.5"/><line x1="18.5" y1="5.5" x2="16.8" y2="7.2"/><line x1="7.2" y1="16.8" x2="5.5" y2="18.5"/>',
   bell:'<path d="M6.5 15c0-1 .4-1.8.4-5a5.1 5.1 0 0 1 10.2 0c0 3.2.4 4 .4 5"/><line x1="5.5" y1="15" x2="18.5" y2="15"/><path d="M10.3 17.6a1.9 1.9 0 0 0 3.4 0"/>',
   check:'<path d="M5 12.5l4.5 4.5L19 7"/>',
   camera:'<path d="M8 7.2L9.3 5h5.4L16 7.2"/><rect x="3" y="7.2" width="18" height="12.8" rx="2.2"/><circle cx="12" cy="13.4" r="3.3"/>',
@@ -618,6 +634,7 @@ function pickStaff(id, silent){
 }
 
 async function boot(){
+  updateThemeBtn();
   const h=new Date().getHours();
   document.getElementById('heroHi').textContent = h<11?'おはようございます':h<18?'おつかれさまです':'こんばんは';
   showNotice();
@@ -1022,6 +1039,13 @@ document.getElementById('meBtn').addEventListener('click',()=>{
 });
 function switchStaff(id){ closeSheet(); pickStaff(id); Nav.go('today'); }
 function resetDemo(){ if(confirm('デモのデータを最初の状態に戻します。よろしいですか？')){ Object.keys(localStorage).filter(k=>k.startsWith('senpuku_')).forEach(k=>localStorage.removeItem(k)); location.reload(); } }
+
+/* 表示モード（ライト/ダーク）— 初期は端末設定に追従、以降は選んだ方を記憶 */
+function effectiveTheme(){ const s=store.read('theme',null); if(s==='dark'||s==='light')return s;
+  return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'; }
+function updateThemeBtn(){ const b=document.getElementById('themeBtn'); if(b) b.innerHTML = effectiveTheme()==='dark'? ic('sun',19,1.7) : ic('moon',18,1.7); }
+function toggleTheme(){ const next=effectiveTheme()==='dark'?'light':'dark'; store.write('theme',next);
+  document.documentElement.setAttribute('data-theme',next); updateThemeBtn(); }
 
 let toastT=null;
 function toast(msg,extra=''){ const el=document.getElementById('toast');
